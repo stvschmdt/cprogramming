@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YOLOX Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+      --layer-backbone: #dbeafe;
+      --layer-neck: #dcfce7;
+      --layer-head: #fef3c7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Hero */
+    .hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero .breadcrumb {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .hero .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .hero .meta-tags span {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .hero .paper-link {
+      font-size: 0.9rem;
+    }
+
+    /* Sections */
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-size: 1.1rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+
+    /* Callout boxes */
+    .callout {
+      background: var(--highlight-bg);
+      border-left: 3px solid var(--highlight-border);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 1.25rem;
+      font-size: 0.92rem;
+    }
+    .callout strong {
+      color: var(--accent);
+    }
+
+    .callout-blue {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+    }
+    .callout-blue strong { color: #2563eb; }
+
+    .callout-green {
+      background: #f0fdf4;
+      border-left-color: #22c55e;
+    }
+    .callout-green strong { color: #16a34a; }
+
+    /* Tensor shape tags */
+    .tensor {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      background: var(--code-bg);
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    /* Architecture diagram */
+    .arch-diagram {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .arch-diagram svg {
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Layer walkthrough cards */
+    .layer-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--border);
+    }
+    .layer-card.backbone { border-left-color: #3b82f6; }
+    .layer-card.neck { border-left-color: #22c55e; }
+    .layer-card.head { border-left-color: #f59e0b; }
+
+    .layer-card .layer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .layer-card .layer-header h4 {
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .layer-card .layer-header .shapes {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .layer-card p {
+      font-size: 0.92rem;
+      margin-bottom: 0.75rem;
+    }
+    .layer-card p:last-child { margin-bottom: 0; }
+
+    .layer-card .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .layer-card .detail-grid dt {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .layer-card .detail-grid dd {
+      margin-bottom: 0.4rem;
+    }
+
+    /* Example images placeholder */
+    .example-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .example-images .img-placeholder {
+      background: var(--code-bg);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 1rem;
+    }
+    .example-images .img-placeholder .icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.4;
+    }
+
+    /* Summary table */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    .summary-table th, .summary-table td {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .summary-table th {
+      background: var(--code-bg);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .summary-table td .tensor {
+      font-size: 0.78rem;
+    }
+
+    /* Step number */
+    .step-num {
+      display: inline-block;
+      width: 1.6rem;
+      height: 1.6rem;
+      line-height: 1.6rem;
+      text-align: center;
+      border-radius: 50%;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+      margin-right: 0.5rem;
+      flex-shrink: 0;
+    }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.green { background: #22c55e; }
+    .step-num.amber { background: #f59e0b; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.5rem; }
+      body { font-size: 16px; }
+      nav { gap: 1rem; }
+      .layer-card .detail-grid { grid-template-columns: 1fr; }
+      .layer-card .layer-header { flex-direction: column; }
+    }
+
+    footer {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / YOLOX</div>
+    <h1>YOLOX: Exceeding YOLO Series in 2021</h1>
+    <div class="subtitle">Anchor-Free Object Detection, Layer by Layer</div>
+    <div class="meta-tags">
+      <span>Object Detection</span>
+      <span>Anchor-Free</span>
+      <span>CSPDarknet</span>
+      <span>Decoupled Head</span>
+      <span>Megvii 2021</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/2107.08430">arXiv:2107.08430</a> &nbsp;|&nbsp;
+      Code: <a href="https://github.com/Megvii-BaseDetection/YOLOX">Megvii-BaseDetection/YOLOX</a>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 1: THE PROBLEM                       -->
+  <!-- ============================================ -->
+  <section>
+    <h2>1 &mdash; The Problem to Solve</h2>
+
+    <p><strong>Object detection</strong> is the task of finding every object in an image and drawing a tight bounding box around it while also labeling what it is. Unlike image classification (one label per image), detection must answer two questions simultaneously for potentially dozens of objects: <em>what is it?</em> and <em>where is it?</em></p>
+
+    <h3>A Concrete Example</h3>
+    <p>Imagine a self-driving car's front camera captures a busy intersection. The model needs to find every pedestrian, car, bicycle, traffic light, and stop sign — and report each one's bounding box coordinates and class label — all in under 10 milliseconds so the car can react in real time.</p>
+
+    <div class="callout">
+      <strong>Why YOLOX?</strong> Previous YOLO models used hand-designed "anchor boxes" — predefined bounding box templates the model would adjust. YOLOX removes anchors entirely, adds a decoupled head that handles classification and localization separately, and introduces a smarter label assignment strategy called SimOTA. The result: simpler design, fewer hyperparameters, better accuracy.
+    </div>
+
+    <h3>What the Model Receives and Returns</h3>
+    <p><strong>Input:</strong> An RGB image resized to <span class="tensor">640 &times; 640 &times; 3</span>. The three channels are red, green, and blue pixel intensities, typically normalized to [0, 1].</p>
+    <p><strong>Output:</strong> A list of detections, each containing:</p>
+    <ul style="padding-left: 1.25rem; margin-bottom: 1rem;">
+      <li>A bounding box: <span class="tensor">(x_center, y_center, width, height)</span></li>
+      <li>A class label (e.g., "person", "car", "dog") with a confidence score</li>
+      <li>An objectness score — how confident the model is that <em>something</em> is there at all</li>
+    </ul>
+
+    <div class="example-images">
+      <div class="img-placeholder">
+        <div class="icon">&#128247;</div>
+        Input: Raw photo<br>(640 &times; 640 RGB)
+      </div>
+      <div class="img-placeholder">
+        <div class="icon">&#9634;</div>
+        Output: Bounding boxes<br>+ class labels + scores
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 2: ARCHITECTURE OVERVIEW             -->
+  <!-- ============================================ -->
+  <section>
+    <h2>2 &mdash; Architecture Overview</h2>
+
+    <p>YOLOX follows the classic three-stage detector pattern: <strong>Backbone</strong> extracts features, <strong>Neck</strong> fuses them across scales, and <strong>Head</strong> makes predictions. Here's the full pipeline:</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif" font-size="12">
+        <!-- Background regions -->
+        <rect x="10" y="40" width="250" height="370" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+        <rect x="270" y="40" width="200" height="370" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+        <rect x="480" y="40" width="270" height="370" rx="8" fill="#fffbeb" stroke="#fde68a" stroke-width="1.5"/>
+
+        <!-- Labels -->
+        <text x="135" y="30" text-anchor="middle" font-weight="700" font-size="13" fill="#2563eb">BACKBONE (CSPDarknet)</text>
+        <text x="370" y="30" text-anchor="middle" font-weight="700" font-size="13" fill="#16a34a">NECK (PAFPN)</text>
+        <text x="615" y="30" text-anchor="middle" font-weight="700" font-size="13" fill="#d97706">HEAD (Decoupled)</text>
+
+        <!-- Input -->
+        <rect x="30" y="70" width="80" height="50" rx="4" fill="#3b82f6" stroke="#2563eb"/>
+        <text x="70" y="92" text-anchor="middle" fill="white" font-size="10" font-weight="600">Input</text>
+        <text x="70" y="105" text-anchor="middle" fill="white" font-size="9">640×640×3</text>
+
+        <!-- Focus -->
+        <rect x="30" y="140" width="80" height="40" rx="4" fill="#60a5fa" stroke="#3b82f6"/>
+        <text x="70" y="158" text-anchor="middle" fill="white" font-size="10" font-weight="600">Focus</text>
+        <text x="70" y="170" text-anchor="middle" fill="white" font-size="8">320×320×12</text>
+        <line x1="70" y1="120" x2="70" y2="140" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+        <!-- Dark2 -->
+        <rect x="30" y="200" width="80" height="40" rx="4" fill="#60a5fa" stroke="#3b82f6"/>
+        <text x="70" y="218" text-anchor="middle" fill="white" font-size="10" font-weight="600">Dark2</text>
+        <text x="70" y="230" text-anchor="middle" fill="white" font-size="8">160×160×128</text>
+        <line x1="70" y1="180" x2="70" y2="200" stroke="#3b82f6" stroke-width="1.5"/>
+
+        <!-- Dark3 (C3) -->
+        <rect x="135" y="200" width="110" height="40" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+        <text x="190" y="218" text-anchor="middle" fill="white" font-size="10" font-weight="700">Dark3 (C3)</text>
+        <text x="190" y="230" text-anchor="middle" fill="white" font-size="8">80×80×256</text>
+        <line x1="110" y1="220" x2="135" y2="220" stroke="#3b82f6" stroke-width="1.5"/>
+
+        <!-- Dark4 (C4) -->
+        <rect x="135" y="270" width="110" height="40" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+        <text x="190" y="288" text-anchor="middle" fill="white" font-size="10" font-weight="700">Dark4 (C4)</text>
+        <text x="190" y="300" text-anchor="middle" fill="white" font-size="8">40×40×512</text>
+        <line x1="190" y1="240" x2="190" y2="270" stroke="#3b82f6" stroke-width="1.5"/>
+
+        <!-- Dark5 + SPP (C5) -->
+        <rect x="135" y="340" width="110" height="50" rx="4" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+        <text x="190" y="358" text-anchor="middle" fill="white" font-size="10" font-weight="700">Dark5 + SPP</text>
+        <text x="190" y="370" text-anchor="middle" fill="white" font-size="10" font-weight="700">(C5)</text>
+        <text x="190" y="383" text-anchor="middle" fill="white" font-size="8">20×20×1024</text>
+        <line x1="190" y1="310" x2="190" y2="340" stroke="#3b82f6" stroke-width="1.5"/>
+
+        <!-- PAFPN top-down path -->
+        <!-- P5 -->
+        <rect x="295" y="340" width="80" height="40" rx="4" fill="#22c55e" stroke="#16a34a"/>
+        <text x="335" y="358" text-anchor="middle" fill="white" font-size="10" font-weight="600">P5</text>
+        <text x="335" y="370" text-anchor="middle" fill="white" font-size="8">20×20×256</text>
+        <line x1="245" y1="365" x2="295" y2="365" stroke="#16a34a" stroke-width="1.5"/>
+
+        <!-- P4 -->
+        <rect x="295" y="270" width="80" height="40" rx="4" fill="#22c55e" stroke="#16a34a"/>
+        <text x="335" y="288" text-anchor="middle" fill="white" font-size="10" font-weight="600">P4</text>
+        <text x="335" y="300" text-anchor="middle" fill="white" font-size="8">40×40×256</text>
+        <line x1="335" y1="340" x2="335" y2="310" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="245" y1="290" x2="295" y2="290" stroke="#16a34a" stroke-width="1.5"/>
+
+        <!-- P3 -->
+        <rect x="295" y="200" width="80" height="40" rx="4" fill="#22c55e" stroke="#16a34a"/>
+        <text x="335" y="218" text-anchor="middle" fill="white" font-size="10" font-weight="600">P3</text>
+        <text x="335" y="230" text-anchor="middle" fill="white" font-size="8">80×80×256</text>
+        <line x1="335" y1="270" x2="335" y2="240" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="245" y1="220" x2="295" y2="220" stroke="#16a34a" stroke-width="1.5"/>
+
+        <!-- PAFPN labels -->
+        <text x="350" y="168" text-anchor="middle" font-size="9" fill="#16a34a" font-style="italic">upsample &#8593;</text>
+        <text x="425" y="168" text-anchor="middle" font-size="9" fill="#16a34a" font-style="italic">downsample &#8595;</text>
+
+        <!-- Bottom-up arrows -->
+        <line x1="385" y1="220" x2="385" y2="225" stroke="#16a34a" stroke-width="1"/>
+        <line x1="385" y1="225" x2="420" y2="225" stroke="#16a34a" stroke-width="1"/>
+        <line x1="420" y1="225" x2="420" y2="280" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="420" y1="290" x2="420" y2="295" stroke="#16a34a" stroke-width="1"/>
+        <line x1="420" y1="295" x2="445" y2="295" stroke="#16a34a" stroke-width="1"/>
+        <line x1="445" y1="295" x2="445" y2="355" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <!-- Decoupled Heads -->
+        <!-- Head for P3 (small objects) -->
+        <rect x="500" y="180" width="100" height="30" rx="3" fill="#f59e0b" stroke="#d97706"/>
+        <text x="550" y="199" text-anchor="middle" fill="white" font-size="9" font-weight="600">1&times;1 Conv &rarr; 256</text>
+        <line x1="375" y1="215" x2="500" y2="195" stroke="#d97706" stroke-width="1.5"/>
+
+        <rect x="500" y="215" width="50" height="25" rx="3" fill="#fbbf24" stroke="#d97706"/>
+        <text x="525" y="231" text-anchor="middle" fill="#78350f" font-size="8" font-weight="600">Cls</text>
+        <rect x="555" y="215" width="50" height="25" rx="3" fill="#fbbf24" stroke="#d97706"/>
+        <text x="580" y="231" text-anchor="middle" fill="#78350f" font-size="8" font-weight="600">Reg+IoU</text>
+        <line x1="525" y1="210" x2="525" y2="215" stroke="#d97706" stroke-width="1"/>
+        <line x1="575" y1="210" x2="575" y2="215" stroke="#d97706" stroke-width="1"/>
+
+        <!-- Head for P4 (medium objects) -->
+        <rect x="500" y="270" width="100" height="30" rx="3" fill="#f59e0b" stroke="#d97706"/>
+        <text x="550" y="289" text-anchor="middle" fill="white" font-size="9" font-weight="600">1&times;1 Conv &rarr; 256</text>
+        <line x1="375" y1="290" x2="500" y2="285" stroke="#d97706" stroke-width="1.5"/>
+
+        <rect x="500" y="305" width="50" height="25" rx="3" fill="#fbbf24" stroke="#d97706"/>
+        <text x="525" y="321" text-anchor="middle" fill="#78350f" font-size="8" font-weight="600">Cls</text>
+        <rect x="555" y="305" width="50" height="25" rx="3" fill="#fbbf24" stroke="#d97706"/>
+        <text x="580" y="321" text-anchor="middle" fill="#78350f" font-size="8" font-weight="600">Reg+IoU</text>
+        <line x1="525" y1="300" x2="525" y2="305" stroke="#d97706" stroke-width="1"/>
+        <line x1="575" y1="300" x2="575" y2="305" stroke="#d97706" stroke-width="1"/>
+
+        <!-- Head for P5 (large objects) -->
+        <rect x="500" y="355" width="100" height="30" rx="3" fill="#f59e0b" stroke="#d97706"/>
+        <text x="550" y="374" text-anchor="middle" fill="white" font-size="9" font-weight="600">1&times;1 Conv &rarr; 256</text>
+        <line x1="375" y1="365" x2="500" y2="370" stroke="#d97706" stroke-width="1.5"/>
+
+        <rect x="500" y="390" width="50" height="25" rx="3" fill="#fbbf24" stroke="#d97706"/>
+        <text x="525" y="406" text-anchor="middle" fill="#78350f" font-size="8" font-weight="600">Cls</text>
+        <rect x="555" y="390" width="50" height="25" rx="3" fill="#fbbf24" stroke="#d97706"/>
+        <text x="580" y="406" text-anchor="middle" fill="#78350f" font-size="8" font-weight="600">Reg+IoU</text>
+        <line x1="525" y1="385" x2="525" y2="390" stroke="#d97706" stroke-width="1"/>
+        <line x1="575" y1="385" x2="575" y2="390" stroke="#d97706" stroke-width="1"/>
+
+        <!-- Output labels -->
+        <text x="620" y="230" font-size="8" fill="#78350f">80&times;80 (small obj)</text>
+        <text x="620" y="320" font-size="8" fill="#78350f">40&times;40 (med obj)</text>
+        <text x="620" y="405" font-size="8" fill="#78350f">20&times;20 (large obj)</text>
+
+        <!-- Scale labels on right -->
+        <text x="730" y="230" font-size="9" fill="#d97706" font-weight="600">Stride 8</text>
+        <text x="730" y="320" font-size="9" fill="#d97706" font-weight="600">Stride 16</text>
+        <text x="730" y="405" font-size="9" fill="#d97706" font-weight="600">Stride 32</text>
+
+        <!-- Arrow marker definition -->
+        <defs>
+          <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#3b82f6"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <p>The image flows left to right. The backbone produces feature maps at three scales (80&times;80, 40&times;40, 20&times;20). The PAFPN neck fuses these features both top-down and bottom-up. Each fused scale feeds into its own decoupled head, which independently predicts classes, bounding boxes, and objectness.</p>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 3: EXAMPLE INPUTS                    -->
+  <!-- ============================================ -->
+  <section>
+    <h2>3 &mdash; Example Inputs</h2>
+    <p>YOLOX expects images resized to <span class="tensor">640 &times; 640</span> pixels. During training, aggressive augmentations (Mosaic + MixUp) are applied. At inference, images are letterbox-resized to preserve aspect ratio with gray padding.</p>
+
+    <div class="example-images">
+      <div class="img-placeholder">
+        <div class="icon">&#128663;</div>
+        Street scene<br>Cars, pedestrians, signs
+      </div>
+      <div class="img-placeholder">
+        <div class="icon">&#128054;</div>
+        Indoor scene<br>Dog on a couch
+      </div>
+      <div class="img-placeholder">
+        <div class="icon">&#127861;</div>
+        Tabletop<br>Cups, plates, utensils
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Mosaic augmentation:</strong> During training, four random images are stitched into a single 640&times;640 tile. This forces the model to see objects at varied scales and positions in a single pass — one of the key reasons YOLOX doesn't need ImageNet pretraining.
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 4: LAYER-BY-LAYER WALKTHROUGH        -->
+  <!-- ============================================ -->
+  <section>
+    <h2>4 &mdash; Layer-by-Layer Walkthrough</h2>
+
+    <p>Let's trace a single <span class="tensor">640 &times; 640 &times; 3</span> image through every stage. We'll track the tensor shape at each step so you always know what's happening to the data.</p>
+
+    <!-- ===== BACKBONE ===== -->
+    <h3><span class="step-num blue">B</span> Backbone: CSPDarknet53</h3>
+    <p>The backbone's job is to convert raw pixels into rich feature representations at multiple scales. Think of it as the model's "eyes" — it learns to see edges, textures, parts, and eventually whole objects as you go deeper.</p>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Focus Layer</h4>
+        <div class="shapes"><span class="tensor">640&times;640&times;3</span> &rarr; <span class="tensor">320&times;320&times;64</span></div>
+      </div>
+      <p>The Focus layer is YOLOX's entry point. Instead of a standard convolution, it takes every other pixel to create four sub-images (like looking at even rows/even cols, even rows/odd cols, etc.), then stacks them along the channel dimension. This turns a <span class="tensor">640&times;640&times;3</span> image into a <span class="tensor">320&times;320&times;12</span> tensor without losing any information — the spatial resolution halves but the channels multiply by 4.</p>
+      <p>A single <span class="tensor">3&times;3</span> convolution with 64 filters then compresses this to <span class="tensor">320&times;320&times;64</span>.</p>
+      <div class="callout-blue callout">
+        <strong>Why not just a strided conv?</strong> The Focus layer preserves every pixel — a strided convolution would skip pixels and lose information at the very first layer. In later YOLO versions this was replaced by a large-kernel conv, but in YOLOX it's a core design choice.
+      </div>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>CBS Module (Conv + BatchNorm + SiLU)</h4>
+        <div class="shapes">Used throughout</div>
+      </div>
+      <p>The fundamental building block. Every convolution in CSPDarknet is followed by Batch Normalization (stabilizes training by normalizing activations) and the SiLU activation function (a smooth version of ReLU that allows small negative gradients).</p>
+      <p><strong>SiLU</strong> (also called Swish): <code>f(x) = x &middot; sigmoid(x)</code>. Unlike ReLU, it doesn't hard-kill negative values — this helps gradient flow in deep networks.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Dark2: CSP Block</h4>
+        <div class="shapes"><span class="tensor">320&times;320&times;64</span> &rarr; <span class="tensor">160&times;160&times;128</span></div>
+      </div>
+      <p>A <span class="tensor">3&times;3</span> convolution with stride 2 halves the spatial dimensions and doubles the channels. Then the CSP (Cross-Stage Partial) structure splits the feature map into two halves along the channel dimension: one half passes through a series of residual blocks, the other skips ahead. The two halves are concatenated back together.</p>
+      <div class="callout-blue callout">
+        <strong>What CSP does:</strong> By splitting channels, CSP lets one path learn complex transformations while the other preserves the original signal. This reduces computation by ~50% compared to processing all channels through the residual blocks, while maintaining accuracy. Think of it as: "let half the channels do the hard work, then share notes."
+      </div>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Dark3: CSP Block &mdash; Output C3</h4>
+        <div class="shapes"><span class="tensor">160&times;160&times;128</span> &rarr; <span class="tensor">80&times;80&times;256</span></div>
+      </div>
+      <p>Same structure as Dark2 — downsample by 2&times;, then CSP residual processing. The output at this stage, called <strong>C3</strong>, captures fine-grained features: edges, textures, small parts. This is the first feature map sent to the neck, and it's responsible for detecting <strong>small objects</strong> (stride 8 — each cell covers an 8&times;8 pixel region).</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Dark4: CSP Block &mdash; Output C4</h4>
+        <div class="shapes"><span class="tensor">80&times;80&times;256</span> &rarr; <span class="tensor">40&times;40&times;512</span></div>
+      </div>
+      <p>Another downsample + CSP stage. <strong>C4</strong> captures mid-level features — object parts, shapes, and spatial relationships. Each grid cell now "sees" a 16&times;16 pixel region. This feature map handles <strong>medium-sized objects</strong>.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Dark5: CSP Block + SPP &mdash; Output C5</h4>
+        <div class="shapes"><span class="tensor">40&times;40&times;512</span> &rarr; <span class="tensor">20&times;20&times;1024</span></div>
+      </div>
+      <p>The deepest stage. After the CSP block, a <strong>Spatial Pyramid Pooling (SPP)</strong> module is applied. SPP runs max pooling at three different kernel sizes (5&times;5, 9&times;9, 13&times;13) in parallel and concatenates the results. This lets the network aggregate context from different spatial extents without resizing the feature map.</p>
+      <p><strong>C5</strong> captures high-level semantic features — the model "understands" what objects are, not just their textures. Each cell covers a 32&times;32 pixel region. This handles <strong>large objects</strong>.</p>
+      <div class="callout-blue callout">
+        <strong>SPP intuition:</strong> Imagine looking at a photo through windows of three different sizes. The small window sees fine details. The large window sees the big picture. SPP gives the model all three perspectives simultaneously, enriching the feature representation at the deepest layer.
+      </div>
+    </div>
+
+    <!-- ===== NECK ===== -->
+    <h3><span class="step-num green">N</span> Neck: PAFPN (Path Aggregation Feature Pyramid Network)</h3>
+    <p>The backbone gave us three feature maps at different scales (C3, C4, C5). But there's a problem: C3 has great spatial detail but weak semantics, while C5 has strong semantics but poor localization. The PAFPN neck fixes this by fusing information in <em>both directions</em>.</p>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>Top-Down Path (FPN): C5 &rarr; C4 &rarr; C3</h4>
+        <div class="shapes">Deep semantics flow to shallow layers</div>
+      </div>
+      <p><strong>Step 1:</strong> Take C5 (<span class="tensor">20&times;20&times;1024</span>), reduce channels with a 1&times;1 conv to <span class="tensor">20&times;20&times;512</span>, then <strong>upsample</strong> (bilinear interpolation) to <span class="tensor">40&times;40&times;512</span>. Concatenate with C4 and pass through a CSP block to produce <strong>P4</strong> (<span class="tensor">40&times;40&times;256</span>).</p>
+      <p><strong>Step 2:</strong> Upsample P4 to <span class="tensor">80&times;80&times;256</span>, concatenate with C3, and pass through another CSP block to produce <strong>P3</strong> (<span class="tensor">80&times;80&times;256</span>).</p>
+      <div class="callout-green callout">
+        <strong>What this achieves:</strong> The shallow layers (which are good at detecting small objects) now have access to the deep network's "understanding" of what objects actually look like. A small blob at 80&times;80 that looked ambiguous now has semantic context from C5 telling it "that's probably a person."
+      </div>
+    </div>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>Bottom-Up Path (PAN): P3 &rarr; P4 &rarr; P5</h4>
+        <div class="shapes">Fine-grained details flow to deep layers</div>
+      </div>
+      <p><strong>Step 3:</strong> Take P3, <strong>downsample</strong> with a stride-2 convolution to <span class="tensor">40&times;40&times;256</span>, concatenate with P4 (from the top-down path), and refine through a CSP block. This produces the final 40&times;40 feature map.</p>
+      <p><strong>Step 4:</strong> Downsample again to <span class="tensor">20&times;20&times;256</span>, concatenate with P5, and refine to produce the final 20&times;20 feature map.</p>
+      <div class="callout-green callout">
+        <strong>Why two passes?</strong> The top-down pass gives shallow layers semantic power. The bottom-up pass gives deep layers spatial precision. After both passes, every scale has <em>both</em> strong semantics and fine-grained localization — the best of both worlds.
+      </div>
+    </div>
+
+    <p>After the PAFPN, we have three fused feature maps, all with 256 channels:</p>
+    <table class="summary-table">
+      <tr>
+        <th>Feature Map</th>
+        <th>Shape</th>
+        <th>Stride</th>
+        <th>Best For</th>
+      </tr>
+      <tr>
+        <td>P3</td>
+        <td><span class="tensor">80 &times; 80 &times; 256</span></td>
+        <td>8</td>
+        <td>Small objects (pedestrians far away)</td>
+      </tr>
+      <tr>
+        <td>P4</td>
+        <td><span class="tensor">40 &times; 40 &times; 256</span></td>
+        <td>16</td>
+        <td>Medium objects (cars, people nearby)</td>
+      </tr>
+      <tr>
+        <td>P5</td>
+        <td><span class="tensor">20 &times; 20 &times; 256</span></td>
+        <td>32</td>
+        <td>Large objects (trucks, buildings)</td>
+      </tr>
+    </table>
+
+    <!-- ===== HEAD ===== -->
+    <h3><span class="step-num amber">H</span> Head: Decoupled Detection Head</h3>
+    <p>This is YOLOX's signature innovation. Previous YOLOs used a single "coupled" head — one set of convolutions predicted both the class and the bounding box. YOLOX found that these two tasks conflict: classification wants features that are invariant to position, while regression wants features that are highly position-sensitive. Decoupling them improves both.</p>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>1&times;1 Conv: Channel Reduction</h4>
+        <div class="shapes"><span class="tensor">H&times;W&times;256</span> &rarr; <span class="tensor">H&times;W&times;256</span></div>
+      </div>
+      <p>Each scale's feature map first passes through a <span class="tensor">1&times;1</span> convolution. This acts as a per-pixel channel mixer — it recombines the 256 channels into a new 256-dimensional representation optimized for the prediction tasks. This is where the "shared stem" ends and the two branches diverge.</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Classification Branch</h4>
+        <div class="shapes"><span class="tensor">H&times;W&times;256</span> &rarr; <span class="tensor">H&times;W&times;num_classes</span></div>
+      </div>
+      <p>Two <span class="tensor">3&times;3</span> convolutions (each followed by BatchNorm + SiLU) process the features specifically for classification. The final layer outputs a score for each of the 80 COCO classes at every spatial position. The output shape for the 80&times;80 scale would be <span class="tensor">80&times;80&times;80</span> (one score per class per grid cell).</p>
+      <p><strong>What it learns:</strong> "Is this a person? A car? A dog?" — position-invariant pattern matching.</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Regression Branch + IoU</h4>
+        <div class="shapes"><span class="tensor">H&times;W&times;256</span> &rarr; <span class="tensor">H&times;W&times;4</span> + <span class="tensor">H&times;W&times;1</span></div>
+      </div>
+      <p>A separate pair of <span class="tensor">3&times;3</span> convolutions specializes in predicting where objects are. It outputs:</p>
+      <ul style="padding-left: 1.25rem; margin: 0.5rem 0;">
+        <li><strong>4 regression values</strong> per cell: (x_center, y_center, width, height) — the bounding box</li>
+        <li><strong>1 objectness score</strong> (IoU branch): "Is there actually an object here, or is this background?"</li>
+      </ul>
+      <p>The IoU (Intersection over Union) branch is attached to regression rather than classification because it's fundamentally about spatial accuracy — how well does the predicted box overlap with the true box?</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Combining Predictions Across Scales</h4>
+        <div class="shapes">8,400 total predictions</div>
+      </div>
+      <p>The three scales produce predictions at every grid cell:</p>
+      <ul style="padding-left: 1.25rem; margin: 0.5rem 0;">
+        <li>80 &times; 80 = <strong>6,400</strong> predictions (stride 8, small objects)</li>
+        <li>40 &times; 40 = <strong>1,600</strong> predictions (stride 16, medium objects)</li>
+        <li>20 &times; 20 = <strong>400</strong> predictions (stride 32, large objects)</li>
+      </ul>
+      <p>Total: <strong>8,400 candidate detections</strong>. Each one has 80 class scores + 4 box coordinates + 1 objectness score = 85 values. Non-Maximum Suppression (NMS) then filters these down to the final clean set of detections — typically a few dozen per image.</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 5: KEY INNOVATIONS                   -->
+  <!-- ============================================ -->
+  <section>
+    <h2>5 &mdash; Key Innovations</h2>
+
+    <div class="layer-card">
+      <h4>Anchor-Free Detection</h4>
+      <p>Older YOLO models placed multiple "anchor boxes" (predefined templates of different aspect ratios) at each grid cell and predicted adjustments to these templates. This required careful tuning of anchor sizes per dataset. YOLOX simply predicts the box directly — each grid cell outputs one (x, y, w, h) prediction with no templates. Fewer hyperparameters, simpler code, faster inference.</p>
+    </div>
+
+    <div class="layer-card">
+      <h4>SimOTA: Dynamic Label Assignment</h4>
+      <p>During training, the model needs to decide which grid cells are "responsible" for each ground-truth object. Older methods used fixed rules (e.g., the center cell). SimOTA dynamically assigns labels by treating it as an optimal transport problem — it finds the globally best matching between predictions and ground-truth boxes based on both classification and localization quality. This means easy objects get fewer assignees, and hard objects get more.</p>
+    </div>
+
+    <div class="layer-card">
+      <h4>Strong Data Augmentation (No Pretraining)</h4>
+      <p>YOLOX uses Mosaic (4 images stitched together) and MixUp (two images blended) augmentation so aggressively that the model can train from scratch on COCO — no ImageNet pretraining needed. This simplifies the training pipeline and avoids domain mismatch between pretraining and fine-tuning datasets.</p>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 6: TENSOR SHAPE SUMMARY              -->
+  <!-- ============================================ -->
+  <section>
+    <h2>6 &mdash; Complete Tensor Shape Summary</h2>
+    <p>For YOLOX-L with a 640&times;640 input:</p>
+    <table class="summary-table">
+      <tr>
+        <th>Stage</th>
+        <th>Layer</th>
+        <th>Output Shape</th>
+        <th>Notes</th>
+      </tr>
+      <tr><td>Input</td><td>Image</td><td><span class="tensor">640&times;640&times;3</span></td><td>RGB, normalized</td></tr>
+      <tr><td rowspan="5">Backbone</td><td>Focus</td><td><span class="tensor">320&times;320&times;64</span></td><td>Slice + 3&times;3 conv</td></tr>
+      <tr><td>Dark2</td><td><span class="tensor">160&times;160&times;128</span></td><td>CSP block</td></tr>
+      <tr><td>Dark3 (C3)</td><td><span class="tensor">80&times;80&times;256</span></td><td>&rarr; sent to Neck</td></tr>
+      <tr><td>Dark4 (C4)</td><td><span class="tensor">40&times;40&times;512</span></td><td>&rarr; sent to Neck</td></tr>
+      <tr><td>Dark5 + SPP (C5)</td><td><span class="tensor">20&times;20&times;1024</span></td><td>&rarr; sent to Neck</td></tr>
+      <tr><td rowspan="2">Neck (FPN &darr;)</td><td>P4 (top-down)</td><td><span class="tensor">40&times;40&times;256</span></td><td>Upsample C5 + C4</td></tr>
+      <tr><td>P3 (top-down)</td><td><span class="tensor">80&times;80&times;256</span></td><td>Upsample P4 + C3</td></tr>
+      <tr><td rowspan="2">Neck (PAN &uarr;)</td><td>P4 (bottom-up)</td><td><span class="tensor">40&times;40&times;256</span></td><td>Downsample P3 + P4</td></tr>
+      <tr><td>P5 (bottom-up)</td><td><span class="tensor">20&times;20&times;256</span></td><td>Downsample P4 + P5</td></tr>
+      <tr><td rowspan="3">Head</td><td>Cls branch (&times;3)</td><td><span class="tensor">H&times;W&times;80</span></td><td>80 COCO classes</td></tr>
+      <tr><td>Reg branch (&times;3)</td><td><span class="tensor">H&times;W&times;4</span></td><td>x, y, w, h</td></tr>
+      <tr><td>Obj branch (&times;3)</td><td><span class="tensor">H&times;W&times;1</span></td><td>Objectness / IoU</td></tr>
+    </table>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 7: RESULTS                           -->
+  <!-- ============================================ -->
+  <section>
+    <h2>7 &mdash; Results</h2>
+    <p>On the COCO val2017 benchmark:</p>
+    <table class="summary-table">
+      <tr>
+        <th>Model</th>
+        <th>AP (%)</th>
+        <th>Params</th>
+        <th>FPS (V100)</th>
+      </tr>
+      <tr><td>YOLOX-Nano</td><td>25.3</td><td>0.91M</td><td>—</td></tr>
+      <tr><td>YOLOX-S</td><td>40.5</td><td>9.0M</td><td>102</td></tr>
+      <tr><td>YOLOX-M</td><td>46.9</td><td>25.3M</td><td>81</td></tr>
+      <tr><td>YOLOX-L</td><td>49.7</td><td>54.2M</td><td>69</td></tr>
+      <tr><td>YOLOX-X</td><td>51.1</td><td>99.1M</td><td>58</td></tr>
+    </table>
+    <p>YOLOX-L exceeded YOLOv5-L by 1.8% AP while running at comparable speed. The team also won 1st place in the Streaming Perception Challenge at CVPR 2021's Workshop on Autonomous Driving.</p>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- SECTION 8: REFERENCES                        -->
+  <!-- ============================================ -->
+  <section>
+    <h2>8 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2107.08430">YOLOX: Exceeding YOLO Series in 2021</a> — Ge et al., 2021 (original paper)</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/Megvii-BaseDetection/YOLOX">Official GitHub Repository</a> — Megvii-BaseDetection</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://viso.ai/computer-vision/yolox/">YOLOX: Boosting Object Detection Performance</a> — viso.ai overview</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://paperswithcode.com/method/yolox">Papers With Code: YOLOX</a></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>

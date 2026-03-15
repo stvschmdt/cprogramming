@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Walkthroughs — Steve Schmidt</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    section { margin-bottom: 2.5rem; }
+    section h2 {
+      font-size: 1.1rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Walkthrough cards */
+    .walkthrough-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .walkthrough-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .walkthrough-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.25rem;
+    }
+    .walkthrough-card h3 a {
+      color: var(--text);
+      border-bottom: none;
+    }
+    .walkthrough-card h3 a:hover {
+      color: var(--accent);
+    }
+    .walkthrough-card .meta {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+    .walkthrough-card .meta span {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      margin-right: 0.4rem;
+    }
+    .walkthrough-card p {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .walkthrough-card .read-link {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Coming soon cards */
+    .walkthrough-card.coming-soon {
+      opacity: 0.55;
+    }
+    .walkthrough-card.coming-soon h3 {
+      color: var(--muted);
+    }
+
+    .philosophy {
+      background: var(--highlight-bg);
+      border-left: 3px solid var(--highlight-border);
+      padding: 1.25rem 1.5rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.7rem; }
+      body { font-size: 16px; }
+      nav { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html" class="active">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <h1>Model Walkthroughs</h1>
+    <div class="subtitle">Papers with Beginner-Friendly Explanations</div>
+    <p>Deep learning papers are dense. These walkthroughs break landmark models down layer by layer — with diagrams, example inputs, and plain-language explanations of what each component actually does. Inspired by <a href="https://paperswithcode.com">Papers With Code</a>, but built for the student seeing these architectures for the first time.</p>
+  </section>
+
+  <section>
+    <h2>Philosophy</h2>
+    <div class="philosophy">
+      Every walkthrough follows the same structure: start with the <strong>problem</strong> the model solves, show the <strong>architecture</strong> as a whole, then walk through each layer explaining <strong>what goes in, what comes out, and why</strong>. No hand-waving — if a tensor changes shape, we show it. If a design choice matters, we explain the alternative that was rejected.
+    </div>
+  </section>
+
+  <section>
+    <h2>Walkthroughs</h2>
+
+    <div class="walkthrough-card">
+      <h3><a href="yolox.html">YOLOX: Exceeding YOLO Series in 2021</a></h3>
+      <div class="meta">
+        <span>Object Detection</span>
+        <span>Anchor-Free</span>
+        <span>Megvii 2021</span>
+      </div>
+      <p>A layer-by-layer walkthrough of YOLOX — the anchor-free object detector that introduced decoupled heads and SimOTA label assignment. We trace a 640&times;640 image from raw pixels through the CSPDarknet backbone, PAFPN neck, and decoupled detection heads, showing tensor shapes and feature maps at every stage.</p>
+      <a href="yolox.html" class="read-link">Read walkthrough &rarr;</a>
+    </div>
+
+    <div class="walkthrough-card coming-soon">
+      <h3>Vision Transformer (ViT)</h3>
+      <div class="meta">
+        <span>Image Classification</span>
+        <span>Transformer</span>
+        <span>Google 2020</span>
+      </div>
+      <p>How patch embeddings, positional encodings, and multi-head self-attention replace convolutions entirely. Coming soon.</p>
+    </div>
+
+    <div class="walkthrough-card coming-soon">
+      <h3>Attention Is All You Need (Transformer)</h3>
+      <div class="meta">
+        <span>Sequence-to-Sequence</span>
+        <span>Attention</span>
+        <span>Google 2017</span>
+      </div>
+      <p>The architecture that started it all — encoder-decoder with multi-head self-attention, positional encoding, and masked decoding. Coming soon.</p>
+    </div>
+
+    <div class="walkthrough-card coming-soon">
+      <h3>ResNet: Deep Residual Learning</h3>
+      <div class="meta">
+        <span>Image Classification</span>
+        <span>CNN</span>
+        <span>Microsoft 2015</span>
+      </div>
+      <p>Skip connections, identity mappings, and why deeper networks can actually learn better. Coming soon.</p>
+    </div>
+
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>
