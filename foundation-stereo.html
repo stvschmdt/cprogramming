@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoundationStereo Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root { --bg: #fafaf9; --text: #1c1917; --muted: #57534e; --accent: #b45309; --border: #e7e5e4; --card-bg: #ffffff; --highlight-bg: #fffbeb; --highlight-border: #d97706; --code-bg: #f5f5f4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; } a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); } nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; } section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; } .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; } .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; } .callout-green strong { color: #16a34a; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.encoder { border-left-color: #3b82f6; } .layer-card.cost { border-left-color: #8b5cf6; } .layer-card.refine { border-left-color: #f59e0b; } .layer-card.data { border-left-color: #22c55e; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; } .layer-card p:last-child { margin-bottom: 0; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.blue { background: #3b82f6; } .step-num.purple { background: #8b5cf6; } .step-num.amber { background: #f59e0b; } .step-num.green { background: #22c55e; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / FoundationStereo</div>
+    <h1>FoundationStereo: Zero-Shot Stereo Matching</h1>
+    <div class="subtitle">A Foundation Model for Stereo Depth Estimation</div>
+    <div class="meta-tags">
+      <span>Stereo Matching</span>
+      <span>Depth Estimation</span>
+      <span>Zero-Shot</span>
+      <span>Foundation Model</span>
+      <span>NVIDIA 2025</span>
+      <span>CVPR Best Paper Nom.</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/2501.09898">arXiv:2501.09898</a> &nbsp;|&nbsp;
+      Code: <a href="https://github.com/NVlabs/FoundationStereo">NVlabs/FoundationStereo</a> &nbsp;|&nbsp;
+      Project: <a href="https://nvlabs.github.io/FoundationStereo/">Project Page</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1 -->
+  <section>
+    <h2>1 &mdash; The Problem to Solve</h2>
+
+    <p><strong>Stereo matching</strong> is the task of estimating depth from two images taken simultaneously by a pair of cameras (like human eyes). For each pixel in the left image, find the corresponding pixel in the right image. The horizontal displacement between them — called <strong>disparity</strong> — is inversely proportional to depth: close objects have large disparity, far objects have small disparity.</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 620 140" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Left camera image -->
+        <rect x="10" y="15" width="100" height="70" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="60" y="38" text-anchor="middle" font-size="8" fill="#1e40af" font-weight="600">Left Image</text>
+        <!-- Object -->
+        <circle cx="45" cy="58" r="8" fill="#3b82f6" opacity="0.5" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="60" y="95" text-anchor="middle" font-size="7" fill="#3b82f6">Object at position x_L</text>
+
+        <!-- Right camera image -->
+        <rect x="130" y="15" width="100" height="70" rx="4" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="180" y="38" text-anchor="middle" font-size="8" fill="#166534" font-weight="600">Right Image</text>
+        <!-- Same object shifted -->
+        <circle cx="155" cy="58" r="8" fill="#22c55e" opacity="0.5" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="180" y="95" text-anchor="middle" font-size="7" fill="#22c55e">Same object at x_R</text>
+
+        <!-- Disparity arrow -->
+        <line x1="45" y1="68" x2="45" y2="110" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="155" y1="68" x2="155" y2="110" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="48" y1="112" x2="152" y2="112" stroke="#ef4444" stroke-width="2" marker-start="url(#fs-arr-l)" marker-end="url(#fs-arr-r)"/>
+        <text x="100" y="127" text-anchor="middle" font-size="8" fill="#ef4444" font-weight="600">disparity = x_L - x_R</text>
+
+        <!-- Arrow to depth map -->
+        <line x1="245" y1="50" x2="280" y2="50" stroke="#57534e" stroke-width="1.5" marker-end="url(#fs-a1)"/>
+        <text x="262" y="43" text-anchor="middle" font-size="7" fill="#57534e">compute</text>
+
+        <!-- Disparity map -->
+        <rect x="285" y="15" width="100" height="70" rx="4" fill="#f5f5f4" stroke="#57534e" stroke-width="1.5"/>
+        <text x="335" y="32" text-anchor="middle" font-size="8" fill="#57534e" font-weight="600">Disparity Map</text>
+        <!-- Gradient showing near=bright, far=dark -->
+        <rect x="295" y="40" width="80" height="35" rx="2" fill="url(#depth-grad)"/>
+        <text x="305" y="83" font-size="6" fill="#57534e">near (bright)</text>
+        <text x="355" y="83" font-size="6" fill="#57534e">far (dark)</text>
+
+        <!-- Arrow to depth -->
+        <line x1="400" y1="50" x2="430" y2="50" stroke="#57534e" stroke-width="1.5" marker-end="url(#fs-a1)"/>
+        <text x="415" y="43" text-anchor="middle" font-size="7" fill="#57534e">depth =</text>
+        <text x="415" y="68" text-anchor="middle" font-size="7" fill="#57534e">f&middot;B / d</text>
+
+        <!-- 3D point cloud -->
+        <rect x="440" y="15" width="100" height="70" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="490" y="32" text-anchor="middle" font-size="8" fill="#92400e" font-weight="600">3D Point Cloud</text>
+        <!-- Dots representing 3D points -->
+        <circle cx="460" cy="50" r="2" fill="#f59e0b"/><circle cx="475" cy="55" r="2" fill="#d97706"/><circle cx="490" cy="45" r="2" fill="#f59e0b"/>
+        <circle cx="505" cy="60" r="2" fill="#92400e"/><circle cx="470" cy="65" r="2" fill="#d97706"/><circle cx="500" cy="50" r="2" fill="#f59e0b"/>
+        <circle cx="480" cy="48" r="2" fill="#92400e"/><circle cx="515" cy="55" r="2" fill="#d97706"/>
+
+        <!-- Applications -->
+        <text x="490" y="95" text-anchor="middle" font-size="7" fill="#92400e">Robotics, AR, autonomous driving</text>
+
+        <defs>
+          <marker id="fs-a1" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker>
+          <marker id="fs-arr-l" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto"><path d="M6,0 L0,3 L6,6 Z" fill="#ef4444"/></marker>
+          <marker id="fs-arr-r" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ef4444"/></marker>
+          <linearGradient id="depth-grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#1e3a8a"/></linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <p>Previous stereo matching models worked well on specific benchmarks but failed on new domains — a model trained on indoor scenes would struggle with outdoor driving, and vice versa. FoundationStereo achieves <strong>zero-shot generalization</strong>: train once, deploy anywhere, without fine-tuning.</p>
+
+    <div class="callout">
+      <strong>Why "foundation model"?</strong> Like GPT for language or SAM for segmentation, FoundationStereo achieves strong performance across diverse domains without task-specific fine-tuning. It does this through two pillars: massive diverse synthetic training data and injecting pre-trained monocular depth priors.
+    </div>
+  </section>
+
+  <!-- SECTION 2: Architecture -->
+  <section>
+    <h2>2 &mdash; Architecture Overview</h2>
+
+    <p>FoundationStereo follows the RAFT-Stereo paradigm — extract features, build a cost volume, then iteratively refine disparity estimates — but adds three key innovations: a Side-Tuning Adapter (STA) for the encoder, a hybrid cost volume, and Attentive Hybrid Cost Filtering (AHCF).</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 760 230" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Stage labels -->
+        <rect x="10" y="10" width="210" height="210" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+        <text x="115" y="28" text-anchor="middle" font-weight="700" font-size="11" fill="#2563eb">FEATURE ENCODER (STA)</text>
+
+        <rect x="230" y="10" width="140" height="210" rx="8" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.5"/>
+        <text x="300" y="28" text-anchor="middle" font-weight="700" font-size="11" fill="#7c3aed">COST VOLUME</text>
+
+        <rect x="380" y="10" width="180" height="210" rx="8" fill="#fef3c7" stroke="#fde68a" stroke-width="1.5"/>
+        <text x="470" y="28" text-anchor="middle" font-weight="700" font-size="11" fill="#d97706">COST FILTERING (AHCF)</text>
+
+        <rect x="570" y="10" width="180" height="210" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+        <text x="660" y="28" text-anchor="middle" font-weight="700" font-size="11" fill="#16a34a">ITERATIVE REFINEMENT</text>
+
+        <!-- Left image -->
+        <rect x="20" y="45" width="40" height="30" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/>
+        <text x="40" y="58" text-anchor="middle" font-size="6" fill="white" font-weight="600">Left</text>
+        <text x="40" y="68" text-anchor="middle" font-size="5" fill="#bfdbfe">img</text>
+
+        <!-- Right image -->
+        <rect x="20" y="85" width="40" height="30" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/>
+        <text x="40" y="98" text-anchor="middle" font-size="6" fill="white" font-weight="600">Right</text>
+        <text x="40" y="108" text-anchor="middle" font-size="5" fill="#bfdbfe">img</text>
+
+        <!-- CNN backbone -->
+        <rect x="80" y="45" width="60" height="70" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="110" y="65" text-anchor="middle" font-size="7" fill="white" font-weight="600">EdgeNeXt-S</text>
+        <text x="110" y="77" text-anchor="middle" font-size="6" fill="#bfdbfe">CNN</text>
+        <text x="110" y="89" text-anchor="middle" font-size="6" fill="#bfdbfe">backbone</text>
+        <text x="110" y="103" text-anchor="middle" font-size="6" fill="#bfdbfe">multi-scale</text>
+        <line x1="63" y1="60" x2="78" y2="60" stroke="#3b82f6" stroke-width="1"/>
+        <line x1="63" y1="100" x2="78" y2="100" stroke="#3b82f6" stroke-width="1"/>
+
+        <!-- DepthAnythingV2 (frozen) -->
+        <rect x="80" y="130" width="60" height="50" rx="4" fill="#9ca3af" stroke="#6b7280" stroke-width="1.5"/>
+        <text x="110" y="148" text-anchor="middle" font-size="6" fill="white" font-weight="600">DepthAny</text>
+        <text x="110" y="158" text-anchor="middle" font-size="6" fill="white" font-weight="600">V2 (ViT)</text>
+        <text x="110" y="172" text-anchor="middle" font-size="6" fill="#e5e7eb">FROZEN</text>
+
+        <!-- Side-tuning arrows -->
+        <line x1="143" y1="155" x2="160" y2="155" stroke="#6b7280" stroke-width="1"/>
+        <line x1="160" y1="155" x2="160" y2="80" stroke="#6b7280" stroke-width="1"/>
+        <line x1="160" y1="80" x2="175" y2="80" stroke="#6b7280" stroke-width="1"/>
+
+        <!-- Concat -->
+        <rect x="178" y="55" width="30" height="50" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+        <text x="193" y="75" text-anchor="middle" font-size="6" fill="white" font-weight="700">cat</text>
+        <text x="193" y="85" text-anchor="middle" font-size="5" fill="#fef3c7">CNN</text>
+        <text x="193" y="93" text-anchor="middle" font-size="5" fill="#fef3c7">+ViT</text>
+        <line x1="143" y1="80" x2="175" y2="80" stroke="#3b82f6" stroke-width="1"/>
+
+        <!-- Arrow to cost volume -->
+        <line x1="212" y1="80" x2="240" y2="80" stroke="#57534e" stroke-width="1.5" marker-end="url(#fs-a2)"/>
+
+        <!-- Cost volume -->
+        <rect x="245" y="45" width="115" height="80" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+        <text x="302" y="62" text-anchor="middle" font-size="7" fill="white" font-weight="600">Hybrid Cost Volume</text>
+        <text x="302" y="78" text-anchor="middle" font-size="6" fill="#ddd6fe">Correlation (8 groups)</text>
+        <text x="302" y="90" text-anchor="middle" font-size="6" fill="#ddd6fe">+ Feature concat</text>
+        <text x="302" y="102" text-anchor="middle" font-size="6" fill="#ddd6fe">at shifted disparities</text>
+        <text x="302" y="118" text-anchor="middle" font-size="6" fill="#c4b5fd">4D: H x W x D x C</text>
+
+        <!-- Arrow to filtering -->
+        <line x1="365" y1="85" x2="390" y2="85" stroke="#57534e" stroke-width="1.5" marker-end="url(#fs-a2)"/>
+
+        <!-- AHCF -->
+        <rect x="395" y="45" width="70" height="45" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+        <text x="430" y="62" text-anchor="middle" font-size="7" fill="white" font-weight="600">APC</text>
+        <text x="430" y="75" text-anchor="middle" font-size="6" fill="#fef3c7">Axial-Planar</text>
+        <text x="430" y="85" text-anchor="middle" font-size="6" fill="#fef3c7">3D Conv</text>
+
+        <rect x="475" y="45" width="70" height="45" rx="3" fill="#ef4444" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="510" y="62" text-anchor="middle" font-size="7" fill="white" font-weight="600">DT</text>
+        <text x="510" y="75" text-anchor="middle" font-size="6" fill="#fecaca">Disparity</text>
+        <text x="510" y="85" text-anchor="middle" font-size="6" fill="#fecaca">Transformer</text>
+
+        <text x="470" y="108" text-anchor="middle" font-size="6" fill="#d97706">spatial + disparity filtering</text>
+
+        <!-- Arrow to refinement -->
+        <line x1="548" y1="67" x2="580" y2="67" stroke="#57534e" stroke-width="1.5" marker-end="url(#fs-a2)"/>
+
+        <!-- GRU iterations -->
+        <rect x="585" y="45" width="70" height="50" rx="4" fill="#22c55e" stroke="#16a34a" stroke-width="2"/>
+        <text x="620" y="62" text-anchor="middle" font-size="7" fill="white" font-weight="700">ConvGRU</text>
+        <text x="620" y="75" text-anchor="middle" font-size="6" fill="#dcfce7">Coarse-to-fine</text>
+        <text x="620" y="87" text-anchor="middle" font-size="6" fill="#dcfce7">x32 iterations</text>
+
+        <!-- Loop arrow -->
+        <path d="M660,65 Q675,65 675,80 Q675,95 660,95" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#fs-a3)"/>
+
+        <!-- Output -->
+        <line x1="620" y1="98" x2="620" y2="125" stroke="#57534e" stroke-width="1.5" marker-end="url(#fs-a2)"/>
+        <rect x="585" y="130" width="90" height="40" rx="4" fill="#16a34a" stroke="#166534" stroke-width="2"/>
+        <text x="630" y="148" text-anchor="middle" font-size="8" fill="white" font-weight="700">Disparity Map</text>
+        <text x="630" y="162" text-anchor="middle" font-size="7" fill="#dcfce7">H x W</text>
+
+        <text x="630" y="195" text-anchor="middle" font-size="7" fill="#57534e">&darr; depth = f&middot;B / disparity</text>
+        <rect x="595" y="200" width="70" height="20" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+        <text x="630" y="214" text-anchor="middle" font-size="7" fill="white" font-weight="600">3D Point Cloud</text>
+
+        <defs>
+          <marker id="fs-a2" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker>
+          <marker id="fs-a3" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#16a34a"/></marker>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 3: Layer by Layer -->
+  <section>
+    <h2>3 &mdash; Layer-by-Layer Walkthrough</h2>
+
+    <h3><span class="step-num blue">1</span> Feature Encoder: Side-Tuning Adapter (STA)</h3>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>EdgeNeXt-S CNN + Frozen DepthAnythingV2 ViT</h4>
+        <div class="shapes">Stereo pair &rarr; multi-scale feature pyramids</div>
+      </div>
+      <p>Both left and right images pass through two parallel encoders:</p>
+      <p><strong>EdgeNeXt-S</strong> — a lightweight CNN that produces multi-level feature pyramids at 1/4, 1/8, 1/16, and 1/32 scales. This CNN is trained end-to-end and learns stereo-specific features.</p>
+      <p><strong>DepthAnythingV2</strong> — a frozen (non-trainable) ViT foundation model pre-trained on massive real-world monocular depth data. Its features are downscaled and <strong>concatenated</strong> with the CNN features at corresponding scales.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="280" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Side-Tuning: Best of both worlds</text>
+
+          <!-- CNN path -->
+          <rect x="10" y="28" width="90" height="35" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="55" y="44" text-anchor="middle" font-size="7" fill="white" font-weight="600">EdgeNeXt-S</text>
+          <text x="55" y="55" text-anchor="middle" font-size="7" fill="#bfdbfe">trainable CNN</text>
+          <text x="55" y="72" text-anchor="middle" font-size="7" fill="#3b82f6">Learns stereo cues</text>
+
+          <!-- ViT path -->
+          <rect x="10" y="78" width="90" height="25" rx="4" fill="#9ca3af" stroke="#6b7280" stroke-width="1.5"/>
+          <text x="55" y="94" text-anchor="middle" font-size="7" fill="white" font-weight="600">DepthAnythingV2 (frozen)</text>
+
+          <!-- Arrows to concat -->
+          <line x1="105" y1="45" x2="140" y2="55" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="105" y1="90" x2="140" y2="62" stroke="#6b7280" stroke-width="1.5"/>
+
+          <!-- Concat -->
+          <rect x="145" y="45" width="30" height="25" rx="12" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="160" y="61" text-anchor="middle" font-size="8" fill="white" font-weight="700">cat</text>
+
+          <!-- Arrow to output -->
+          <line x1="178" y1="57" x2="200" y2="57" stroke="#57534e" stroke-width="1.5" marker-end="url(#fs-a4)"/>
+
+          <!-- Output features -->
+          <rect x="205" y="35" width="80" height="45" rx="4" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+          <text x="245" y="53" text-anchor="middle" font-size="7" fill="white" font-weight="600">Rich Features</text>
+          <text x="245" y="67" text-anchor="middle" font-size="6" fill="#bfdbfe">stereo + monocular</text>
+
+          <!-- Explanation -->
+          <line x1="310" y1="30" x2="310" y2="90" stroke="#e7e5e4" stroke-width="1"/>
+          <text x="430" y="38" text-anchor="middle" font-size="8" fill="#57534e" font-weight="600">Why side-tuning?</text>
+          <text x="430" y="52" text-anchor="middle" font-size="7" fill="#3b82f6">CNN: learns domain-specific stereo</text>
+          <text x="430" y="62" text-anchor="middle" font-size="7" fill="#3b82f6">matching from synthetic data</text>
+          <text x="430" y="78" text-anchor="middle" font-size="7" fill="#6b7280">ViT: provides real-world semantic</text>
+          <text x="430" y="88" text-anchor="middle" font-size="7" fill="#6b7280">priors from internet-scale training</text>
+          <text x="430" y="103" text-anchor="middle" font-size="7" fill="#57534e" font-weight="600">Together: bridges sim-to-real gap</text>
+
+          <defs><marker id="fs-a4" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+      <div class="callout-blue callout">
+        <strong>Why freeze the ViT?</strong> DepthAnythingV2 learned rich depth priors from millions of real images. Fine-tuning it on synthetic stereo data would destroy this knowledge (catastrophic forgetting). By keeping it frozen, FoundationStereo preserves real-world understanding while the CNN learns stereo-specific patterns.
+      </div>
+    </div>
+
+    <h3><span class="step-num purple">2</span> Hybrid Cost Volume</h3>
+
+    <div class="layer-card cost">
+      <div class="layer-header">
+        <h4>Correlation + Feature Concatenation</h4>
+        <div class="shapes">Left/right features &rarr; 4D cost volume (H &times; W &times; D &times; C)</div>
+      </div>
+      <p>The cost volume measures how well left and right image features match at every possible disparity. FoundationStereo uses a <strong>hybrid</strong> approach combining two signals:</p>
+      <ul style="padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.92rem;">
+        <li><strong>Group-wise correlation</strong> (8 groups) — dot product between left and shifted-right features, split across channel groups. This captures matching similarity.</li>
+        <li><strong>Feature concatenation</strong> — raw left and right features concatenated at each disparity. This preserves the monocular depth priors from DepthAnythingV2 that would be lost in a pure correlation volume.</li>
+      </ul>
+    </div>
+
+    <h3><span class="step-num amber">3</span> Attentive Hybrid Cost Filtering (AHCF)</h3>
+
+    <div class="layer-card refine">
+      <div class="layer-header">
+        <h4>APC + Disparity Transformer</h4>
+        <div class="shapes">4D cost volume &rarr; filtered cost volume</div>
+      </div>
+      <p>Raw cost volumes are noisy — reflections, textureless surfaces, and repetitive patterns create matching ambiguities. AHCF filters the cost volume with two complementary mechanisms:</p>
+      <p><strong>Axial-Planar Convolution (APC)</strong> decomposes a full 3D convolution into a spatial conv (K<sub>s</sub>&times;K<sub>s</sub>&times;1) and a disparity conv (1&times;1&times;K<sub>d</sub>). This reduces memory dramatically while capturing local spatial and disparity patterns.</p>
+      <p><strong>Disparity Transformer (DT)</strong> applies self-attention across the entire disparity dimension, providing global reasoning. When a textureless wall creates ambiguity at many disparities, the transformer can reason about the overall disparity distribution to pick the correct match.</p>
+    </div>
+
+    <h3><span class="step-num green">4</span> Iterative Refinement (ConvGRU)</h3>
+
+    <div class="layer-card data">
+      <div class="layer-header">
+        <h4>Coarse-to-Fine GRU Updates</h4>
+        <div class="shapes">Initial estimate &rarr; 32 iterations &rarr; final disparity</div>
+      </div>
+      <p>Starting from a coarse disparity estimate, a <strong>ConvGRU</strong> (Convolutional Gated Recurrent Unit) iteratively refines the prediction. Each iteration looks up the cost volume at the current disparity estimate, computes a correction, and updates. 22 iterations during training, 32 at inference. The coarse-to-fine structure starts at low resolution and progressively refines details.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Training Data -->
+  <section>
+    <h2>4 &mdash; Training Data Strategy</h2>
+
+    <div class="layer-card data">
+      <div class="layer-header">
+        <h4>FoundationStereo Dataset (FSD): 1 Million Synthetic Pairs</h4>
+      </div>
+      <p>The key to zero-shot generalization is <strong>diverse, high-quality training data</strong>. NVIDIA generated 1 million stereo pairs using <strong>Omniverse</strong> with RTX path tracing (32-128 samples per pixel for photorealism). The dataset covers:</p>
+      <ul style="padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.92rem;">
+        <li>Structured indoor and outdoor scenes (rooms, streets, warehouses)</li>
+        <li>Navigation, driving, and manipulation scenarios</li>
+        <li>Randomized "flying object" scenes for extreme variety</li>
+        <li>Varying camera intrinsics and baselines</li>
+        <li>Challenging conditions: reflections, transparency, low texture, heavy occlusion</li>
+      </ul>
+      <div class="callout-green callout">
+        <strong>Self-curation:</strong> An automatic pipeline trains a model, runs inference on its own training set, and removes samples where the bad-pixel rate exceeds 60% — filtering out ambiguous or mislabeled examples that would confuse training.
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Results -->
+  <section>
+    <h2>5 &mdash; Results</h2>
+
+    <p>Zero-shot performance (no fine-tuning on target domains):</p>
+    <table class="summary-table">
+      <tr><th>Benchmark</th><th>Metric</th><th>FoundationStereo</th><th>Domain</th></tr>
+      <tr><td>Middlebury</td><td>BP-2</td><td><strong>1.2%</strong></td><td>Indoor close-range</td></tr>
+      <tr><td>ETH3D</td><td>BP-1</td><td><strong>1.4%</strong></td><td>Indoor/outdoor</td></tr>
+      <tr><td>KITTI-12</td><td>D1</td><td>1.9%</td><td>Driving</td></tr>
+      <tr><td>KITTI-15</td><td>D1</td><td>2.2%</td><td>Driving</td></tr>
+      <tr><td>SceneFlow</td><td>EPE</td><td><strong>0.33</strong> (prev: 0.41)</td><td>Synthetic</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>1st place</strong> on both Middlebury and ETH3D leaderboards — as a <em>zero-shot</em> model competing against methods that were fine-tuned specifically for each benchmark. This demonstrates true foundation model generalization.
+    </div>
+
+    <p>A follow-up work, <strong>Fast-FoundationStereo</strong> (CVPR 2026), achieves 10&times; speedup through knowledge distillation, NAS, and structured pruning while closely matching accuracy — enabling real-time stereo matching for robotics.</p>
+  </section>
+
+  <!-- SECTION 6: REFERENCES -->
+  <section>
+    <h2>6 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2501.09898">FoundationStereo: Zero-Shot Stereo Matching</a> — Wen et al., NVIDIA, CVPR 2025</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/NVlabs/FoundationStereo">Official GitHub Repository</a></li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://nvlabs.github.io/FoundationStereo/">Project Page</a></li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/NVlabs/Fast-FoundationStereo">Fast-FoundationStereo (CVPR 2026)</a></li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2011.07806">RAFT-Stereo</a> — Lipson et al., 2021 (iterative refinement baseline)</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>

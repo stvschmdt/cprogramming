@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAM &amp; SAM 2 Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root { --bg: #fafaf9; --text: #1c1917; --muted: #57534e; --accent: #b45309; --border: #e7e5e4; --card-bg: #ffffff; --highlight-bg: #fffbeb; --highlight-border: #d97706; --code-bg: #f5f5f4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; } a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); } nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; } section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; } .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; } .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; } .callout-green strong { color: #16a34a; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.encoder { border-left-color: #3b82f6; } .layer-card.prompt { border-left-color: #22c55e; } .layer-card.decoder { border-left-color: #8b5cf6; } .layer-card.memory { border-left-color: #f59e0b; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; } .layer-card p:last-child { margin-bottom: 0; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .model-section { background: var(--card-bg); border: 2px solid var(--border); border-radius: 10px; padding: 2rem 1.5rem; margin: 2rem 0; }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.blue { background: #3b82f6; } .step-num.green { background: #22c55e; } .step-num.purple { background: #8b5cf6; } .step-num.amber { background: #f59e0b; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / SAM &amp; SAM 2</div>
+    <h1>Segment Anything: From Images to Video</h1>
+    <div class="subtitle">SAM (2023) &amp; SAM 2 (2024) &mdash; Meta AI</div>
+    <div class="meta-tags">
+      <span>Segmentation</span>
+      <span>Foundation Model</span>
+      <span>Promptable</span>
+      <span>Zero-Shot</span>
+      <span>Video</span>
+      <span>Meta FAIR</span>
+    </div>
+    <div class="paper-link">
+      SAM: <a href="https://arxiv.org/abs/2304.02643">arXiv:2304.02643</a> &nbsp;|&nbsp;
+      SAM 2: <a href="https://arxiv.org/abs/2408.00714">arXiv:2408.00714</a> &nbsp;|&nbsp;
+      Code: <a href="https://github.com/facebookresearch/sam2">facebookresearch/sam2</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1 -->
+  <section>
+    <h2>1 &mdash; The Problem to Solve</h2>
+
+    <p><strong>Image segmentation</strong> is the task of labeling every pixel in an image — deciding exactly which pixels belong to which object. Unlike detection (bounding boxes), segmentation gives pixel-precise outlines.</p>
+
+    <p>Before SAM, segmentation models were trained on specific datasets for specific categories (people, cars, buildings). You couldn't just point at a random object and say "segment that." SAM changed this by creating a <strong>promptable</strong> foundation model that segments <em>anything</em> — any object in any image — given just a point, box, or text prompt.</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 600 130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Input: image with prompt -->
+        <rect x="10" y="15" width="100" height="80" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <!-- Object outlines -->
+        <ellipse cx="40" cy="45" rx="18" ry="22" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+        <rect x="65" y="35" width="30" height="25" rx="2" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+        <ellipse cx="45" cy="75" rx="12" ry="8" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+        <!-- Point prompt -->
+        <circle cx="40" cy="45" r="4" fill="#ef4444" stroke="white" stroke-width="1.5"/>
+        <text x="60" y="108" text-anchor="middle" font-size="7" fill="#57534e">Image + click prompt</text>
+
+        <!-- Arrow -->
+        <line x1="118" y1="55" x2="150" y2="55" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam-a1)"/>
+        <text x="134" y="48" text-anchor="middle" font-size="8" fill="#57534e">SAM</text>
+
+        <!-- Output: precise mask -->
+        <rect x="158" y="15" width="100" height="80" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <ellipse cx="188" cy="45" rx="18" ry="22" fill="#3b82f6" opacity="0.5" stroke="#3b82f6" stroke-width="2"/>
+        <text x="208" y="108" text-anchor="middle" font-size="7" fill="#57534e">Precise pixel mask</text>
+
+        <!-- Prompt types -->
+        <line x1="290" y1="20" x2="290" y2="100" stroke="#e7e5e4" stroke-width="1"/>
+        <text x="430" y="18" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Prompt types:</text>
+
+        <circle cx="320" cy="38" r="4" fill="#ef4444"/><text x="335" y="42" font-size="8" fill="#57534e">Point click(s) &mdash; foreground / background</text>
+        <rect x="316" y="52" width="14" height="10" rx="1" fill="none" stroke="#3b82f6" stroke-width="1.5"/><text x="335" y="62" font-size="8" fill="#57534e">Bounding box</text>
+        <rect x="316" y="72" width="14" height="10" rx="2" fill="#22c55e" opacity="0.5"/><text x="335" y="82" font-size="8" fill="#57534e">Rough mask (coarse input)</text>
+        <text x="320" y="100" font-size="8" fill="#57534e">T &nbsp;Text description (with CLIP)</text>
+
+        <defs><marker id="sam-a1" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <strong>The SAM project included three things:</strong> (1) A new task — "promptable segmentation," (2) A new model — the SAM architecture, and (3) A new dataset — SA-1B with 1.1 billion masks on 11 million images, by far the largest segmentation dataset ever created.
+    </div>
+  </section>
+
+  <!-- SECTION 2: SAM 1 Architecture -->
+  <div class="model-section" style="border-color: #3b82f6;">
+  <section>
+    <h2>2 &mdash; SAM Architecture (2023)</h2>
+    <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">Kirillov et al. &mdash; <a href="https://arxiv.org/abs/2304.02643">arXiv:2304.02643</a> &mdash; Meta FAIR</p>
+
+    <p>SAM has three components: an <strong>image encoder</strong> (runs once per image), a <strong>prompt encoder</strong> (lightweight, runs per prompt), and a <strong>mask decoder</strong> (lightweight, produces the mask). This design means you can encode an image once and then interactively try different prompts in real time.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Image Encoder -->
+        <rect x="10" y="10" width="190" height="170" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+        <text x="105" y="30" text-anchor="middle" font-weight="700" font-size="11" fill="#2563eb">IMAGE ENCODER</text>
+
+        <rect x="25" y="45" width="60" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+        <text x="55" y="68" text-anchor="middle" font-size="7" fill="#4338ca">1024x1024</text>
+        <text x="55" y="80" text-anchor="middle" font-size="7" fill="#4338ca">Image</text>
+
+        <line x1="90" y1="70" x2="105" y2="70" stroke="#3b82f6" stroke-width="1.5"/>
+
+        <rect x="108" y="40" width="78" height="60" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+        <text x="147" y="60" text-anchor="middle" font-size="8" fill="white" font-weight="700">ViT-H</text>
+        <text x="147" y="72" text-anchor="middle" font-size="7" fill="#bfdbfe">MAE pre-trained</text>
+        <text x="147" y="84" text-anchor="middle" font-size="7" fill="#bfdbfe">632M params</text>
+
+        <text x="105" y="120" text-anchor="middle" font-size="7" fill="#2563eb">Output: 64x64x256</text>
+        <text x="105" y="135" text-anchor="middle" font-size="7" fill="#2563eb">image embedding</text>
+        <text x="105" y="155" text-anchor="middle" font-size="8" fill="#57534e" font-style="italic">Runs ONCE per image</text>
+        <text x="105" y="167" text-anchor="middle" font-size="8" fill="#57534e" font-style="italic">(~0.15s on GPU)</text>
+
+        <!-- Prompt Encoder -->
+        <rect x="220" y="10" width="160" height="170" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+        <text x="300" y="30" text-anchor="middle" font-weight="700" font-size="11" fill="#16a34a">PROMPT ENCODER</text>
+
+        <!-- Sparse prompts -->
+        <circle cx="245" cy="55" r="5" fill="#ef4444"/><text x="260" y="58" font-size="7" fill="#166534">Points</text>
+        <rect x="240" y="68" width="14" height="10" rx="1" fill="none" stroke="#3b82f6" stroke-width="1.5"/><text x="260" y="78" font-size="7" fill="#166534">Boxes</text>
+        <text x="300" y="97" text-anchor="middle" font-size="7" fill="#22c55e" font-weight="600">Sparse: positional encodings</text>
+
+        <!-- Dense prompts -->
+        <rect x="240" y="108" width="30" height="20" rx="2" fill="#22c55e" opacity="0.3" stroke="#22c55e" stroke-width="1"/><text x="278" y="122" font-size="7" fill="#166534">Mask input</text>
+        <text x="300" y="140" text-anchor="middle" font-size="7" fill="#22c55e" font-weight="600">Dense: conv downsampled</text>
+
+        <text x="300" y="165" text-anchor="middle" font-size="8" fill="#57534e" font-style="italic">Runs per prompt (~1ms)</text>
+
+        <!-- Mask Decoder -->
+        <rect x="400" y="10" width="290" height="170" rx="8" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.5"/>
+        <text x="545" y="30" text-anchor="middle" font-weight="700" font-size="11" fill="#7c3aed">MASK DECODER</text>
+
+        <!-- Two-way cross attention -->
+        <rect x="420" y="45" width="120" height="50" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+        <text x="480" y="63" text-anchor="middle" font-size="8" fill="white" font-weight="600">2-Way Cross-Attn</text>
+        <text x="480" y="77" text-anchor="middle" font-size="7" fill="#ddd6fe">prompts &harr; image</text>
+        <text x="480" y="88" text-anchor="middle" font-size="6" fill="#c4b5fd">&times;2 transformer layers</text>
+
+        <!-- Arrows in -->
+        <line x1="195" y1="90" x2="415" y2="65" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <line x1="385" y1="90" x2="418" y2="70" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+        <!-- Output tokens -->
+        <line x1="545" y1="70" x2="570" y2="70" stroke="#7c3aed" stroke-width="1.5"/>
+
+        <!-- Three masks -->
+        <rect x="575" y="42" width="50" height="15" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/>
+        <text x="600" y="53" text-anchor="middle" font-size="6" fill="white">Mask 1</text>
+        <rect x="575" y="60" width="50" height="15" rx="2" fill="#a78bfa" stroke="#8b5cf6" stroke-width="1"/>
+        <text x="600" y="71" text-anchor="middle" font-size="6" fill="white">Mask 2</text>
+        <rect x="575" y="78" width="50" height="15" rx="2" fill="#c4b5fd" stroke="#a78bfa" stroke-width="1"/>
+        <text x="600" y="89" text-anchor="middle" font-size="6" fill="#7c3aed">Mask 3</text>
+
+        <!-- IoU scores -->
+        <rect x="635" y="55" width="45" height="30" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+        <text x="657" y="68" text-anchor="middle" font-size="6" fill="white" font-weight="600">IoU</text>
+        <text x="657" y="78" text-anchor="middle" font-size="6" fill="#fef3c7">scores</text>
+
+        <text x="545" y="115" text-anchor="middle" font-size="7" fill="#7c3aed">Outputs 3 masks at 3 levels</text>
+        <text x="545" y="127" text-anchor="middle" font-size="7" fill="#7c3aed">of granularity + confidence</text>
+
+        <text x="545" y="165" text-anchor="middle" font-size="8" fill="#57534e" font-style="italic">Runs per prompt (~10ms)</text>
+      </svg>
+    </div>
+
+    <h3><span class="step-num blue">1</span> Image Encoder: ViT-H</h3>
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>ViT-H/16 (MAE Pre-trained)</h4>
+        <div class="shapes"><span class="tensor">1024&times;1024&times;3</span> &rarr; <span class="tensor">64&times;64&times;256</span></div>
+      </div>
+      <p>The heaviest component. A ViT-Huge with 632M parameters (see our <a href="vit.html">ViT walkthrough</a>) processes the input image. Pre-trained with MAE (Masked Autoencoder) self-supervised learning on massive data. The 16&times;16 patch size on a 1024&times;1024 image gives 4,096 tokens. After the ViT, neck layers (1&times;1 and 3&times;3 convolutions) reduce the output to <span class="tensor">64&times;64&times;256</span>.</p>
+      <p>This is intentionally the expensive part — it runs <strong>once per image</strong>, then the embedding is reused for all prompts.</p>
+    </div>
+
+    <h3><span class="step-num green">2</span> Prompt Encoder</h3>
+    <div class="layer-card prompt">
+      <div class="layer-header">
+        <h4>Sparse + Dense Prompt Encoding</h4>
+        <div class="shapes">Points/boxes &rarr; 256-d tokens; masks &rarr; 256-ch map</div>
+      </div>
+      <p><strong>Sparse prompts</strong> (points and box corners) are represented using positional encodings plus learned embeddings indicating whether each point is foreground or background. Each prompt becomes a 256-d token.</p>
+      <p><strong>Dense prompts</strong> (input masks from a previous iteration) are downsampled via two 2&times;2 stride-2 convolutions to produce a 256-channel map matching the image embedding resolution. This enables iterative refinement — the user provides a rough mask and SAM refines it.</p>
+    </div>
+
+    <h3><span class="step-num purple">3</span> Mask Decoder</h3>
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>Two-Way Transformer + Upsampling</h4>
+        <div class="shapes"><span class="tensor">64&times;64&times;256</span> + prompts &rarr; 3 masks + IoU scores</div>
+      </div>
+      <p>The decoder is deliberately lightweight (just 2 Transformer layers) so it can run interactively. It uses <strong>two-way cross-attention</strong>: prompt tokens attend to the image embedding (asking "what's at my location?") AND image tokens attend to prompts (letting the image "see" what's being asked for).</p>
+      <p>The decoder outputs <strong>3 masks</strong> at different granularity levels (whole object, part, sub-part) plus an IoU confidence score for each. This handles ambiguity — when you click on a person's shirt, SAM gives you the shirt, the torso, and the whole person as three options.</p>
+    </div>
+
+    <div class="callout">
+      <strong>SA-1B Dataset:</strong> Meta built the largest segmentation dataset ever — 1.1 billion masks on 11 million images. They used a "data engine" where SAM was iteratively trained, used to assist human annotators, then retrained on the annotations. The final phase was fully automatic — SAM generated masks with no human help.
+    </div>
+  </section>
+  </div>
+
+  <!-- SECTION 3: SAM 2 -->
+  <div class="model-section" style="border-color: #f59e0b;">
+  <section>
+    <h2>3 &mdash; SAM 2: Extending to Video (2024)</h2>
+    <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">Ravi et al. &mdash; <a href="https://arxiv.org/abs/2408.00714">arXiv:2408.00714</a> &mdash; Meta FAIR</p>
+
+    <p>SAM worked on single images. SAM 2 extends it to <strong>video</strong> — give a prompt on one frame, and SAM 2 tracks and segments the object through the entire video. This is fundamentally harder because objects move, get occluded, change shape, and the camera moves too.</p>
+
+    <h3>What SAM 2 Adds</h3>
+
+    <div class="layer-card memory">
+      <div class="layer-header">
+        <h4>Streaming Architecture</h4>
+        <div class="shapes">Process video frame-by-frame with memory</div>
+      </div>
+      <p>SAM 2 processes video as a <strong>stream</strong> — one frame at a time, left to right. It doesn't need to see the whole video at once. This makes it practical for real-time applications and arbitrarily long videos.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 620 130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Frame sequence -->
+          <text x="310" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Streaming Video Processing</text>
+
+          <!-- Frame 1 (prompted) -->
+          <rect x="20" y="30" width="50" height="40" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+          <circle cx="35" cy="45" r="3" fill="#ef4444" stroke="white" stroke-width="1"/>
+          <text x="45" y="82" text-anchor="middle" font-size="7" fill="#d97706" font-weight="600">Frame 1</text>
+          <text x="45" y="92" text-anchor="middle" font-size="6" fill="#d97706">(prompted)</text>
+
+          <line x1="73" y1="50" x2="93" y2="50" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam2-a)"/>
+
+          <!-- Frame 2 -->
+          <rect x="98" y="30" width="50" height="40" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <rect x="108" y="38" width="18" height="16" rx="8" fill="#3b82f6" opacity="0.4" stroke="#fbbf24" stroke-width="1.5"/>
+          <text x="123" y="82" text-anchor="middle" font-size="7" fill="#57534e">Frame 2</text>
+
+          <line x1="151" y1="50" x2="171" y2="50" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam2-a)"/>
+
+          <!-- Frame 3 -->
+          <rect x="176" y="30" width="50" height="40" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <rect x="190" y="36" width="18" height="16" rx="8" fill="#3b82f6" opacity="0.4" stroke="#fbbf24" stroke-width="1.5"/>
+          <text x="201" y="82" text-anchor="middle" font-size="7" fill="#57534e">Frame 3</text>
+
+          <line x1="229" y1="50" x2="249" y2="50" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam2-a)"/>
+
+          <text x="268" y="54" font-size="10" fill="#57534e">&hellip;</text>
+
+          <line x1="282" y1="50" x2="302" y2="50" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam2-a)"/>
+
+          <!-- Frame N -->
+          <rect x="307" y="30" width="50" height="40" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <rect x="325" y="42" width="18" height="16" rx="8" fill="#3b82f6" opacity="0.4" stroke="#fbbf24" stroke-width="1.5"/>
+          <text x="332" y="82" text-anchor="middle" font-size="7" fill="#57534e">Frame N</text>
+
+          <!-- Memory bank below -->
+          <rect x="80" y="100" width="280" height="25" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="220" y="117" text-anchor="middle" font-size="8" fill="#92400e" font-weight="600">Memory Bank (spatial memory + object pointers)</text>
+
+          <!-- Arrows connecting memory -->
+          <line x1="123" y1="73" x2="123" y2="100" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="201" y1="73" x2="201" y2="100" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="332" y1="73" x2="332" y2="100" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+
+          <!-- Key: each frame writes to and reads from memory -->
+          <text x="490" y="45" font-size="7" fill="#57534e">Each frame:</text>
+          <text x="490" y="58" font-size="7" fill="#3b82f6">1. Encode image</text>
+          <text x="490" y="71" font-size="7" fill="#f59e0b">2. Read memory</text>
+          <text x="490" y="84" font-size="7" fill="#8b5cf6">3. Predict mask</text>
+          <text x="490" y="97" font-size="7" fill="#f59e0b">4. Write to memory</text>
+
+          <defs><marker id="sam2-a" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Hiera Image Encoder (replacing ViT-H)</h4>
+        <div class="shapes">Hierarchical ViT — faster than ViT-H</div>
+      </div>
+      <p>SAM 2 replaces the heavyweight ViT-H with <strong>Hiera</strong> (Hierarchical Vision Transformer), also from Meta. Hiera uses MAE pre-training but with a hierarchical design that produces multi-scale features naturally (like a CNN) while being 6&times; faster than ViT-H. This is critical for video — processing every frame with ViT-H would be too slow.</p>
+    </div>
+
+    <div class="layer-card memory">
+      <div class="layer-header">
+        <h4>Memory Attention Module</h4>
+        <div class="shapes">Current frame attends to memory bank</div>
+      </div>
+      <p>The key new component. After encoding the current frame, a <strong>memory attention</strong> module performs cross-attention between the current frame's features and a <strong>memory bank</strong> that stores information from previous frames. This bank contains:</p>
+      <ul style="padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.92rem;">
+        <li><strong>Spatial memory</strong> — per-frame feature maps from recent frames and the prompted frame</li>
+        <li><strong>Object pointers</strong> — lightweight tokens summarizing each object's appearance, enabling tracking through occlusions</li>
+      </ul>
+      <p>The memory bank has a fixed capacity (keeping the most recent N frames plus the prompted frame), so it works on arbitrarily long videos without growing memory.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>Mask Decoder (Same Design as SAM)</h4>
+        <div class="shapes">Prompt tokens + memory-conditioned features &rarr; masks</div>
+      </div>
+      <p>The mask decoder uses the same two-way cross-attention design as SAM, but now operates on memory-conditioned features instead of raw image features. It still produces multiple mask hypotheses with confidence scores.</p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Occlusion handling:</strong> SAM 2 can predict that an object is <em>occluded</em> (hidden behind something) and generate an occlusion score. When the object reappears, the memory bank helps re-identify it. This is a key advantage over simple frame-by-frame segmentation.
+    </div>
+
+    <h3>SA-V Dataset</h3>
+    <p>Meta created the <strong>SA-V (Segment Anything in Video)</strong> dataset — 50,900 videos with 642,600 masklets (per-object mask tracks across frames). This is 53&times; more mask annotations than previous video segmentation datasets. Like SA-1B, it was built with a human-in-the-loop data engine using SAM 2 itself.</p>
+  </section>
+  </div>
+
+  <!-- SECTION 4: Comparison -->
+  <section>
+    <h2>4 &mdash; SAM vs. SAM 2 Comparison</h2>
+    <table class="summary-table">
+      <tr><th>Feature</th><th>SAM (2023)</th><th>SAM 2 (2024)</th></tr>
+      <tr><td>Domain</td><td>Images only</td><td>Images AND video</td></tr>
+      <tr><td>Image encoder</td><td>ViT-H (632M params)</td><td>Hiera (hierarchical ViT, 6&times; faster)</td></tr>
+      <tr><td>Memory</td><td>None — each image independent</td><td>Memory bank + object pointers</td></tr>
+      <tr><td>Video tracking</td><td>Not supported</td><td>Frame-by-frame with memory attention</td></tr>
+      <tr><td>Occlusion</td><td>N/A</td><td>Occlusion prediction + re-identification</td></tr>
+      <tr><td>Training data</td><td>SA-1B (1.1B masks, 11M images)</td><td>SA-V (642K masklets, 51K videos) + SA-1B</td></tr>
+      <tr><td>Image segmentation</td><td>Baseline</td><td>Better — SAM 2 also improves on images</td></tr>
+      <tr><td>Interactive speed</td><td>~10ms per prompt</td><td>~10ms per prompt + 3&times; faster per frame</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>Surprising result:</strong> SAM 2 isn't just better at video — it's also better at images. Despite being trained jointly on images and video, SAM 2 outperforms the original SAM on image segmentation benchmarks. The video training acts as a form of augmentation, teaching the model to understand objects from multiple viewpoints.
+    </div>
+  </section>
+
+  <!-- SECTION 5: REFERENCES -->
+  <section>
+    <h2>5 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2304.02643">Segment Anything</a> — Kirillov et al., Meta AI, 2023</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2408.00714">SAM 2: Segment Anything in Images and Videos</a> — Ravi et al., Meta FAIR, 2024</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/facebookresearch/sam2">Official SAM 2 GitHub Repository</a></li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://ai.meta.com/sam2/">SAM 2 Project Page</a></li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2306.00989">Hiera: A Hierarchical Vision Transformer without the Bells-and-Whistles</a> — Ryali et al., Meta, 2023</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>

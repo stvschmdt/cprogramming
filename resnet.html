@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResNet Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+      --layer-backbone: #dbeafe;
+      --layer-neck: #dcfce7;
+      --layer-head: #fef3c7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero .breadcrumb {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .hero .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .hero .meta-tags span {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .hero .paper-link {
+      font-size: 0.9rem;
+    }
+
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-size: 1.1rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+
+    .callout {
+      background: var(--highlight-bg);
+      border-left: 3px solid var(--highlight-border);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 1.25rem;
+      font-size: 0.92rem;
+    }
+    .callout strong { color: var(--accent); }
+
+    .callout-blue {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+    }
+    .callout-blue strong { color: #2563eb; }
+
+    .callout-green {
+      background: #f0fdf4;
+      border-left-color: #22c55e;
+    }
+    .callout-green strong { color: #16a34a; }
+
+    .tensor {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      background: var(--code-bg);
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .arch-diagram {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .arch-diagram svg {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .layer-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--border);
+    }
+    .layer-card.backbone { border-left-color: #3b82f6; }
+    .layer-card.head { border-left-color: #f59e0b; }
+
+    .layer-card .layer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .layer-card .layer-header h4 {
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .layer-card .layer-header .shapes {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .layer-card p {
+      font-size: 0.92rem;
+      margin-bottom: 0.75rem;
+    }
+    .layer-card p:last-child { margin-bottom: 0; }
+
+    .layer-diagram {
+      margin: 1rem 0 0.75rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .layer-diagram svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    .summary-table th, .summary-table td {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .summary-table th {
+      background: var(--code-bg);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .step-num {
+      display: inline-block;
+      width: 1.6rem;
+      height: 1.6rem;
+      line-height: 1.6rem;
+      text-align: center;
+      border-radius: 50%;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+      margin-right: 0.5rem;
+    }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.amber { background: #f59e0b; }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.5rem; }
+      body { font-size: 16px; }
+      nav { gap: 1rem; }
+      .layer-card .layer-header { flex-direction: column; }
+    }
+
+    footer {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / ResNet</div>
+    <h1>Deep Residual Learning for Image Recognition</h1>
+    <div class="subtitle">Skip Connections That Changed Everything</div>
+    <div class="meta-tags">
+      <span>Image Classification</span>
+      <span>CNN</span>
+      <span>Residual Learning</span>
+      <span>Skip Connections</span>
+      <span>Microsoft Research 2015</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/1512.03385">arXiv:1512.03385</a> &nbsp;|&nbsp;
+      Code: <a href="https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py">torchvision/resnet.py</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1: THE PROBLEM -->
+  <section>
+    <h2>1 &mdash; The Problem to Solve</h2>
+
+    <p><strong>Image classification</strong> is the task of assigning a single label to an image: "this is a cat," "this is a car," "this is a mushroom." Before ResNet, the computer vision community had a clear recipe: stack more convolutional layers to learn more complex features. But there was a surprising problem.</p>
+
+    <h3>The Degradation Problem</h3>
+    <p>By 2015, researchers found that simply making networks deeper actually made accuracy <em>worse</em> — not because of overfitting, but because the training itself broke down. A 56-layer network performed worse than a 20-layer network, even on the training set. Gradients either vanished (shrank to near-zero) or exploded as they propagated back through dozens of layers.</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 580 150" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Title -->
+        <text x="290" y="15" text-anchor="middle" font-size="11" fill="#57534e" font-weight="600">The Degradation Problem</text>
+
+        <!-- 20-layer network bar -->
+        <rect x="60" y="35" width="200" height="30" rx="4" fill="#22c55e" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="160" y="54" text-anchor="middle" font-size="9" fill="white" font-weight="600">20-layer: 8.5% error</text>
+        <text x="30" y="54" text-anchor="end" font-size="9" fill="#57534e">Shallow</text>
+
+        <!-- 56-layer network bar (worse!) -->
+        <rect x="60" y="75" width="260" height="30" rx="4" fill="#ef4444" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="190" y="94" text-anchor="middle" font-size="9" fill="white" font-weight="600">56-layer: 10.3% error (WORSE!)</text>
+        <text x="30" y="94" text-anchor="end" font-size="9" fill="#57534e">Deeper</text>
+
+        <!-- Confusion icon -->
+        <text x="345" y="94" font-size="14" fill="#ef4444">?!</text>
+        <text x="370" y="90" font-size="8" fill="#991b1b">More layers =</text>
+        <text x="370" y="102" font-size="8" fill="#991b1b">higher error?</text>
+
+        <!-- ResNet bar -->
+        <rect x="60" y="120" width="140" height="30" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="130" y="139" text-anchor="middle" font-size="9" fill="white" font-weight="600">ResNet-152: 3.6% error</text>
+        <text x="30" y="139" text-anchor="end" font-size="9" fill="#57534e">ResNet</text>
+        <text x="220" y="139" font-size="8" fill="#2563eb" font-weight="600">Skip connections fix it!</text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <strong>Key Insight:</strong> If a deeper network should be at least as good as a shallower one (the extra layers could just learn identity mappings), then the problem isn't capacity — it's optimization. He et al. proposed making the identity mapping the <em>default</em> by adding skip connections, so layers only need to learn the <em>residual</em> (the difference from identity).
+    </div>
+
+    <h3>What the Model Receives and Returns</h3>
+    <p><strong>Input:</strong> An RGB image resized to <span class="tensor">224 &times; 224 &times; 3</span>.</p>
+    <p><strong>Output:</strong> A probability distribution over 1,000 ImageNet classes. The highest-scoring class is the prediction.</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 600 110" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Input -->
+        <rect x="20" y="20" width="80" height="70" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <rect x="30" y="28" width="8" height="8" fill="#ef4444" rx="1"/>
+        <rect x="40" y="28" width="8" height="8" fill="#22c55e" rx="1"/>
+        <rect x="50" y="28" width="8" height="8" fill="#3b82f6" rx="1"/>
+        <text x="60" y="62" text-anchor="middle" font-size="9" fill="#4338ca">224x224x3</text>
+        <text x="60" y="75" text-anchor="middle" font-size="8" fill="#4338ca">RGB Image</text>
+
+        <!-- Arrow -->
+        <line x1="105" y1="55" x2="155" y2="55" stroke="#57534e" stroke-width="2" marker-end="url(#arr-rn)"/>
+        <text x="130" y="48" text-anchor="middle" font-size="9" fill="#57534e">ResNet</text>
+
+        <!-- Output: probability bars -->
+        <rect x="165" y="15" width="200" height="80" rx="4" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1.5"/>
+        <text x="265" y="30" text-anchor="middle" font-size="8" fill="#57534e" font-weight="600">1000-class probabilities</text>
+        <rect x="175" y="38" width="140" height="8" rx="2" fill="#3b82f6"/>
+        <text x="320" y="46" font-size="7" fill="#2563eb" font-weight="600">golden retriever: 0.92</text>
+        <rect x="175" y="50" width="30" height="8" rx="2" fill="#93c5fd"/>
+        <text x="320" y="58" font-size="7" fill="#57534e">labrador: 0.04</text>
+        <rect x="175" y="62" width="15" height="8" rx="2" fill="#bfdbfe"/>
+        <text x="320" y="70" font-size="7" fill="#57534e">tennis ball: 0.01</text>
+        <rect x="175" y="74" width="5" height="8" rx="2" fill="#dbeafe"/>
+        <text x="320" y="82" font-size="7" fill="#57534e">...</text>
+
+        <defs>
+          <marker id="arr-rn" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 2: ARCHITECTURE OVERVIEW -->
+  <section>
+    <h2>2 &mdash; Architecture Overview</h2>
+
+    <p>ResNet comes in several depths (18, 34, 50, 101, 152 layers), but they all share the same skeleton: an initial convolution and pooling, then four groups of residual blocks, then global average pooling and a classifier.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif" font-size="12">
+        <!-- Input -->
+        <rect x="10" y="70" width="55" height="50" rx="4" fill="#6366f1" stroke="#4f46e5"/>
+        <text x="38" y="90" text-anchor="middle" fill="white" font-size="9" font-weight="600">Input</text>
+        <text x="38" y="103" text-anchor="middle" fill="white" font-size="7">224x224x3</text>
+
+        <!-- Conv1 + Pool -->
+        <rect x="80" y="70" width="65" height="50" rx="4" fill="#3b82f6" stroke="#2563eb"/>
+        <text x="112" y="88" text-anchor="middle" fill="white" font-size="8" font-weight="600">Conv1</text>
+        <text x="112" y="100" text-anchor="middle" fill="white" font-size="7">7x7, stride 2</text>
+        <text x="112" y="110" text-anchor="middle" fill="white" font-size="7">+ MaxPool</text>
+        <line x1="68" y1="95" x2="80" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Stage 2 -->
+        <rect x="160" y="60" width="85" height="70" rx="4" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+        <text x="202" y="82" text-anchor="middle" fill="white" font-size="9" font-weight="700">Stage 2</text>
+        <text x="202" y="94" text-anchor="middle" fill="#bfdbfe" font-size="7">56x56x64</text>
+        <text x="202" y="108" text-anchor="middle" fill="#bfdbfe" font-size="7">3 blocks</text>
+        <text x="202" y="120" text-anchor="middle" fill="#93c5fd" font-size="7">(ResNet-50)</text>
+        <line x1="148" y1="95" x2="160" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Stage 3 -->
+        <rect x="260" y="60" width="85" height="70" rx="4" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+        <text x="302" y="82" text-anchor="middle" fill="white" font-size="9" font-weight="700">Stage 3</text>
+        <text x="302" y="94" text-anchor="middle" fill="#bfdbfe" font-size="7">28x28x128</text>
+        <text x="302" y="108" text-anchor="middle" fill="#bfdbfe" font-size="7">4 blocks</text>
+        <line x1="248" y1="95" x2="260" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Stage 4 -->
+        <rect x="360" y="60" width="85" height="70" rx="4" fill="#1d4ed8" stroke="#1e3a8a" stroke-width="2"/>
+        <text x="402" y="82" text-anchor="middle" fill="white" font-size="9" font-weight="700">Stage 4</text>
+        <text x="402" y="94" text-anchor="middle" fill="#bfdbfe" font-size="7">14x14x256</text>
+        <text x="402" y="108" text-anchor="middle" fill="#bfdbfe" font-size="7">6 blocks</text>
+        <line x1="348" y1="95" x2="360" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Stage 5 -->
+        <rect x="460" y="60" width="85" height="70" rx="4" fill="#1e3a8a" stroke="#172554" stroke-width="2"/>
+        <text x="502" y="82" text-anchor="middle" fill="white" font-size="9" font-weight="700">Stage 5</text>
+        <text x="502" y="94" text-anchor="middle" fill="#bfdbfe" font-size="7">7x7x512</text>
+        <text x="502" y="108" text-anchor="middle" fill="#bfdbfe" font-size="7">3 blocks</text>
+        <line x1="448" y1="95" x2="460" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- GAP -->
+        <rect x="560" y="75" width="55" height="40" rx="4" fill="#f59e0b" stroke="#d97706"/>
+        <text x="588" y="92" text-anchor="middle" fill="white" font-size="8" font-weight="600">AvgPool</text>
+        <text x="588" y="104" text-anchor="middle" fill="white" font-size="7">7x7&rarr;1x1</text>
+        <line x1="548" y1="95" x2="560" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- FC -->
+        <rect x="630" y="75" width="50" height="40" rx="4" fill="#ef4444" stroke="#dc2626"/>
+        <text x="655" y="92" text-anchor="middle" fill="white" font-size="8" font-weight="600">FC</text>
+        <text x="655" y="104" text-anchor="middle" fill="white" font-size="7">1000</text>
+        <line x1="618" y1="95" x2="630" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Output -->
+        <rect x="695" y="80" width="50" height="30" rx="4" fill="#fecaca" stroke="#ef4444"/>
+        <text x="720" y="99" text-anchor="middle" fill="#991b1b" font-size="8" font-weight="600">Softmax</text>
+        <line x1="683" y1="95" x2="695" y2="95" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Annotations -->
+        <text x="112" y="145" text-anchor="middle" font-size="8" fill="#3b82f6">112x112x64</text>
+        <text x="112" y="157" text-anchor="middle" font-size="7" fill="#57534e">&darr; pool to 56x56</text>
+
+        <!-- Skip connections annotation -->
+        <text x="350" y="175" text-anchor="middle" font-size="9" fill="#57534e" font-style="italic">Each block within a stage contains skip connections (the key innovation)</text>
+        <text x="350" y="192" text-anchor="middle" font-size="8" fill="#3b82f6" font-weight="600">Total: 50 weighted layers in ResNet-50 (16 + 3&times;2 + 4&times;2 + 6&times;2 + 3&times;2 bottleneck layers)</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 3: LAYER-BY-LAYER WALKTHROUGH -->
+  <section>
+    <h2>3 &mdash; Layer-by-Layer Walkthrough</h2>
+
+    <p>Let's trace a single <span class="tensor">224 &times; 224 &times; 3</span> image through ResNet-50.</p>
+
+    <h3><span class="step-num blue">1</span> Initial Convolution and Pooling</h3>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Conv1 + BatchNorm + ReLU + MaxPool</h4>
+        <div class="shapes"><span class="tensor">224&times;224&times;3</span> &rarr; <span class="tensor">56&times;56&times;64</span></div>
+      </div>
+      <p>The first layer is a large <span class="tensor">7&times;7</span> convolution with 64 filters and stride 2, followed by batch normalization and ReLU. This immediately halves spatial dimensions to <span class="tensor">112&times;112&times;64</span>. A <span class="tensor">3&times;3</span> max pooling with stride 2 then halves again to <span class="tensor">56&times;56&times;64</span>.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 560 80" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <rect x="10" y="20" width="65" height="40" rx="4" fill="#6366f1" stroke="#4f46e5" stroke-width="1.5"/>
+          <text x="42" y="38" text-anchor="middle" font-size="7" fill="white" font-weight="600">224x224x3</text>
+          <text x="42" y="50" text-anchor="middle" font-size="7" fill="#c4b5fd">Input</text>
+
+          <line x1="80" y1="40" x2="100" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a1)"/>
+
+          <rect x="105" y="15" width="80" height="50" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="145" y="34" text-anchor="middle" font-size="8" fill="white" font-weight="600">7x7 Conv</text>
+          <text x="145" y="46" text-anchor="middle" font-size="7" fill="#bfdbfe">stride 2, 64 filters</text>
+          <text x="145" y="56" text-anchor="middle" font-size="7" fill="#bfdbfe">+ BN + ReLU</text>
+
+          <line x1="190" y1="40" x2="210" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a1)"/>
+
+          <rect x="215" y="22" width="70" height="36" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="250" y="38" text-anchor="middle" font-size="7" fill="white" font-weight="600">112x112x64</text>
+          <text x="250" y="50" text-anchor="middle" font-size="7" fill="#bfdbfe">after conv</text>
+
+          <line x1="290" y1="40" x2="310" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a1)"/>
+
+          <rect x="315" y="15" width="80" height="50" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="355" y="34" text-anchor="middle" font-size="8" fill="white" font-weight="600">3x3 MaxPool</text>
+          <text x="355" y="46" text-anchor="middle" font-size="7" fill="#ddd6fe">stride 2</text>
+          <text x="355" y="56" text-anchor="middle" font-size="7" fill="#ddd6fe">pad 1</text>
+
+          <line x1="400" y1="40" x2="420" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a1)"/>
+
+          <rect x="425" y="22" width="70" height="36" rx="4" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+          <text x="460" y="38" text-anchor="middle" font-size="7" fill="white" font-weight="600">56x56x64</text>
+          <text x="460" y="50" text-anchor="middle" font-size="7" fill="#bfdbfe">to Stage 2</text>
+
+          <defs><marker id="a1" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+      <p>This aggressive 4&times; spatial downsampling happens before any residual blocks — it reduces computation for all subsequent stages.</p>
+    </div>
+
+    <h3><span class="step-num blue">2</span> The Residual Block (The Core Innovation)</h3>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Basic Block (ResNet-18/34)</h4>
+        <div class="shapes">Two 3&times;3 convolutions + skip</div>
+      </div>
+      <p>In the shallower ResNets (18 and 34), each residual block contains two <span class="tensor">3&times;3</span> convolutions. The input is added directly to the output — this is the <strong>skip connection</strong>.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 500 140" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="250" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Basic Residual Block</text>
+
+          <!-- Input x -->
+          <rect x="20" y="55" width="40" height="30" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="40" y="74" text-anchor="middle" font-size="10" fill="white" font-weight="700">x</text>
+
+          <!-- Main path -->
+          <line x1="64" y1="70" x2="90" y2="70" stroke="#3b82f6" stroke-width="1.5"/>
+          <circle cx="80" cy="70" r="4" fill="#3b82f6"/>
+
+          <!-- Conv path (bottom) -->
+          <line x1="80" y1="74" x2="80" y2="105" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="80" y1="105" x2="115" y2="105" stroke="#3b82f6" stroke-width="1.5"/>
+
+          <rect x="118" y="90" width="75" height="30" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="156" y="104" text-anchor="middle" font-size="8" fill="white" font-weight="600">3x3 Conv</text>
+          <text x="156" y="115" text-anchor="middle" font-size="7" fill="#bfdbfe">BN + ReLU</text>
+
+          <line x1="197" y1="105" x2="218" y2="105" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#a2)"/>
+
+          <rect x="222" y="90" width="75" height="30" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="260" y="104" text-anchor="middle" font-size="8" fill="white" font-weight="600">3x3 Conv</text>
+          <text x="260" y="115" text-anchor="middle" font-size="7" fill="#bfdbfe">BN only</text>
+
+          <line x1="301" y1="105" x2="340" y2="105" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="340" y1="105" x2="340" y2="75" stroke="#3b82f6" stroke-width="1.5"/>
+
+          <!-- Skip path (top) -->
+          <line x1="80" y1="66" x2="80" y2="40" stroke="#22c55e" stroke-width="2"/>
+          <line x1="80" y1="40" x2="340" y2="40" stroke="#22c55e" stroke-width="2"/>
+          <line x1="340" y1="40" x2="340" y2="62" stroke="#22c55e" stroke-width="2"/>
+          <text x="210" y="35" text-anchor="middle" font-size="9" fill="#22c55e" font-weight="600">Identity skip connection (just copy x)</text>
+
+          <!-- Add circle -->
+          <circle cx="340" cy="70" r="12" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="340" y="74" text-anchor="middle" font-size="12" fill="white" font-weight="700">+</text>
+
+          <!-- ReLU -->
+          <line x1="355" y1="70" x2="375" y2="70" stroke="#57534e" stroke-width="1.5" marker-end="url(#a2)"/>
+          <rect x="380" y="57" width="45" height="26" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="402" y="74" text-anchor="middle" font-size="8" fill="white" font-weight="600">ReLU</text>
+
+          <!-- Output -->
+          <line x1="428" y1="70" x2="448" y2="70" stroke="#57534e" stroke-width="1.5" marker-end="url(#a2)"/>
+          <text x="466" y="74" font-size="10" fill="#2563eb" font-weight="700">F(x) + x</text>
+
+          <!-- Labels -->
+          <text x="200" y="132" text-anchor="middle" font-size="8" fill="#3b82f6">F(x) = learned residual</text>
+          <text x="380" y="132" text-anchor="middle" font-size="8" fill="#22c55e">x = identity</text>
+
+          <defs><marker id="a2" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+      <div class="callout">
+        <strong>Why this works:</strong> If the optimal transformation is close to identity, a regular network must learn to produce <code>x</code> from scratch. With a skip connection, the layers only need to learn <code>F(x) = 0</code> (the residual), which is much easier to optimize. The network defaults to "change nothing" and only learns deviations from that.
+      </div>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Bottleneck Block (ResNet-50/101/152)</h4>
+        <div class="shapes">1&times;1 &rarr; 3&times;3 &rarr; 1&times;1 + skip</div>
+      </div>
+      <p>For deeper ResNets, a "bottleneck" design reduces computation. Instead of two 3&times;3 convolutions, it uses three layers: a <span class="tensor">1&times;1</span> conv to reduce channels, a <span class="tensor">3&times;3</span> conv to process spatial features, and a <span class="tensor">1&times;1</span> conv to expand channels back. The skip connection still adds the input to the output.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 580 150" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="290" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Bottleneck Residual Block (ResNet-50+)</text>
+
+          <!-- Input -->
+          <rect x="15" y="55" width="50" height="30" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="40" y="68" text-anchor="middle" font-size="7" fill="white" font-weight="600">256ch</text>
+          <text x="40" y="78" text-anchor="middle" font-size="8" fill="white" font-weight="700">x</text>
+
+          <line x1="68" y1="70" x2="88" y2="70" stroke="#3b82f6" stroke-width="1.5"/>
+          <circle cx="82" cy="70" r="4" fill="#3b82f6"/>
+
+          <!-- Conv path -->
+          <line x1="82" y1="74" x2="82" y2="105" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="82" y1="105" x2="105" y2="105" stroke="#3b82f6" stroke-width="1.5"/>
+
+          <!-- 1x1 reduce -->
+          <rect x="108" y="90" width="70" height="30" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="143" y="104" text-anchor="middle" font-size="7" fill="white" font-weight="600">1x1 Conv</text>
+          <text x="143" y="114" text-anchor="middle" font-size="6" fill="#bfdbfe">256&rarr;64 (reduce)</text>
+
+          <line x1="182" y1="105" x2="200" y2="105" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#a3)"/>
+
+          <!-- 3x3 process -->
+          <rect x="205" y="90" width="70" height="30" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+          <text x="240" y="104" text-anchor="middle" font-size="7" fill="white" font-weight="700">3x3 Conv</text>
+          <text x="240" y="114" text-anchor="middle" font-size="6" fill="#bfdbfe">64 channels</text>
+
+          <line x1="279" y1="105" x2="297" y2="105" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#a3)"/>
+
+          <!-- 1x1 expand -->
+          <rect x="302" y="90" width="70" height="30" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="337" y="104" text-anchor="middle" font-size="7" fill="white" font-weight="600">1x1 Conv</text>
+          <text x="337" y="114" text-anchor="middle" font-size="6" fill="#bfdbfe">64&rarr;256 (expand)</text>
+
+          <line x1="376" y1="105" x2="410" y2="105" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="410" y1="105" x2="410" y2="76" stroke="#3b82f6" stroke-width="1.5"/>
+
+          <!-- Skip connection -->
+          <line x1="82" y1="66" x2="82" y2="38" stroke="#22c55e" stroke-width="2"/>
+          <line x1="82" y1="38" x2="410" y2="38" stroke="#22c55e" stroke-width="2"/>
+          <line x1="410" y1="38" x2="410" y2="62" stroke="#22c55e" stroke-width="2"/>
+          <text x="246" y="33" text-anchor="middle" font-size="8" fill="#22c55e" font-weight="600">Identity shortcut (256ch &rarr; 256ch)</text>
+
+          <!-- Add -->
+          <circle cx="410" cy="70" r="12" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="410" y="74" text-anchor="middle" font-size="12" fill="white" font-weight="700">+</text>
+
+          <line x1="425" y1="70" x2="445" y2="70" stroke="#57534e" stroke-width="1.5" marker-end="url(#a3)"/>
+          <rect x="450" y="57" width="45" height="26" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="472" y="74" text-anchor="middle" font-size="8" fill="white" font-weight="600">ReLU</text>
+
+          <line x1="498" y1="70" x2="515" y2="70" stroke="#57534e" stroke-width="1.5" marker-end="url(#a3)"/>
+          <text x="545" y="74" font-size="9" fill="#2563eb" font-weight="700">F(x)+x</text>
+
+          <!-- Computation saving annotation -->
+          <text x="240" y="140" text-anchor="middle" font-size="8" fill="#57534e">Bottleneck: 256&rarr;64&rarr;64&rarr;256 uses 69K params vs 590K for two 3x3 on 256ch</text>
+
+          <defs><marker id="a3" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+      <div class="callout-blue callout">
+        <strong>Bottleneck savings:</strong> By squeezing 256 channels down to 64, doing the expensive 3&times;3 convolution on only 64 channels, then expanding back to 256, the bottleneck block uses roughly 8&times; fewer parameters than doing two 3&times;3 convolutions on 256 channels directly.
+      </div>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Projection Shortcut (When Dimensions Change)</h4>
+        <div class="shapes">1&times;1 conv to match dimensions</div>
+      </div>
+      <p>When moving between stages, spatial dimensions halve and channels double. The skip connection can't simply add <span class="tensor">56&times;56&times;256</span> to <span class="tensor">28&times;28&times;512</span> — they don't match. The solution: a <span class="tensor">1&times;1</span> convolution with stride 2 on the skip path to project the input to the right shape.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 500 120" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Input -->
+          <rect x="20" y="40" width="55" height="35" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="47" y="55" text-anchor="middle" font-size="7" fill="white" font-weight="600">56x56</text>
+          <text x="47" y="66" text-anchor="middle" font-size="7" fill="#bfdbfe">x256</text>
+
+          <circle cx="95" cy="57" r="4" fill="#3b82f6"/>
+
+          <!-- Conv path (bottom) -->
+          <line x1="95" y1="61" x2="95" y2="90" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="95" y1="90" x2="130" y2="90" stroke="#3b82f6" stroke-width="1.5"/>
+          <rect x="133" y="78" width="110" height="25" rx="3" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="188" y="93" text-anchor="middle" font-size="7" fill="white" font-weight="600">Bottleneck (stride 2 on 3x3)</text>
+          <line x1="247" y1="90" x2="340" y2="90" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="340" y1="90" x2="340" y2="64" stroke="#3b82f6" stroke-width="1.5"/>
+
+          <!-- Skip path with 1x1 projection (top) -->
+          <line x1="95" y1="53" x2="95" y2="27" stroke="#f59e0b" stroke-width="2"/>
+          <line x1="95" y1="27" x2="170" y2="27" stroke="#f59e0b" stroke-width="2"/>
+          <rect x="173" y="14" width="105" height="26" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="226" y="31" text-anchor="middle" font-size="7" fill="white" font-weight="600">1x1 Conv, stride 2, 512 filters</text>
+          <line x1="281" y1="27" x2="340" y2="27" stroke="#f59e0b" stroke-width="2"/>
+          <line x1="340" y1="27" x2="340" y2="50" stroke="#f59e0b" stroke-width="2"/>
+
+          <text x="226" y="10" text-anchor="middle" font-size="8" fill="#d97706" font-weight="600">Projection shortcut (changes shape)</text>
+
+          <!-- Add -->
+          <circle cx="340" cy="57" r="12" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="340" y="61" text-anchor="middle" font-size="12" fill="white" font-weight="700">+</text>
+
+          <line x1="355" y1="57" x2="380" y2="57" stroke="#57534e" stroke-width="1.5" marker-end="url(#a4)"/>
+
+          <!-- Output -->
+          <rect x="385" y="40" width="55" height="35" rx="4" fill="#1d4ed8" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="412" y="55" text-anchor="middle" font-size="7" fill="white" font-weight="600">28x28</text>
+          <text x="412" y="66" text-anchor="middle" font-size="7" fill="#bfdbfe">x512</text>
+
+          <defs><marker id="a4" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <h3><span class="step-num blue">3</span> The Four Stages</h3>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Stage 2 (conv2_x)</h4>
+        <div class="shapes"><span class="tensor">56&times;56&times;64</span> &rarr; <span class="tensor">56&times;56&times;256</span></div>
+      </div>
+      <p>Three bottleneck blocks. The first block expands channels from 64 to 256 (using a projection shortcut). The remaining two blocks maintain <span class="tensor">56&times;56&times;256</span>. No spatial downsampling within this stage — that happened in the initial max pool.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Stage 3 (conv3_x)</h4>
+        <div class="shapes"><span class="tensor">56&times;56&times;256</span> &rarr; <span class="tensor">28&times;28&times;512</span></div>
+      </div>
+      <p>Four bottleneck blocks. The first block uses stride 2 to halve spatial dimensions and a projection shortcut to double channels. Features at this stage capture mid-level patterns — object parts, textures, and spatial relationships.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Stage 4 (conv4_x)</h4>
+        <div class="shapes"><span class="tensor">28&times;28&times;512</span> &rarr; <span class="tensor">14&times;14&times;1024</span></div>
+      </div>
+      <p>Six bottleneck blocks — the most blocks of any stage. Again, stride 2 on the first block. This is where most of the network's capacity lives. Features represent high-level object concepts.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Stage 5 (conv5_x)</h4>
+        <div class="shapes"><span class="tensor">14&times;14&times;1024</span> &rarr; <span class="tensor">7&times;7&times;2048</span></div>
+      </div>
+      <p>Three bottleneck blocks with stride 2 on the first. The output is a highly compressed <span class="tensor">7&times;7</span> feature map with 2,048 channels — each spatial position encodes rich semantic information about a 32&times;32 pixel region of the original image.</p>
+    </div>
+
+    <h3><span class="step-num amber">4</span> Classification Head</h3>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Global Average Pooling + Fully Connected</h4>
+        <div class="shapes"><span class="tensor">7&times;7&times;2048</span> &rarr; <span class="tensor">1000</span></div>
+      </div>
+      <p><strong>Global Average Pooling</strong> takes the <span class="tensor">7&times;7&times;2048</span> feature map and averages each channel across all spatial positions, producing a <span class="tensor">2048</span>-dimensional vector. This is far more parameter-efficient than the fully connected layers used in earlier networks like VGG.</p>
+      <p>A single fully connected layer maps the 2,048 features to 1,000 class logits. Softmax converts these to probabilities.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 500 80" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <rect x="10" y="20" width="55" height="40" rx="4" fill="#1e3a8a" stroke="#172554" stroke-width="1.5"/>
+          <text x="38" y="38" text-anchor="middle" font-size="7" fill="white" font-weight="600">7x7x2048</text>
+          <text x="38" y="50" text-anchor="middle" font-size="7" fill="#bfdbfe">Stage 5 out</text>
+
+          <line x1="70" y1="40" x2="90" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a5)"/>
+
+          <rect x="95" y="20" width="75" height="40" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="132" y="37" text-anchor="middle" font-size="8" fill="white" font-weight="600">Global AvgPool</text>
+          <text x="132" y="50" text-anchor="middle" font-size="7" fill="#fef3c7">7x7 &rarr; 1x1</text>
+
+          <line x1="175" y1="40" x2="195" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a5)"/>
+
+          <rect x="200" y="25" width="50" height="30" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="225" y="44" text-anchor="middle" font-size="8" fill="white" font-weight="600">2048-d</text>
+
+          <line x1="255" y1="40" x2="275" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a5)"/>
+
+          <rect x="280" y="20" width="60" height="40" rx="4" fill="#ef4444" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="310" y="37" text-anchor="middle" font-size="8" fill="white" font-weight="600">FC Layer</text>
+          <text x="310" y="50" text-anchor="middle" font-size="7" fill="#fecaca">2048&rarr;1000</text>
+
+          <line x1="345" y1="40" x2="365" y2="40" stroke="#57534e" stroke-width="1.5" marker-end="url(#a5)"/>
+
+          <rect x="370" y="20" width="55" height="40" rx="4" fill="#fecaca" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="397" y="37" text-anchor="middle" font-size="8" fill="#991b1b" font-weight="600">Softmax</text>
+          <text x="397" y="50" text-anchor="middle" font-size="7" fill="#991b1b">1000 probs</text>
+
+          <defs><marker id="a5" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: WHY SKIP CONNECTIONS WORK -->
+  <section>
+    <h2>4 &mdash; Why Skip Connections Work</h2>
+
+    <div class="layer-card">
+      <h4>Gradient Flow</h4>
+      <p>During backpropagation, the skip connection creates a "gradient highway." Without it, gradients must flow through every weight layer, and they shrink multiplicatively — 50 layers of 0.9&times; multiplication gives 0.005 (effectively zero). With skip connections, gradients can flow directly through the addition operation, reaching early layers intact.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="280" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Gradient flow comparison</text>
+
+          <!-- Without skip: gradient shrinks -->
+          <text x="280" y="38" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="600">Without skip connections</text>
+          <rect x="30" y="45" width="40" height="20" rx="3" fill="#ef4444"/><text x="50" y="58" text-anchor="middle" font-size="7" fill="white">Layer 1</text>
+          <text x="85" y="58" font-size="8" fill="#ef4444">&times;0.9</text>
+          <rect x="110" y="45" width="40" height="20" rx="3" fill="#ef4444" opacity="0.8"/><text x="130" y="58" text-anchor="middle" font-size="7" fill="white">Layer 2</text>
+          <text x="165" y="58" font-size="8" fill="#ef4444">&times;0.9</text>
+          <rect x="190" y="45" width="40" height="20" rx="3" fill="#ef4444" opacity="0.6"/><text x="210" y="58" text-anchor="middle" font-size="7" fill="white">Layer 3</text>
+          <text x="245" y="58" font-size="7" fill="#ef4444">&hellip;</text>
+          <rect x="270" y="45" width="50" height="20" rx="3" fill="#ef4444" opacity="0.2"/><text x="295" y="58" text-anchor="middle" font-size="7" fill="white">Layer 50</text>
+          <text x="340" y="58" font-size="8" fill="#ef4444">= 0.9^50 = 0.005</text>
+          <text x="460" y="58" font-size="8" fill="#ef4444" font-weight="600">Gradient vanishes!</text>
+
+          <!-- With skip: gradient preserved -->
+          <text x="280" y="82" text-anchor="middle" font-size="9" fill="#22c55e" font-weight="600">With skip connections</text>
+          <rect x="30" y="88" width="40" height="20" rx="3" fill="#22c55e"/><text x="50" y="101" text-anchor="middle" font-size="7" fill="white">Layer 1</text>
+          <line x1="30" y1="86" x2="530" y2="86" stroke="#22c55e" stroke-width="2" stroke-dasharray="4,2"/>
+          <rect x="110" y="88" width="40" height="20" rx="3" fill="#22c55e"/><text x="130" y="101" text-anchor="middle" font-size="7" fill="white">Layer 2</text>
+          <rect x="190" y="88" width="40" height="20" rx="3" fill="#22c55e"/><text x="210" y="101" text-anchor="middle" font-size="7" fill="white">Layer 3</text>
+          <text x="245" y="101" font-size="7" fill="#22c55e">&hellip;</text>
+          <rect x="270" y="88" width="50" height="20" rx="3" fill="#22c55e"/><text x="295" y="101" text-anchor="middle" font-size="7" fill="white">Layer 50</text>
+          <text x="340" y="101" font-size="8" fill="#22c55e">= 1.0 (identity)</text>
+          <text x="460" y="101" font-size="8" fill="#22c55e" font-weight="600">Gradient flows freely</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card">
+      <h4>Ensemble Effect</h4>
+      <p>A ResNet can be viewed as an ensemble of many shorter networks. Each block can either transform the features or pass them through unchanged. With <em>n</em> blocks, there are 2<sup>n</sup> possible paths through the network — it implicitly trains an exponential number of sub-networks simultaneously.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 5: TENSOR SHAPE SUMMARY -->
+  <section>
+    <h2>5 &mdash; Complete Tensor Shape Summary</h2>
+    <p>For ResNet-50 with a 224&times;224 input:</p>
+    <table class="summary-table">
+      <tr>
+        <th>Stage</th>
+        <th>Layer</th>
+        <th>Output Shape</th>
+        <th>Blocks</th>
+        <th>Notes</th>
+      </tr>
+      <tr><td>Input</td><td>Image</td><td><span class="tensor">224&times;224&times;3</span></td><td>&mdash;</td><td>RGB, normalized</td></tr>
+      <tr><td>Conv1</td><td>7&times;7 conv, stride 2</td><td><span class="tensor">112&times;112&times;64</span></td><td>&mdash;</td><td>+ BN + ReLU</td></tr>
+      <tr><td>Pool</td><td>3&times;3 max pool, stride 2</td><td><span class="tensor">56&times;56&times;64</span></td><td>&mdash;</td><td></td></tr>
+      <tr><td>Stage 2</td><td>conv2_x</td><td><span class="tensor">56&times;56&times;256</span></td><td>3</td><td>Bottleneck, no downsample</td></tr>
+      <tr><td>Stage 3</td><td>conv3_x</td><td><span class="tensor">28&times;28&times;512</span></td><td>4</td><td>Stride 2 on first block</td></tr>
+      <tr><td>Stage 4</td><td>conv4_x</td><td><span class="tensor">14&times;14&times;1024</span></td><td>6</td><td>Stride 2 on first block</td></tr>
+      <tr><td>Stage 5</td><td>conv5_x</td><td><span class="tensor">7&times;7&times;2048</span></td><td>3</td><td>Stride 2 on first block</td></tr>
+      <tr><td>Head</td><td>AvgPool + FC</td><td><span class="tensor">1000</span></td><td>&mdash;</td><td>Softmax probabilities</td></tr>
+    </table>
+  </section>
+
+  <!-- SECTION 6: RESNET FAMILY -->
+  <section>
+    <h2>6 &mdash; Results and the ResNet Family</h2>
+    <table class="summary-table">
+      <tr>
+        <th>Model</th>
+        <th>Layers</th>
+        <th>Params</th>
+        <th>Top-1 Error (%)</th>
+        <th>Top-5 Error (%)</th>
+      </tr>
+      <tr><td>ResNet-18</td><td>18</td><td>11.7M</td><td>27.9</td><td>9.6</td></tr>
+      <tr><td>ResNet-34</td><td>34</td><td>21.8M</td><td>25.0</td><td>7.8</td></tr>
+      <tr><td>ResNet-50</td><td>50</td><td>25.6M</td><td>22.9</td><td>6.7</td></tr>
+      <tr><td>ResNet-101</td><td>101</td><td>44.5M</td><td>21.8</td><td>6.0</td></tr>
+      <tr><td>ResNet-152</td><td>152</td><td>60.2M</td><td>21.4</td><td>5.7</td></tr>
+    </table>
+    <p>ResNet-152 won 1st place in the ILSVRC 2015 classification challenge with a 3.57% top-5 error rate. Perhaps more importantly, ResNet became the default backbone for virtually every downstream task — object detection (Faster R-CNN), segmentation (Mask R-CNN, DeepLab), and even as the image encoder in models like CLIP and DETR.</p>
+
+    <div class="callout">
+      <strong>Legacy:</strong> Skip connections are now a universal pattern in deep learning — they appear in DenseNet, U-Net, Transformers (layer norm + residual), GPT, and virtually every modern architecture. ResNet didn't just solve image classification — it proved that depth is achievable with the right structural prior.
+    </div>
+  </section>
+
+  <!-- SECTION 7: REFERENCES -->
+  <section>
+    <h2>7 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/1512.03385">Deep Residual Learning for Image Recognition</a> — He et al., 2015 (original paper)</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/1603.05027">Identity Mappings in Deep Residual Networks</a> — He et al., 2016 (ResNet v2)</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py">PyTorch Official ResNet Implementation</a></li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://paperswithcode.com/method/resnet">Papers With Code: ResNet</a></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>

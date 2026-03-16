@@ -208,6 +208,28 @@
     <h2>Walkthroughs</h2>
 
     <div class="walkthrough-card">
+      <h3><a href="resnet.html">ResNet: Deep Residual Learning for Image Recognition</a></h3>
+      <div class="meta">
+        <span>Image Classification</span>
+        <span>CNN</span>
+        <span>Microsoft 2015</span>
+      </div>
+      <p>The paper that proved depth is achievable with the right structural prior. We trace a 224&times;224 image through ResNet-50's skip connections, bottleneck blocks, and projection shortcuts — explaining why simply adding the input to the output solves the vanishing gradient problem and enables 152-layer networks.</p>
+      <a href="resnet.html" class="read-link">Read walkthrough &rarr;</a>
+    </div>
+
+    <div class="walkthrough-card">
+      <h3><a href="vit.html">Vision Transformer (ViT): An Image is Worth 16x16 Words</a></h3>
+      <div class="meta">
+        <span>Image Classification</span>
+        <span>Transformer</span>
+        <span>Google 2020</span>
+      </div>
+      <p>How patch embeddings, positional encodings, and multi-head self-attention replace convolutions entirely. We trace a 224&times;224 image through ViT-Base/16 — splitting into 196 patches, the [CLS] token, 12 encoder layers, and why ViT needs massive data to beat CNNs.</p>
+      <a href="vit.html" class="read-link">Read walkthrough &rarr;</a>
+    </div>
+
+    <div class="walkthrough-card">
       <h3><a href="yolox.html">YOLOX: Exceeding YOLO Series in 2021</a></h3>
       <div class="meta">
         <span>Object Detection</span>
@@ -218,34 +240,37 @@
       <a href="yolox.html" class="read-link">Read walkthrough &rarr;</a>
     </div>
 
-    <div class="walkthrough-card coming-soon">
-      <h3>Vision Transformer (ViT)</h3>
+    <div class="walkthrough-card">
+      <h3><a href="detr.html">The DETR Family: From Transformers to Real-Time Detection</a></h3>
       <div class="meta">
-        <span>Image Classification</span>
+        <span>Object Detection</span>
         <span>Transformer</span>
-        <span>Google 2020</span>
+        <span>DETR &rarr; RT-DETR &rarr; RF-DETR</span>
       </div>
-      <p>How patch embeddings, positional encodings, and multi-head self-attention replace convolutions entirely. Coming soon.</p>
+      <p>Three generations of detection Transformers in one walkthrough. DETR (2020) eliminated anchors and NMS with set prediction. RT-DETR (2023) made it real-time with hybrid encoders. RF-DETR (2025) pushed past 60 AP on COCO using DINOv2 backbone and neural architecture search.</p>
+      <a href="detr.html" class="read-link">Read walkthrough &rarr;</a>
     </div>
 
-    <div class="walkthrough-card coming-soon">
-      <h3>Attention Is All You Need (Transformer)</h3>
+    <div class="walkthrough-card">
+      <h3><a href="sam.html">Segment Anything: SAM &amp; SAM 2</a></h3>
       <div class="meta">
-        <span>Sequence-to-Sequence</span>
-        <span>Attention</span>
-        <span>Google 2017</span>
+        <span>Segmentation</span>
+        <span>Foundation Model</span>
+        <span>Meta 2023/2024</span>
       </div>
-      <p>The architecture that started it all — encoder-decoder with multi-head self-attention, positional encoding, and masked decoding. Coming soon.</p>
+      <p>Meta's promptable segmentation foundation models. SAM (2023) segments any object from a point click using a ViT-H encoder and lightweight mask decoder. SAM 2 (2024) extends to video with memory attention and streaming architecture — prompting one frame tracks objects through entire videos.</p>
+      <a href="sam.html" class="read-link">Read walkthrough &rarr;</a>
     </div>
 
-    <div class="walkthrough-card coming-soon">
-      <h3>ResNet: Deep Residual Learning</h3>
+    <div class="walkthrough-card">
+      <h3><a href="foundation-stereo.html">FoundationStereo: Zero-Shot Stereo Matching</a></h3>
       <div class="meta">
-        <span>Image Classification</span>
-        <span>CNN</span>
-        <span>Microsoft 2015</span>
+        <span>Stereo Depth</span>
+        <span>Foundation Model</span>
+        <span>NVIDIA CVPR 2025</span>
       </div>
-      <p>Skip connections, identity mappings, and why deeper networks can actually learn better. Coming soon.</p>
+      <p>NVIDIA's foundation model for stereo depth estimation. Uses a side-tuning adapter that pairs a CNN with a frozen DepthAnythingV2 ViT to bridge the sim-to-real gap, trained on 1M photorealistic synthetic pairs. Achieved 1st place on Middlebury and ETH3D — as a zero-shot model competing against fine-tuned methods.</p>
+      <a href="foundation-stereo.html" class="read-link">Read walkthrough &rarr;</a>
     </div>
 
   </section>

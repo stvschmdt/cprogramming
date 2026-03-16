@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision Transformer (ViT) Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-purple { background: #faf5ff; border-left-color: #8b5cf6; }
+    .callout-purple strong { color: #7c3aed; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.embed { border-left-color: #8b5cf6; }
+    .layer-card.encoder { border-left-color: #3b82f6; }
+    .layer-card.head { border-left-color: #f59e0b; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.purple { background: #8b5cf6; }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.amber { background: #f59e0b; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / ViT</div>
+    <h1>An Image is Worth 16x16 Words</h1>
+    <div class="subtitle">Vision Transformer &mdash; Transformers Replace Convolutions</div>
+    <div class="meta-tags">
+      <span>Image Classification</span>
+      <span>Transformer</span>
+      <span>Patch Embeddings</span>
+      <span>Self-Attention</span>
+      <span>Google Brain 2020</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/2010.11929">arXiv:2010.11929</a> &nbsp;|&nbsp;
+      Code: <a href="https://github.com/google-research/vision_transformer">google-research/vision_transformer</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1 -->
+  <section>
+    <h2>1 &mdash; The Problem to Solve</h2>
+
+    <p>By 2020, Transformers had conquered NLP — BERT, GPT, and friends dominated every language benchmark. But computer vision still ran on CNNs. The question was simple: <strong>can we apply the Transformer architecture directly to images?</strong></p>
+
+    <p>The challenge: Transformers process <em>sequences</em> of tokens. Images are 2D grids of pixels. A 224&times;224 image has 50,176 pixels — self-attention over that many tokens is computationally impossible (it scales quadratically). ViT's solution: cut the image into patches and treat each patch as a "word."</p>
+
+    <div class="callout">
+      <strong>Key Insight:</strong> Split a 224&times;224 image into a grid of 16&times;16 patches. Each patch becomes a token. Now you have 196 tokens instead of 50,176 pixels — a manageable sequence length for a Transformer.
+    </div>
+
+    <h3>What the Model Receives and Returns</h3>
+    <p><strong>Input:</strong> An RGB image resized to <span class="tensor">224 &times; 224 &times; 3</span>.</p>
+    <p><strong>Output:</strong> A probability distribution over 1,000 ImageNet classes (same task as ResNet).</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 620 120" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Input image with grid -->
+        <rect x="10" y="15" width="90" height="90" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <!-- 14x14 grid lines (simplified as 4x4 for visibility) -->
+        <line x1="32" y1="15" x2="32" y2="105" stroke="#6366f1" opacity="0.3" stroke-width="0.5"/>
+        <line x1="55" y1="15" x2="55" y2="105" stroke="#6366f1" opacity="0.3" stroke-width="0.5"/>
+        <line x1="77" y1="15" x2="77" y2="105" stroke="#6366f1" opacity="0.3" stroke-width="0.5"/>
+        <line x1="10" y1="37" x2="100" y2="37" stroke="#6366f1" opacity="0.3" stroke-width="0.5"/>
+        <line x1="10" y1="60" x2="100" y2="60" stroke="#6366f1" opacity="0.3" stroke-width="0.5"/>
+        <line x1="10" y1="82" x2="100" y2="82" stroke="#6366f1" opacity="0.3" stroke-width="0.5"/>
+        <!-- Highlight one patch -->
+        <rect x="32" y="37" width="23" height="23" fill="#8b5cf6" opacity="0.4"/>
+        <text x="55" y="115" text-anchor="middle" font-size="8" fill="#6366f1">224x224 &rarr; 14x14 patches</text>
+
+        <!-- Arrow -->
+        <line x1="108" y1="60" x2="135" y2="60" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a1)"/>
+        <text x="122" y="52" text-anchor="middle" font-size="7" fill="#57534e">split</text>
+
+        <!-- Patch sequence -->
+        <rect x="142" y="40" width="18" height="18" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/>
+        <rect x="164" y="40" width="18" height="18" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/>
+        <rect x="186" y="40" width="18" height="18" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/>
+        <rect x="208" y="40" width="18" height="18" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/>
+        <text x="231" y="53" font-size="10" fill="#7c3aed">&hellip;</text>
+        <rect x="240" y="40" width="18" height="18" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/>
+        <text x="195" y="72" text-anchor="middle" font-size="7" fill="#7c3aed">196 patch tokens</text>
+
+        <!-- + CLS token -->
+        <rect x="142" y="78" width="18" height="18" rx="9" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+        <text x="151" y="90" text-anchor="middle" font-size="7" fill="white" font-weight="700">cls</text>
+        <text x="195" y="103" text-anchor="middle" font-size="7" fill="#d97706">+ 1 [CLS] token = 197 total</text>
+
+        <!-- Arrow to transformer -->
+        <line x1="265" y1="60" x2="295" y2="60" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a1)"/>
+
+        <!-- Transformer encoder -->
+        <rect x="300" y="25" width="130" height="70" rx="6" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+        <text x="365" y="52" text-anchor="middle" font-size="10" fill="white" font-weight="700">Transformer</text>
+        <text x="365" y="65" text-anchor="middle" font-size="8" fill="#bfdbfe">12 encoder layers</text>
+        <text x="365" y="78" text-anchor="middle" font-size="8" fill="#bfdbfe">(self-attention + MLP)</text>
+
+        <!-- Arrow to output -->
+        <line x1="435" y1="60" x2="465" y2="60" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a1)"/>
+
+        <!-- CLS output -->
+        <rect x="470" y="35" width="55" height="18" rx="9" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+        <text x="497" y="47" text-anchor="middle" font-size="7" fill="white" font-weight="600">[CLS] out</text>
+
+        <line x1="528" y1="44" x2="545" y2="44" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a1)"/>
+
+        <!-- FC head -->
+        <rect x="550" y="30" width="55" height="30" rx="4" fill="#ef4444" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="577" y="44" text-anchor="middle" font-size="7" fill="white" font-weight="600">MLP Head</text>
+        <text x="577" y="54" text-anchor="middle" font-size="7" fill="#fecaca">1000 classes</text>
+
+        <text x="577" y="80" text-anchor="middle" font-size="8" fill="#991b1b" font-weight="600">"golden retriever"</text>
+
+        <defs><marker id="vit-a1" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 2: ARCHITECTURE -->
+  <section>
+    <h2>2 &mdash; Architecture Overview</h2>
+
+    <p>ViT is remarkably simple compared to CNNs. There are no pooling layers, no convolutions (except one for patch embedding), and no multi-scale feature maps. It's just: split into patches, embed, add position info, and run through a standard Transformer encoder.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Phase labels -->
+        <rect x="10" y="10" width="180" height="230" rx="8" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.5"/>
+        <text x="100" y="30" text-anchor="middle" font-weight="700" font-size="11" fill="#7c3aed">PATCH EMBEDDING</text>
+
+        <rect x="200" y="10" width="400" height="230" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+        <text x="400" y="30" text-anchor="middle" font-weight="700" font-size="11" fill="#2563eb">TRANSFORMER ENCODER (x12)</text>
+
+        <rect x="610" y="10" width="140" height="230" rx="8" fill="#fffbeb" stroke="#fde68a" stroke-width="1.5"/>
+        <text x="680" y="30" text-anchor="middle" font-weight="700" font-size="11" fill="#d97706">CLASSIFICATION HEAD</text>
+
+        <!-- Image input -->
+        <rect x="25" y="55" width="60" height="60" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <line x1="45" y1="55" x2="45" y2="115" stroke="#6366f1" opacity="0.2"/>
+        <line x1="65" y1="55" x2="65" y2="115" stroke="#6366f1" opacity="0.2"/>
+        <line x1="25" y1="75" x2="85" y2="75" stroke="#6366f1" opacity="0.2"/>
+        <line x1="25" y1="95" x2="85" y2="95" stroke="#6366f1" opacity="0.2"/>
+        <text x="55" y="88" text-anchor="middle" font-size="7" fill="#4338ca">224x224</text>
+        <text x="55" y="130" text-anchor="middle" font-size="7" fill="#57534e">Input</text>
+
+        <!-- Linear projection -->
+        <rect x="100" y="55" width="75" height="60" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="137" y="75" text-anchor="middle" font-size="8" fill="white" font-weight="600">Linear</text>
+        <text x="137" y="87" text-anchor="middle" font-size="8" fill="white" font-weight="600">Projection</text>
+        <text x="137" y="100" text-anchor="middle" font-size="7" fill="#ddd6fe">16x16 &rarr; 768d</text>
+        <text x="137" y="130" text-anchor="middle" font-size="7" fill="#57534e">Patch Embed</text>
+        <line x1="88" y1="85" x2="100" y2="85" stroke="#57534e" stroke-width="1"/>
+
+        <!-- Position embeddings -->
+        <rect x="30" y="150" width="65" height="30" rx="4" fill="#a78bfa" stroke="#8b5cf6" stroke-width="1"/>
+        <text x="62" y="169" text-anchor="middle" font-size="7" fill="white" font-weight="600">Pos Embed</text>
+        <text x="62" y="196" text-anchor="middle" font-size="7" fill="#7c3aed">197 x 768</text>
+
+        <!-- CLS token -->
+        <rect x="110" y="150" width="55" height="30" rx="15" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+        <text x="137" y="169" text-anchor="middle" font-size="7" fill="white" font-weight="600">[CLS] token</text>
+        <text x="137" y="196" text-anchor="middle" font-size="7" fill="#d97706">1 x 768</text>
+
+        <!-- Add arrows pointing to sequence -->
+        <line x1="137" y1="118" x2="137" y2="148" stroke="#57534e" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="62" y1="148" x2="62" y2="140" stroke="#57534e" stroke-width="1" stroke-dasharray="3,2"/>
+
+        <!-- Arrow to transformer -->
+        <line x1="180" y1="85" x2="215" y2="85" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a2)"/>
+
+        <!-- Transformer blocks -->
+        <!-- Block 1: Layer Norm + MSA -->
+        <rect x="220" y="50" width="80" height="40" rx="4" fill="#93c5fd" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="260" y="68" text-anchor="middle" font-size="8" fill="#1e3a8a" font-weight="600">Layer Norm</text>
+        <text x="260" y="80" text-anchor="middle" font-size="7" fill="#1e40af">+ Multi-Head</text>
+
+        <!-- Skip connection around MSA -->
+        <line x1="220" y1="45" x2="310" y2="45" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="265" y="42" text-anchor="middle" font-size="7" fill="#22c55e" font-weight="600">+ residual</text>
+
+        <rect x="310" y="50" width="75" height="40" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="2"/>
+        <text x="347" y="68" text-anchor="middle" font-size="8" fill="white" font-weight="700">Self-Attn</text>
+        <text x="347" y="80" text-anchor="middle" font-size="7" fill="#bfdbfe">12 heads</text>
+        <line x1="303" y1="70" x2="310" y2="70" stroke="#3b82f6" stroke-width="1.5"/>
+
+        <line x1="388" y1="70" x2="395" y2="70" stroke="#57534e" stroke-width="1.5"/>
+        <circle cx="400" cy="70" r="8" fill="#22c55e" stroke="#16a34a" stroke-width="1"/>
+        <text x="400" y="73" text-anchor="middle" font-size="10" fill="white" font-weight="700">+</text>
+
+        <!-- Block 2: Layer Norm + MLP -->
+        <rect x="220" y="120" width="80" height="40" rx="4" fill="#93c5fd" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="260" y="138" text-anchor="middle" font-size="8" fill="#1e3a8a" font-weight="600">Layer Norm</text>
+        <text x="260" y="150" text-anchor="middle" font-size="7" fill="#1e40af">+ Feed-fwd</text>
+
+        <!-- Skip connection around MLP -->
+        <line x1="220" y1="115" x2="310" y2="115" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="265" y="112" text-anchor="middle" font-size="7" fill="#22c55e" font-weight="600">+ residual</text>
+
+        <rect x="310" y="120" width="75" height="40" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+        <text x="347" y="138" text-anchor="middle" font-size="8" fill="white" font-weight="700">MLP</text>
+        <text x="347" y="150" text-anchor="middle" font-size="7" fill="#bfdbfe">768&rarr;3072&rarr;768</text>
+        <line x1="303" y1="140" x2="310" y2="140" stroke="#3b82f6" stroke-width="1.5"/>
+
+        <line x1="388" y1="140" x2="395" y2="140" stroke="#57534e" stroke-width="1.5"/>
+        <circle cx="400" cy="140" r="8" fill="#22c55e" stroke="#16a34a" stroke-width="1"/>
+        <text x="400" y="143" text-anchor="middle" font-size="10" fill="white" font-weight="700">+</text>
+
+        <!-- Vertical connections -->
+        <line x1="400" y1="80" x2="400" y2="95" stroke="#57534e" stroke-width="1"/>
+        <line x1="400" y1="95" x2="220" y2="95" stroke="#57534e" stroke-width="1"/>
+        <line x1="220" y1="95" x2="220" y2="120" stroke="#57534e" stroke-width="1"/>
+
+        <!-- x12 annotation -->
+        <rect x="420" y="80" width="35" height="55" rx="4" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="437" y="112" text-anchor="middle" font-size="9" fill="#2563eb" font-weight="700">&times;12</text>
+
+        <!-- Arrow from repeat to output -->
+        <line x1="458" y1="105" x2="470" y2="105" stroke="#57534e" stroke-width="1"/>
+
+        <!-- Layer norm -->
+        <rect x="475" y="90" width="65" height="30" rx="4" fill="#93c5fd" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="507" y="109" text-anchor="middle" font-size="8" fill="#1e3a8a" font-weight="600">Layer Norm</text>
+
+        <!-- Arrow -->
+        <line x1="543" y1="105" x2="558" y2="105" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Extract CLS -->
+        <rect x="563" y="85" width="35" height="40" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+        <text x="580" y="103" text-anchor="middle" font-size="7" fill="white" font-weight="700">[CLS]</text>
+        <text x="580" y="116" text-anchor="middle" font-size="6" fill="#fef3c7">768d</text>
+
+        <!-- Arrow to head -->
+        <line x1="600" y1="105" x2="628" y2="105" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a2)"/>
+
+        <!-- MLP head -->
+        <rect x="633" y="70" width="100" height="70" rx="6" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+        <text x="683" y="95" text-anchor="middle" font-size="9" fill="white" font-weight="700">MLP Head</text>
+        <text x="683" y="110" text-anchor="middle" font-size="8" fill="#fef3c7">768 &rarr; 1000</text>
+        <text x="683" y="130" text-anchor="middle" font-size="8" fill="#fef3c7">+ softmax</text>
+
+        <defs><marker id="vit-a2" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 3: LAYER-BY-LAYER -->
+  <section>
+    <h2>3 &mdash; Layer-by-Layer Walkthrough</h2>
+
+    <p>Let's trace a single <span class="tensor">224 &times; 224 &times; 3</span> image through ViT-Base/16.</p>
+
+    <h3><span class="step-num purple">1</span> Patch Embedding</h3>
+
+    <div class="layer-card embed">
+      <div class="layer-header">
+        <h4>Split Image into Patches</h4>
+        <div class="shapes"><span class="tensor">224&times;224&times;3</span> &rarr; <span class="tensor">196 &times; 768</span></div>
+      </div>
+      <p>The image is divided into a grid of non-overlapping <span class="tensor">16&times;16</span> patches. Each patch is <span class="tensor">16&times;16&times;3 = 768</span> values. With a 224&times;224 image, this gives <span class="tensor">14&times;14 = 196</span> patches.</p>
+      <p>Each 768-value patch is linearly projected to a 768-dimensional embedding using a learned weight matrix. In practice, this is implemented as a single <span class="tensor">16&times;16</span> convolution with stride 16 and 768 output channels — mathematically identical to flattening + linear projection, but more efficient.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Image grid -->
+          <text x="55" y="15" text-anchor="middle" font-size="9" fill="#57534e" font-weight="600">224 x 224 image</text>
+          <rect x="10" y="22" width="90" height="90" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <!-- Grid of patches -->
+          <line x1="32" y1="22" x2="32" y2="112" stroke="#6366f1" opacity="0.25"/><line x1="55" y1="22" x2="55" y2="112" stroke="#6366f1" opacity="0.25"/><line x1="77" y1="22" x2="77" y2="112" stroke="#6366f1" opacity="0.25"/>
+          <line x1="10" y1="44" x2="100" y2="44" stroke="#6366f1" opacity="0.25"/><line x1="10" y1="67" x2="100" y2="67" stroke="#6366f1" opacity="0.25"/><line x1="10" y1="89" x2="100" y2="89" stroke="#6366f1" opacity="0.25"/>
+          <!-- Highlight patch -->
+          <rect x="10" y="22" width="22" height="22" fill="#8b5cf6" opacity="0.5" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="21" y="36" text-anchor="middle" font-size="6" fill="white" font-weight="700">p1</text>
+          <rect x="32" y="22" width="23" height="22" fill="#8b5cf6" opacity="0.3"/><text x="43" y="36" text-anchor="middle" font-size="6" fill="#7c3aed">p2</text>
+
+          <text x="55" y="130" text-anchor="middle" font-size="7" fill="#57534e">14 x 14 = 196 patches</text>
+
+          <!-- Arrow -->
+          <line x1="108" y1="67" x2="140" y2="67" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a3)"/>
+          <text x="124" y="60" text-anchor="middle" font-size="7" fill="#57534e">flatten</text>
+
+          <!-- Flattened patches -->
+          <text x="210" y="15" text-anchor="middle" font-size="9" fill="#7c3aed" font-weight="600">Each patch: 16x16x3 = 768 values</text>
+          <rect x="148" y="27" width="125" height="14" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/><text x="210" y="37" text-anchor="middle" font-size="6" fill="white">patch 1: [r,g,b, r,g,b, ..., r,g,b]  768 vals</text>
+          <rect x="148" y="44" width="125" height="14" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1" opacity="0.8"/><text x="210" y="54" text-anchor="middle" font-size="6" fill="white">patch 2: [r,g,b, r,g,b, ..., r,g,b]  768 vals</text>
+          <rect x="148" y="61" width="125" height="14" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1" opacity="0.6"/><text x="210" y="71" text-anchor="middle" font-size="6" fill="white">patch 3: [r,g,b, ...]</text>
+          <text x="210" y="86" font-size="8" fill="#7c3aed">&vellip;</text>
+          <rect x="148" y="92" width="125" height="14" rx="2" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1" opacity="0.4"/><text x="210" y="102" text-anchor="middle" font-size="6" fill="white">patch 196: [r,g,b, ...]</text>
+
+          <!-- Arrow: Linear projection -->
+          <line x1="280" y1="67" x2="315" y2="67" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a3)"/>
+          <text x="297" y="55" text-anchor="middle" font-size="7" fill="#57534e">linear</text>
+          <text x="297" y="80" text-anchor="middle" font-size="7" fill="#57534e">768x768</text>
+
+          <!-- Embedded patches -->
+          <text x="400" y="15" text-anchor="middle" font-size="9" fill="#3b82f6" font-weight="600">Patch embeddings (196 x 768)</text>
+          <rect x="325" y="27" width="150" height="14" rx="2" fill="#3b82f6" stroke="#2563eb" stroke-width="1"/><text x="400" y="37" text-anchor="middle" font-size="6" fill="white">e1: 768-dim embedding</text>
+          <rect x="325" y="44" width="150" height="14" rx="2" fill="#3b82f6" stroke="#2563eb" stroke-width="1" opacity="0.8"/><text x="400" y="54" text-anchor="middle" font-size="6" fill="white">e2: 768-dim embedding</text>
+          <rect x="325" y="61" width="150" height="14" rx="2" fill="#3b82f6" stroke="#2563eb" stroke-width="1" opacity="0.6"/><text x="400" y="71" text-anchor="middle" font-size="6" fill="white">e3: 768-dim embedding</text>
+          <text x="400" y="86" font-size="8" fill="#3b82f6">&vellip;</text>
+          <rect x="325" y="92" width="150" height="14" rx="2" fill="#3b82f6" stroke="#2563eb" stroke-width="1" opacity="0.4"/><text x="400" y="102" text-anchor="middle" font-size="6" fill="white">e196: 768-dim embedding</text>
+
+          <!-- Add CLS -->
+          <rect x="325" y="115" width="150" height="16" rx="8" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="400" y="127" text-anchor="middle" font-size="7" fill="white" font-weight="600">[CLS] token prepended &rarr; 197 x 768</text>
+
+          <!-- Pos embed annotation -->
+          <text x="400" y="150" text-anchor="middle" font-size="8" fill="#7c3aed">+ positional embeddings (197 x 768) added element-wise</text>
+
+          <defs><marker id="vit-a3" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card embed">
+      <div class="layer-header">
+        <h4>[CLS] Token and Positional Embeddings</h4>
+        <div class="shapes"><span class="tensor">196&times;768</span> &rarr; <span class="tensor">197&times;768</span></div>
+      </div>
+      <p>A special learnable <strong>[CLS] token</strong> is prepended to the sequence (borrowed from BERT). After passing through all Transformer layers, the [CLS] token's output is used as the image representation for classification — it aggregates information from all patches via self-attention.</p>
+      <p><strong>Positional embeddings</strong> — 197 learnable 768-dimensional vectors — are added element-wise to tell the Transformer where each patch came from. Without these, the model wouldn't know that patch 1 is top-left and patch 196 is bottom-right (Transformers are permutation-invariant by default).</p>
+      <div class="callout-purple callout">
+        <strong>Why learned positions, not fixed?</strong> ViT uses learned positional embeddings rather than the sinusoidal encodings from the original Transformer. The authors found learned positions worked equally well and are simpler. Interestingly, the learned positions end up encoding a 2D spatial pattern — nearby patches learn similar position embeddings.
+      </div>
+    </div>
+
+    <h3><span class="step-num blue">2</span> Transformer Encoder</h3>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Multi-Head Self-Attention (MSA)</h4>
+        <div class="shapes"><span class="tensor">197&times;768</span> &rarr; <span class="tensor">197&times;768</span></div>
+      </div>
+      <p>Each token (patch embedding) attends to every other token. This is where the magic happens — a patch showing a dog's ear can "look at" a patch showing a dog's nose and a patch showing a tail, connecting distant image regions that a CNN with its limited receptive field might miss.</p>
+      <p>With 12 attention heads, each head operates on <span class="tensor">768/12 = 64</span> dimensions. Each head computes <strong>Q</strong> (query), <strong>K</strong> (key), <strong>V</strong> (value) matrices, then attention weights = softmax(QK<sup>T</sup>/&radic;64). The outputs of all 12 heads are concatenated and projected back to 768 dimensions.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 150" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="300" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Multi-Head Self-Attention</text>
+
+          <!-- Input -->
+          <rect x="15" y="55" width="55" height="35" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="42" y="70" text-anchor="middle" font-size="7" fill="white" font-weight="600">197x768</text>
+          <text x="42" y="82" text-anchor="middle" font-size="7" fill="#bfdbfe">tokens</text>
+
+          <!-- Split into Q, K, V -->
+          <line x1="73" y1="72" x2="110" y2="72" stroke="#57534e" stroke-width="1.5"/>
+          <circle cx="100" cy="72" r="4" fill="#57534e"/>
+
+          <!-- Q -->
+          <line x1="100" y1="68" x2="100" y2="35" stroke="#ef4444" stroke-width="1.5"/>
+          <line x1="100" y1="35" x2="138" y2="35" stroke="#ef4444" stroke-width="1.5"/>
+          <rect x="140" y="25" width="55" height="22" rx="3" fill="#ef4444" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="167" y="40" text-anchor="middle" font-size="8" fill="white" font-weight="700">Q</text>
+          <text x="167" y="55" text-anchor="middle" font-size="6" fill="#ef4444">197x64</text>
+
+          <!-- K -->
+          <rect x="140" y="62" width="55" height="22" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="167" y="77" text-anchor="middle" font-size="8" fill="white" font-weight="700">K</text>
+          <text x="167" y="92" text-anchor="middle" font-size="6" fill="#f59e0b">197x64</text>
+
+          <!-- V -->
+          <line x1="100" y1="76" x2="100" y2="110" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="100" y1="110" x2="138" y2="110" stroke="#3b82f6" stroke-width="1.5"/>
+          <rect x="140" y="100" width="55" height="22" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="167" y="115" text-anchor="middle" font-size="8" fill="white" font-weight="700">V</text>
+          <text x="167" y="130" text-anchor="middle" font-size="6" fill="#3b82f6">197x64</text>
+
+          <!-- QK^T -->
+          <line x1="198" y1="36" x2="230" y2="50" stroke="#57534e" stroke-width="1"/>
+          <line x1="198" y1="73" x2="230" y2="55" stroke="#57534e" stroke-width="1"/>
+          <rect x="233" y="35" width="75" height="32" rx="3" fill="#fecaca" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="270" y="49" text-anchor="middle" font-size="7" fill="#991b1b" font-weight="600">QK^T / &radic;64</text>
+          <text x="270" y="60" text-anchor="middle" font-size="6" fill="#991b1b">197x197</text>
+
+          <!-- Softmax -->
+          <line x1="312" y1="51" x2="325" y2="51" stroke="#57534e" stroke-width="1"/>
+          <rect x="328" y="38" width="55" height="26" rx="3" fill="#f97316" stroke="#ea580c" stroke-width="1.5"/>
+          <text x="355" y="55" text-anchor="middle" font-size="7" fill="white" font-weight="600">softmax</text>
+
+          <!-- x V -->
+          <line x1="386" y1="51" x2="400" y2="51" stroke="#57534e" stroke-width="1"/>
+          <line x1="198" y1="111" x2="400" y2="111" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="400" y1="111" x2="400" y2="62" stroke="#3b82f6" stroke-width="1"/>
+
+          <rect x="405" y="42" width="20" height="20" rx="10" fill="#57534e"/>
+          <text x="415" y="56" text-anchor="middle" font-size="10" fill="white">&times;</text>
+
+          <!-- Output per head -->
+          <line x1="428" y1="52" x2="445" y2="52" stroke="#57534e" stroke-width="1"/>
+          <rect x="448" y="38" width="55" height="28" rx="3" fill="#22c55e" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="475" y="52" text-anchor="middle" font-size="7" fill="white" font-weight="600">Head out</text>
+          <text x="475" y="62" text-anchor="middle" font-size="6" fill="#dcfce7">197x64</text>
+
+          <!-- x12 heads -->
+          <text x="475" y="80" text-anchor="middle" font-size="7" fill="#16a34a" font-weight="600">&times;12 heads</text>
+
+          <!-- Concat + project -->
+          <line x1="506" y1="52" x2="520" y2="52" stroke="#57534e" stroke-width="1"/>
+          <rect x="523" y="33" width="60" height="38" rx="3" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="553" y="48" text-anchor="middle" font-size="7" fill="white" font-weight="600">Concat</text>
+          <text x="553" y="60" text-anchor="middle" font-size="7" fill="#ddd6fe">+ Linear</text>
+
+          <text x="553" y="85" text-anchor="middle" font-size="7" fill="#7c3aed">12&times;64 = 768</text>
+
+          <text x="300" y="145" text-anchor="middle" font-size="8" fill="#57534e">Every patch can attend to every other patch &mdash; global receptive field from layer 1</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>MLP (Feed-Forward Network)</h4>
+        <div class="shapes"><span class="tensor">197&times;768</span> &rarr; <span class="tensor">197&times;768</span></div>
+      </div>
+      <p>After self-attention, each token independently passes through a two-layer MLP: expand to 4&times; the embedding dimension (768 &rarr; 3072), apply GELU activation, then project back (3072 &rarr; 768). This is where the model learns non-linear feature transformations — self-attention mixes information between tokens, and the MLP processes it.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 500 70" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <rect x="10" y="15" width="60" height="35" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="40" y="36" text-anchor="middle" font-size="8" fill="white" font-weight="600">768</text>
+
+          <line x1="74" y1="32" x2="100" y2="32" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a4)"/>
+
+          <rect x="105" y="10" width="85" height="45" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+          <text x="147" y="28" text-anchor="middle" font-size="8" fill="white" font-weight="600">Linear</text>
+          <text x="147" y="42" text-anchor="middle" font-size="7" fill="#bfdbfe">768 &rarr; 3072</text>
+
+          <line x1="194" y1="32" x2="215" y2="32" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a4)"/>
+
+          <rect x="220" y="15" width="55" height="35" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="247" y="36" text-anchor="middle" font-size="8" fill="white" font-weight="600">GELU</text>
+
+          <line x1="279" y1="32" x2="300" y2="32" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a4)"/>
+
+          <rect x="305" y="10" width="85" height="45" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+          <text x="347" y="28" text-anchor="middle" font-size="8" fill="white" font-weight="600">Linear</text>
+          <text x="347" y="42" text-anchor="middle" font-size="7" fill="#bfdbfe">3072 &rarr; 768</text>
+
+          <line x1="394" y1="32" x2="420" y2="32" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a4)"/>
+
+          <rect x="425" y="15" width="60" height="35" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="455" y="36" text-anchor="middle" font-size="8" fill="white" font-weight="600">768</text>
+
+          <text x="247" y="65" text-anchor="middle" font-size="8" fill="#57534e">Applied independently to each of 197 tokens</text>
+
+          <defs><marker id="vit-a4" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Residual Connections and Layer Normalization</h4>
+        <div class="shapes">Applied around both MSA and MLP</div>
+      </div>
+      <p>Just like ResNet's skip connections, ViT adds the input of each sub-layer to its output: <code>x = x + MSA(LN(x))</code> and <code>x = x + MLP(LN(x))</code>. ViT uses <strong>Pre-Norm</strong> (Layer Norm before the sub-layer), which was found to train more stably than Post-Norm used in the original Transformer.</p>
+    </div>
+
+    <h3><span class="step-num amber">3</span> Classification Head</h3>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Extract [CLS] Token + MLP Head</h4>
+        <div class="shapes"><span class="tensor">768</span> &rarr; <span class="tensor">1000</span></div>
+      </div>
+      <p>After 12 encoder layers, the [CLS] token (position 0) has attended to all 196 patch tokens repeatedly. It now encodes a global representation of the entire image. A final Layer Norm and an MLP head (one hidden layer during pre-training, single linear layer during fine-tuning) maps this 768-dimensional vector to class logits.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 4: CNN vs ViT -->
+  <section>
+    <h2>4 &mdash; CNN vs. ViT: What Changed</h2>
+
+    <div class="layer-card">
+      <h4>Receptive Field</h4>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 560 100" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- CNN: local receptive field -->
+          <text x="130" y="15" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="600">CNN (ResNet)</text>
+          <rect x="30" y="25" width="80" height="60" rx="3" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+          <!-- Small kernel highlight -->
+          <rect x="50" y="40" width="18" height="18" fill="#ef4444" opacity="0.4" stroke="#ef4444" stroke-width="1.5"/>
+          <!-- Lines showing limited reach -->
+          <line x1="59" y1="49" x2="40" y2="35" stroke="#ef4444" stroke-width="1" stroke-dasharray="2,2"/>
+          <line x1="59" y1="49" x2="78" y2="35" stroke="#ef4444" stroke-width="1" stroke-dasharray="2,2"/>
+          <text x="130" y="45" font-size="7" fill="#991b1b">3x3 kernel: sees</text>
+          <text x="130" y="55" font-size="7" fill="#991b1b">only neighbors</text>
+          <text x="130" y="70" font-size="7" fill="#991b1b">Need many layers</text>
+          <text x="130" y="80" font-size="7" fill="#991b1b">for global context</text>
+
+          <!-- Divider -->
+          <line x1="260" y1="20" x2="260" y2="90" stroke="#e7e5e4" stroke-width="1"/>
+
+          <!-- ViT: global receptive field -->
+          <text x="410" y="15" text-anchor="middle" font-size="9" fill="#22c55e" font-weight="600">ViT (Transformer)</text>
+          <rect x="310" y="25" width="80" height="60" rx="3" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+          <!-- Patch highlighted -->
+          <rect x="330" y="40" width="18" height="18" fill="#22c55e" opacity="0.4" stroke="#22c55e" stroke-width="1.5"/>
+          <!-- Lines to ALL other patches -->
+          <line x1="339" y1="49" x2="315" y2="30" stroke="#22c55e" stroke-width="0.8"/>
+          <line x1="339" y1="49" x2="350" y2="30" stroke="#22c55e" stroke-width="0.8"/>
+          <line x1="339" y1="49" x2="380" y2="35" stroke="#22c55e" stroke-width="0.8"/>
+          <line x1="339" y1="49" x2="315" y2="75" stroke="#22c55e" stroke-width="0.8"/>
+          <line x1="339" y1="49" x2="380" y2="75" stroke="#22c55e" stroke-width="0.8"/>
+          <line x1="339" y1="49" x2="350" y2="80" stroke="#22c55e" stroke-width="0.8"/>
+          <text x="410" y="45" font-size="7" fill="#166534">Self-attention: sees</text>
+          <text x="410" y="55" font-size="7" fill="#166534">ALL patches at once</text>
+          <text x="410" y="70" font-size="7" fill="#166534">Global context from</text>
+          <text x="410" y="80" font-size="7" fill="#166534">very first layer</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card">
+      <h4>Inductive Bias Trade-off</h4>
+      <p>CNNs have strong inductive biases: locality (nearby pixels matter more), translation equivariance (a cat is a cat regardless of position), and hierarchical features (edges &rarr; textures &rarr; parts &rarr; objects). ViT has almost <em>none</em> of these — it must learn spatial structure entirely from data.</p>
+      <p>This means ViT needs <em>much more data</em> to train well. On ImageNet alone (1.2M images), ViT underperforms ResNet. But when pre-trained on JFT-300M (300M images) or ImageNet-21K (14M images), ViT surpasses CNNs on every benchmark — with fewer computational resources at inference.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 5: TENSOR SUMMARY -->
+  <section>
+    <h2>5 &mdash; Tensor Shape Summary</h2>
+    <p>For ViT-Base/16 with a 224&times;224 input:</p>
+    <table class="summary-table">
+      <tr><th>Stage</th><th>Operation</th><th>Output Shape</th><th>Notes</th></tr>
+      <tr><td>Input</td><td>Image</td><td><span class="tensor">224&times;224&times;3</span></td><td>RGB, normalized</td></tr>
+      <tr><td>Patch Embed</td><td>16&times;16 conv, stride 16</td><td><span class="tensor">196&times;768</span></td><td>14&times;14 patches</td></tr>
+      <tr><td>Prepend [CLS]</td><td>Concat learned token</td><td><span class="tensor">197&times;768</span></td><td>+1 classification token</td></tr>
+      <tr><td>+ Pos Embed</td><td>Element-wise add</td><td><span class="tensor">197&times;768</span></td><td>Learned positions</td></tr>
+      <tr><td rowspan="2">Encoder (&times;12)</td><td>Multi-Head Self-Attention</td><td><span class="tensor">197&times;768</span></td><td>12 heads, 64 dim each</td></tr>
+      <tr><td>MLP</td><td><span class="tensor">197&times;768</span></td><td>768&rarr;3072&rarr;768</td></tr>
+      <tr><td>Head</td><td>Extract [CLS] + Linear</td><td><span class="tensor">1000</span></td><td>Softmax probabilities</td></tr>
+    </table>
+  </section>
+
+  <!-- SECTION 6: RESULTS -->
+  <section>
+    <h2>6 &mdash; Results</h2>
+    <table class="summary-table">
+      <tr><th>Model</th><th>Pre-training Data</th><th>ImageNet Top-1</th><th>Params</th></tr>
+      <tr><td>ResNet-152 (baseline)</td><td>ImageNet-1K</td><td>78.3%</td><td>60M</td></tr>
+      <tr><td>ViT-B/16</td><td>ImageNet-1K</td><td>77.9%</td><td>86M</td></tr>
+      <tr><td>ViT-B/16</td><td>ImageNet-21K</td><td>84.0%</td><td>86M</td></tr>
+      <tr><td>ViT-L/16</td><td>JFT-300M</td><td>87.8%</td><td>307M</td></tr>
+      <tr><td>ViT-H/14</td><td>JFT-300M</td><td><strong>88.6%</strong></td><td>632M</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>Legacy:</strong> ViT proved that Transformers can match or beat CNNs on vision tasks — given enough data. It spawned an explosion of vision Transformer variants (DeiT, Swin, BEiT, MAE) and became the de facto image encoder in multimodal models like CLIP, DALL-E, SAM, and Stable Diffusion.
+    </div>
+  </section>
+
+  <!-- SECTION 7: REFERENCES -->
+  <section>
+    <h2>7 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2010.11929">An Image is Worth 16x16 Words</a> — Dosovitskiy et al., 2020 (original paper)</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2012.12877">DeiT: Training Data-Efficient Image Transformers</a> — Touvron et al., 2020</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2103.14030">Swin Transformer: Hierarchical Vision Transformer</a> — Liu et al., 2021</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/google-research/vision_transformer">Official Google Research Implementation</a></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>

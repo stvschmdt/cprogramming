@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DETR Family Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root { --bg: #fafaf9; --text: #1c1917; --muted: #57534e; --accent: #b45309; --border: #e7e5e4; --card-bg: #ffffff; --highlight-bg: #fffbeb; --highlight-border: #d97706; --code-bg: #f5f5f4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); } nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; } .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; } .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #8b5cf6; } .callout-purple strong { color: #7c3aed; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.backbone { border-left-color: #3b82f6; } .layer-card.decoder { border-left-color: #8b5cf6; } .layer-card.head { border-left-color: #f59e0b; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; } .layer-card p:last-child { margin-bottom: 0; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.blue { background: #3b82f6; } .step-num.purple { background: #8b5cf6; } .step-num.amber { background: #f59e0b; }
+    .model-section { background: var(--card-bg); border: 2px solid var(--border); border-radius: 10px; padding: 2rem 1.5rem; margin: 2rem 0; }
+    .model-section h3 { margin-top: 0; font-size: 1.3rem; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / DETR Family</div>
+    <h1>The DETR Family: From Transformers to Real-Time Detection</h1>
+    <div class="subtitle">DETR &rarr; RT-DETR &rarr; RF-DETR</div>
+    <div class="meta-tags">
+      <span>Object Detection</span>
+      <span>Transformer</span>
+      <span>Set Prediction</span>
+      <span>No NMS</span>
+      <span>No Anchors</span>
+    </div>
+    <div class="paper-link">
+      DETR: <a href="https://arxiv.org/abs/2005.12872">arXiv:2005.12872</a> &nbsp;|&nbsp;
+      RT-DETR: <a href="https://arxiv.org/abs/2304.08069">arXiv:2304.08069</a> &nbsp;|&nbsp;
+      RF-DETR: <a href="https://arxiv.org/abs/2511.09554">arXiv:2511.09554</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1 -->
+  <section>
+    <h2>1 &mdash; The Problem &amp; Why DETR Matters</h2>
+
+    <p>Object detection traditionally requires a messy pipeline: a backbone extracts features, a neck fuses scales, region proposals or anchor boxes generate candidates, and Non-Maximum Suppression (NMS) removes duplicates. Every stage has hand-designed hyperparameters.</p>
+
+    <p><strong>DETR's radical idea:</strong> treat object detection as a <em>direct set prediction problem</em>. Use a Transformer to predict a fixed set of detections in parallel — no anchors, no NMS, no hand-designed post-processing. The model learns to output exactly one prediction per object through a bipartite matching loss.</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 650 130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="325" y="15" text-anchor="middle" font-size="11" fill="#57534e" font-weight="600">Traditional Pipeline vs. DETR</text>
+
+        <!-- Traditional -->
+        <text x="325" y="35" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="600">Traditional (Faster R-CNN, YOLO)</text>
+        <rect x="20" y="42" width="60" height="22" rx="3" fill="#fecaca" stroke="#ef4444" stroke-width="1"/><text x="50" y="57" text-anchor="middle" font-size="7" fill="#991b1b">Backbone</text>
+        <text x="88" y="56" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="98" y="42" width="50" height="22" rx="3" fill="#fecaca" stroke="#ef4444" stroke-width="1"/><text x="123" y="57" text-anchor="middle" font-size="7" fill="#991b1b">FPN</text>
+        <text x="156" y="56" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="166" y="42" width="60" height="22" rx="3" fill="#fecaca" stroke="#ef4444" stroke-width="1"/><text x="196" y="57" text-anchor="middle" font-size="7" fill="#991b1b">Anchors</text>
+        <text x="234" y="56" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="244" y="42" width="55" height="22" rx="3" fill="#fecaca" stroke="#ef4444" stroke-width="1"/><text x="271" y="57" text-anchor="middle" font-size="7" fill="#991b1b">RPN</text>
+        <text x="307" y="56" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="317" y="42" width="55" height="22" rx="3" fill="#fecaca" stroke="#ef4444" stroke-width="1"/><text x="344" y="57" text-anchor="middle" font-size="7" fill="#991b1b">RoI Pool</text>
+        <text x="380" y="56" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="390" y="42" width="50" height="22" rx="3" fill="#fecaca" stroke="#ef4444" stroke-width="1"/><text x="415" y="57" text-anchor="middle" font-size="7" fill="#991b1b">Head</text>
+        <text x="448" y="56" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="458" y="42" width="50" height="22" rx="3" fill="#ef4444" stroke="#dc2626" stroke-width="1.5"/><text x="483" y="57" text-anchor="middle" font-size="7" fill="white" font-weight="600">NMS</text>
+        <text x="560" y="56" font-size="8" fill="#991b1b" font-weight="600">7+ stages</text>
+
+        <!-- DETR -->
+        <text x="325" y="85" text-anchor="middle" font-size="9" fill="#22c55e" font-weight="600">DETR (end-to-end)</text>
+        <rect x="80" y="92" width="80" height="28" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/><text x="120" y="110" text-anchor="middle" font-size="8" fill="white" font-weight="600">Backbone</text>
+        <text x="170" y="109" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="182" y="92" width="110" height="28" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/><text x="237" y="110" text-anchor="middle" font-size="8" fill="white" font-weight="600">Transformer</text>
+        <text x="302" y="109" font-size="8" fill="#57534e">&rarr;</text>
+        <rect x="314" y="92" width="100" height="28" rx="4" fill="#22c55e" stroke="#16a34a" stroke-width="1.5"/><text x="364" y="110" text-anchor="middle" font-size="8" fill="white" font-weight="600">Set Prediction</text>
+        <text x="500" y="110" font-size="8" fill="#166534" font-weight="600">3 stages, no NMS!</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 2: DETR (Original) -->
+  <div class="model-section" style="border-color: #3b82f6;">
+  <section>
+    <h2>2 &mdash; DETR (Facebook AI, 2020)</h2>
+    <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">Carion et al. &mdash; <a href="https://arxiv.org/abs/2005.12872">arXiv:2005.12872</a></p>
+
+    <h3><span class="step-num blue">1</span> Backbone: CNN Feature Extraction</h3>
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>ResNet-50 Backbone</h4>
+        <div class="shapes"><span class="tensor">800&times;800&times;3</span> &rarr; <span class="tensor">25&times;25&times;2048</span></div>
+      </div>
+      <p>A standard ResNet-50 (see our <a href="resnet.html">ResNet walkthrough</a>) extracts features. The output from the last stage is a <span class="tensor">25&times;25&times;2048</span> feature map (for an 800&times;800 input). A 1&times;1 convolution reduces channels to 256, giving <span class="tensor">25&times;25&times;256</span>.</p>
+    </div>
+
+    <h3><span class="step-num blue">2</span> Positional Encoding + Flatten</h3>
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Spatial Positional Encoding</h4>
+        <div class="shapes"><span class="tensor">25&times;25&times;256</span> &rarr; <span class="tensor">625&times;256</span></div>
+      </div>
+      <p>The 2D feature map is flattened to a sequence of 625 tokens (25&times;25). Fixed sinusoidal 2D positional encodings are added so the Transformer knows where each token sits spatially. This is analogous to positional embeddings in ViT, but using the original Transformer's sine/cosine formulation extended to 2D.</p>
+    </div>
+
+    <h3><span class="step-num purple">3</span> Transformer Encoder</h3>
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>6 Encoder Layers</h4>
+        <div class="shapes"><span class="tensor">625&times;256</span> &rarr; <span class="tensor">625&times;256</span></div>
+      </div>
+      <p>Standard Transformer encoder with multi-head self-attention and feed-forward networks. Each image feature token attends to all others, building global context. After 6 layers, every spatial position has information from the entire image — crucial for reasoning about object relationships and removing duplicate detections.</p>
+    </div>
+
+    <h3><span class="step-num purple">4</span> Transformer Decoder + Object Queries</h3>
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>6 Decoder Layers with 100 Object Queries</h4>
+        <div class="shapes"><span class="tensor">100&times;256</span> (queries) + <span class="tensor">625&times;256</span> (memory)</div>
+      </div>
+      <p>This is DETR's most novel component. <strong>100 learned object queries</strong> — fixed-size set of 256-dimensional vectors — attend to the encoder output via cross-attention. Each query "specializes" in detecting one object. Through 6 decoder layers, queries compete for objects and learn to avoid predicting the same one.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 580 150" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Object queries -->
+          <rect x="10" y="20" width="100" height="110" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="60" y="40" text-anchor="middle" font-size="8" fill="white" font-weight="600">100 Object Queries</text>
+          <text x="60" y="55" text-anchor="middle" font-size="7" fill="#ddd6fe">(learned embeddings)</text>
+          <!-- Query slots -->
+          <rect x="20" y="65" width="80" height="10" rx="2" fill="#a78bfa" stroke="#8b5cf6" stroke-width="0.5"/><text x="60" y="73" text-anchor="middle" font-size="6" fill="white">query 1: "find object #1"</text>
+          <rect x="20" y="78" width="80" height="10" rx="2" fill="#a78bfa" stroke="#8b5cf6" stroke-width="0.5"/><text x="60" y="86" text-anchor="middle" font-size="6" fill="white">query 2: "find object #2"</text>
+          <rect x="20" y="91" width="80" height="10" rx="2" fill="#a78bfa" stroke="#8b5cf6" stroke-width="0.5" opacity="0.7"/><text x="60" y="99" text-anchor="middle" font-size="6" fill="white">query 3 ...</text>
+          <text x="60" y="118" text-anchor="middle" font-size="7" fill="#ddd6fe">&vellip; (100 total)</text>
+
+          <!-- Cross-attention -->
+          <line x1="115" y1="75" x2="165" y2="55" stroke="#8b5cf6" stroke-width="1.5"/>
+          <line x1="115" y1="75" x2="165" y2="75" stroke="#8b5cf6" stroke-width="1.5"/>
+          <line x1="115" y1="75" x2="165" y2="95" stroke="#8b5cf6" stroke-width="1.5"/>
+
+          <!-- Encoder memory -->
+          <rect x="170" y="20" width="120" height="110" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="230" y="40" text-anchor="middle" font-size="8" fill="white" font-weight="600">Encoder Memory</text>
+          <text x="230" y="55" text-anchor="middle" font-size="7" fill="#bfdbfe">625 image tokens</text>
+          <!-- Feature map visualization -->
+          <rect x="185" y="62" width="90" height="55" rx="3" fill="#60a5fa" stroke="#3b82f6" stroke-width="1"/>
+          <rect x="195" y="72" width="18" height="12" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+          <rect x="225" y="85" width="22" height="18" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+          <rect x="250" y="70" width="12" height="10" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+          <text x="230" y="128" text-anchor="middle" font-size="7" fill="#bfdbfe">cross-attention: queries look at image</text>
+
+          <!-- Arrow to predictions -->
+          <line x1="295" y1="75" x2="330" y2="75" stroke="#57534e" stroke-width="1.5" marker-end="url(#detr-a1)"/>
+
+          <!-- Predictions -->
+          <rect x="335" y="20" width="120" height="110" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="395" y="40" text-anchor="middle" font-size="8" fill="white" font-weight="600">Parallel Predictions</text>
+          <!-- Prediction 1: object found -->
+          <rect x="345" y="50" width="100" height="18" rx="2" fill="#22c55e" stroke="#16a34a" stroke-width="1"/>
+          <text x="395" y="62" text-anchor="middle" font-size="6" fill="white" font-weight="600">Q1: person (0.95) [x,y,w,h]</text>
+          <!-- Prediction 2: object found -->
+          <rect x="345" y="72" width="100" height="18" rx="2" fill="#22c55e" stroke="#16a34a" stroke-width="1"/>
+          <text x="395" y="84" text-anchor="middle" font-size="6" fill="white" font-weight="600">Q2: car (0.89) [x,y,w,h]</text>
+          <!-- Prediction 3: no object -->
+          <rect x="345" y="94" width="100" height="18" rx="2" fill="#9ca3af" stroke="#6b7280" stroke-width="1"/>
+          <text x="395" y="106" text-anchor="middle" font-size="6" fill="white">Q3: no object (background)</text>
+          <text x="395" y="128" text-anchor="middle" font-size="7" fill="#fef3c7">Most queries predict &empty; (no object)</text>
+
+          <!-- No NMS badge -->
+          <rect x="475" y="55" width="90" height="40" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+          <text x="520" y="72" text-anchor="middle" font-size="8" fill="#166534" font-weight="700">No NMS needed!</text>
+          <text x="520" y="85" text-anchor="middle" font-size="7" fill="#166534">1 query = 1 object</text>
+
+          <defs><marker id="detr-a1" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+      <div class="callout-blue callout">
+        <strong>Hungarian matching loss:</strong> During training, DETR uses the Hungarian algorithm to find the optimal one-to-one assignment between the 100 predictions and ground-truth objects. This bipartite matching ensures each ground-truth gets exactly one prediction — eliminating the need for NMS.
+      </div>
+    </div>
+
+    <h3>DETR Limitations</h3>
+    <div class="callout">
+      <strong>Slow convergence:</strong> DETR requires 500 epochs to train (vs. 36 for Faster R-CNN). <strong>Weak on small objects:</strong> Using only the final backbone feature map loses fine-grained detail. These limitations motivated the next generation.
+    </div>
+  </section>
+  </div>
+
+  <!-- SECTION 3: RT-DETR -->
+  <div class="model-section" style="border-color: #22c55e;">
+  <section>
+    <h2>3 &mdash; RT-DETR (Baidu, 2023)</h2>
+    <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">Zhao et al. &mdash; <a href="https://arxiv.org/abs/2304.08069">arXiv:2304.08069</a> &mdash; First real-time DETR</p>
+
+    <p>RT-DETR asked: can we make DETR <em>real-time</em>? The answer required three changes: a better backbone, an efficient hybrid encoder, and IoU-aware query selection.</p>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>HGNetv2 Backbone (or ResNet)</h4>
+        <div class="shapes">Multi-scale features: S3, S4, S5</div>
+      </div>
+      <p>RT-DETR uses a fast CNN backbone (HGNetv2) that outputs multi-scale feature maps — unlike DETR's single-scale approach. This gives access to fine-grained features for small objects (S3 at stride 8) alongside high-level features for large objects (S5 at stride 32).</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>Hybrid Encoder: Intra-Scale + Cross-Scale</h4>
+        <div class="shapes">Efficient multi-scale fusion</div>
+      </div>
+      <p>Instead of DETR's expensive all-to-all attention, RT-DETR uses a two-stage encoder: <strong>Attention-based Intra-Scale Modules (AISM)</strong> apply self-attention within each scale separately (much cheaper), then <strong>CNN-based Cross-Scale Fusion (CCFM)</strong> merges information across scales using efficient convolutions rather than attention.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 560 100" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Scale features -->
+          <rect x="10" y="10" width="45" height="25" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/><text x="32" y="26" text-anchor="middle" font-size="7" fill="white" font-weight="600">S3</text>
+          <rect x="10" y="40" width="45" height="25" rx="3" fill="#2563eb" stroke="#1d4ed8" stroke-width="1.5"/><text x="32" y="56" text-anchor="middle" font-size="7" fill="white" font-weight="600">S4</text>
+          <rect x="10" y="70" width="45" height="25" rx="3" fill="#1d4ed8" stroke="#1e3a8a" stroke-width="1.5"/><text x="32" y="86" text-anchor="middle" font-size="7" fill="white" font-weight="600">S5</text>
+
+          <!-- AISM blocks -->
+          <line x1="60" y1="22" x2="85" y2="22" stroke="#57534e" stroke-width="1"/>
+          <line x1="60" y1="52" x2="85" y2="52" stroke="#57534e" stroke-width="1"/>
+          <line x1="60" y1="82" x2="85" y2="82" stroke="#57534e" stroke-width="1"/>
+          <rect x="88" y="5" width="80" height="85" rx="4" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="128" y="20" text-anchor="middle" font-size="7" fill="#2563eb" font-weight="600">AISM</text>
+          <text x="128" y="32" text-anchor="middle" font-size="6" fill="#3b82f6">Self-attn within</text>
+          <text x="128" y="42" text-anchor="middle" font-size="6" fill="#3b82f6">each scale only</text>
+          <rect x="95" y="48" width="66" height="12" rx="2" fill="#93c5fd" stroke="#3b82f6" stroke-width="0.5"/>
+          <text x="128" y="57" text-anchor="middle" font-size="6" fill="#1e40af">S3: 80x80 self-attn</text>
+          <rect x="95" y="63" width="66" height="12" rx="2" fill="#93c5fd" stroke="#3b82f6" stroke-width="0.5"/>
+          <text x="128" y="72" text-anchor="middle" font-size="6" fill="#1e40af">S4: 40x40 self-attn</text>
+          <rect x="95" y="78" width="66" height="12" rx="2" fill="#93c5fd" stroke="#3b82f6" stroke-width="0.5"/>
+          <text x="128" y="87" text-anchor="middle" font-size="6" fill="#1e40af">S5: 20x20 self-attn</text>
+
+          <!-- Arrow -->
+          <line x1="172" y1="47" x2="195" y2="47" stroke="#57534e" stroke-width="1.5" marker-end="url(#rtd-a1)"/>
+
+          <!-- CCFM -->
+          <rect x="200" y="5" width="90" height="85" rx="4" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="245" y="20" text-anchor="middle" font-size="7" fill="#16a34a" font-weight="600">CCFM</text>
+          <text x="245" y="32" text-anchor="middle" font-size="6" fill="#22c55e">Cross-scale fusion</text>
+          <text x="245" y="42" text-anchor="middle" font-size="6" fill="#22c55e">via CNN (not attn)</text>
+          <!-- Arrows showing fusion -->
+          <line x1="215" y1="55" x2="235" y2="50" stroke="#22c55e" stroke-width="1"/>
+          <line x1="215" y1="65" x2="235" y2="60" stroke="#22c55e" stroke-width="1"/>
+          <line x1="235" y1="60" x2="275" y2="60" stroke="#22c55e" stroke-width="1"/>
+          <line x1="275" y1="50" x2="235" y2="60" stroke="#22c55e" stroke-width="1"/>
+          <line x1="275" y1="70" x2="235" y2="60" stroke="#22c55e" stroke-width="1"/>
+
+          <!-- Arrow to decoder -->
+          <line x1="295" y1="47" x2="325" y2="47" stroke="#57534e" stroke-width="1.5" marker-end="url(#rtd-a1)"/>
+
+          <!-- IoU-aware query selection -->
+          <rect x="330" y="5" width="100" height="85" rx="4" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="380" y="22" text-anchor="middle" font-size="7" fill="#7c3aed" font-weight="600">IoU-Aware</text>
+          <text x="380" y="34" text-anchor="middle" font-size="7" fill="#7c3aed" font-weight="600">Query Selection</text>
+          <text x="380" y="50" text-anchor="middle" font-size="6" fill="#8b5cf6">Select top-K encoder</text>
+          <text x="380" y="60" text-anchor="middle" font-size="6" fill="#8b5cf6">features as queries</text>
+          <text x="380" y="75" text-anchor="middle" font-size="6" fill="#8b5cf6">(not random learned)</text>
+
+          <!-- Arrow to output -->
+          <line x1="435" y1="47" x2="460" y2="47" stroke="#57534e" stroke-width="1.5" marker-end="url(#rtd-a1)"/>
+          <rect x="465" y="25" width="80" height="45" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="505" y="45" text-anchor="middle" font-size="7" fill="white" font-weight="600">Decoder</text>
+          <text x="505" y="57" text-anchor="middle" font-size="6" fill="#fef3c7">6 layers</text>
+
+          <defs><marker id="rtd-a1" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <table class="summary-table">
+      <tr><th>Model</th><th>Backbone</th><th>COCO AP</th><th>FPS (T4)</th></tr>
+      <tr><td>RT-DETR-R50</td><td>ResNet-50</td><td>53.1%</td><td>108</td></tr>
+      <tr><td>RT-DETR-L</td><td>HGNetv2</td><td>53.0%</td><td>114</td></tr>
+      <tr><td>RT-DETR-X</td><td>HGNetv2</td><td>54.8%</td><td>74</td></tr>
+    </table>
+
+    <div class="callout-green callout">
+      <strong>Key achievement:</strong> RT-DETR proved that DETR-family models can be real-time. It matched YOLO accuracy while keeping DETR's elegant NMS-free design. The flexible decoder also allows speed-accuracy trade-off by adjusting the number of decoder layers at inference time.
+    </div>
+  </section>
+  </div>
+
+  <!-- SECTION 4: RF-DETR -->
+  <div class="model-section" style="border-color: #8b5cf6;">
+  <section>
+    <h2>4 &mdash; RF-DETR (Roboflow, 2025)</h2>
+    <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem;">Robinson et al. &mdash; <a href="https://arxiv.org/abs/2511.09554">arXiv:2511.09554</a> &mdash; ICLR 2026 &mdash; First real-time detector to exceed 60 AP on COCO</p>
+
+    <p>RF-DETR's key insight: <strong>CNN backbones don't benefit from large-scale pre-training the way Transformers do.</strong> By swapping in a pre-trained DINOv2 ViT backbone (which learned rich visual representations from massive unsupervised data), and using Neural Architecture Search to find optimal sub-networks, RF-DETR pushes accuracy far beyond CNN-based detectors.</p>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>DINOv2 ViT Backbone (Pre-trained)</h4>
+        <div class="shapes">Single-scale ViT &rarr; projected multi-scale features</div>
+      </div>
+      <p>Unlike RT-DETR's CNN backbone that naturally produces multi-scale features, RF-DETR uses a single-scale <strong>DINOv2 Vision Transformer</strong> (see our <a href="vit.html">ViT walkthrough</a>). A projector module bilinearly interpolates the ViT output to create multi-scale feature maps. The backbone interleaves <strong>windowed attention</strong> (efficient, local) with <strong>global attention</strong> (expensive, full-image) blocks to balance accuracy and speed.</p>
+      <div class="callout-purple callout">
+        <strong>Why DINOv2?</strong> DINOv2 was pre-trained on 142M images with self-supervised learning. It learned to recognize objects, textures, and spatial relationships without any labels. RF-DETR inherits all this knowledge, so it converges faster and generalizes better than CNN backbones that must learn everything from detection data alone.
+      </div>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>LW-DETR Decoder with Deformable Cross-Attention</h4>
+        <div class="shapes">Lightweight decoder from LW-DETR</div>
+      </div>
+      <p>The decoder follows the LW-DETR framework, using <strong>deformable cross-attention</strong> (from Deformable DETR) instead of standard cross-attention. Rather than attending to all spatial positions, each query only attends to a small set of learned sampling points — dramatically reducing computation while maintaining accuracy.</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Neural Architecture Search (NAS)</h4>
+        <div class="shapes">Discover optimal accuracy-latency trade-offs</div>
+      </div>
+      <p>RF-DETR's most distinctive contribution: <strong>weight-sharing NAS</strong>. After training a single large "supernet," thousands of sub-network configurations are evaluated without retraining. This discovers accuracy-latency Pareto curves — the nano, small, and medium variants are NAS-discovered, while base and large are hand-designed.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 500 100" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="250" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">NAS: Train once, evaluate thousands of sub-networks</text>
+
+          <!-- Supernet -->
+          <rect x="20" y="30" width="100" height="50" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+          <text x="70" y="50" text-anchor="middle" font-size="8" fill="white" font-weight="700">Supernet</text>
+          <text x="70" y="63" text-anchor="middle" font-size="7" fill="#ddd6fe">(train once)</text>
+
+          <!-- Arrow splitting into many -->
+          <line x1="125" y1="45" x2="160" y2="35" stroke="#8b5cf6" stroke-width="1.5"/>
+          <line x1="125" y1="55" x2="160" y2="55" stroke="#8b5cf6" stroke-width="1.5"/>
+          <line x1="125" y1="65" x2="160" y2="75" stroke="#8b5cf6" stroke-width="1.5"/>
+
+          <!-- Sub-networks -->
+          <rect x="165" y="25" width="75" height="18" rx="3" fill="#a78bfa" stroke="#8b5cf6" stroke-width="1"/><text x="202" y="37" text-anchor="middle" font-size="6" fill="white">sub-net 1: fast</text>
+          <rect x="165" y="46" width="75" height="18" rx="3" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1"/><text x="202" y="58" text-anchor="middle" font-size="6" fill="white">sub-net 2: balanced</text>
+          <rect x="165" y="67" width="75" height="18" rx="3" fill="#7c3aed" stroke="#6d28d9" stroke-width="1"/><text x="202" y="79" text-anchor="middle" font-size="6" fill="white">sub-net 3: accurate</text>
+
+          <!-- Pareto curve -->
+          <rect x="280" y="25" width="200" height="65" rx="4" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+          <text x="380" y="38" text-anchor="middle" font-size="7" fill="#57534e" font-weight="600">Pareto curve (accuracy vs latency)</text>
+          <!-- Axes -->
+          <line x1="300" y1="80" x2="460" y2="80" stroke="#57534e" stroke-width="1"/>
+          <line x1="300" y1="80" x2="300" y2="42" stroke="#57534e" stroke-width="1"/>
+          <text x="380" y="92" text-anchor="middle" font-size="6" fill="#57534e">Latency &rarr;</text>
+          <text x="292" y="60" text-anchor="middle" font-size="6" fill="#57534e" transform="rotate(-90,292,60)">AP &rarr;</text>
+          <!-- Points on curve -->
+          <circle cx="320" cy="72" r="3" fill="#a78bfa"/><text x="325" y="70" font-size="5" fill="#7c3aed">nano</text>
+          <circle cx="360" cy="60" r="3" fill="#8b5cf6"/><text x="370" y="58" font-size="5" fill="#7c3aed">base</text>
+          <circle cx="420" cy="48" r="4" fill="#7c3aed"/><text x="430" y="46" font-size="5" fill="#6d28d9">2XL</text>
+          <!-- Curve -->
+          <path d="M315,74 Q340,58 360,60 Q390,52 420,48" fill="none" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="3,2"/>
+        </svg>
+      </div>
+    </div>
+
+    <table class="summary-table">
+      <tr><th>Model</th><th>Params</th><th>COCO AP</th><th>Design</th></tr>
+      <tr><td>RF-DETR Nano</td><td>30.5M</td><td>48.0</td><td>NAS-discovered</td></tr>
+      <tr><td>RF-DETR Base</td><td>29.0M</td><td>53.3</td><td>Hand-designed</td></tr>
+      <tr><td>RF-DETR Large</td><td>129.0M</td><td>~56</td><td>Hand-designed</td></tr>
+      <tr><td>RF-DETR 2XL</td><td>&mdash;</td><td><strong>60+</strong></td><td>NAS + hand</td></tr>
+    </table>
+  </section>
+  </div>
+
+  <!-- SECTION 5: Evolution comparison -->
+  <section>
+    <h2>5 &mdash; Evolution Summary</h2>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 650 160" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="325" y="15" text-anchor="middle" font-size="11" fill="#57534e" font-weight="600">DETR Family Evolution</text>
+
+        <!-- DETR -->
+        <rect x="20" y="30" width="180" height="55" rx="6" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+        <text x="110" y="48" text-anchor="middle" font-size="10" fill="white" font-weight="700">DETR (2020)</text>
+        <text x="110" y="62" text-anchor="middle" font-size="7" fill="#bfdbfe">ResNet backbone &bull; 43.3 AP</text>
+        <text x="110" y="74" text-anchor="middle" font-size="7" fill="#bfdbfe">500 epochs &bull; Not real-time</text>
+
+        <!-- Arrow -->
+        <line x1="205" y1="57" x2="235" y2="57" stroke="#57534e" stroke-width="2" marker-end="url(#evo-a)"/>
+        <text x="220" y="50" text-anchor="middle" font-size="7" fill="#57534e">fix</text>
+
+        <!-- RT-DETR -->
+        <rect x="240" y="30" width="170" height="55" rx="6" fill="#22c55e" stroke="#16a34a" stroke-width="2"/>
+        <text x="325" y="48" text-anchor="middle" font-size="10" fill="white" font-weight="700">RT-DETR (2023)</text>
+        <text x="325" y="62" text-anchor="middle" font-size="7" fill="#dcfce7">CNN backbone &bull; 54.8 AP</text>
+        <text x="325" y="74" text-anchor="middle" font-size="7" fill="#dcfce7">Real-time &bull; Multi-scale</text>
+
+        <!-- Arrow -->
+        <line x1="415" y1="57" x2="445" y2="57" stroke="#57534e" stroke-width="2" marker-end="url(#evo-a)"/>
+        <text x="430" y="50" text-anchor="middle" font-size="7" fill="#57534e">scale</text>
+
+        <!-- RF-DETR -->
+        <rect x="450" y="30" width="180" height="55" rx="6" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+        <text x="540" y="48" text-anchor="middle" font-size="10" fill="white" font-weight="700">RF-DETR (2025)</text>
+        <text x="540" y="62" text-anchor="middle" font-size="7" fill="#ddd6fe">DINOv2 ViT &bull; 60+ AP</text>
+        <text x="540" y="74" text-anchor="middle" font-size="7" fill="#ddd6fe">NAS &bull; Pre-training power</text>
+
+        <!-- Key improvements along bottom -->
+        <text x="110" y="110" text-anchor="middle" font-size="7" fill="#2563eb">Pioneered end-to-end</text>
+        <text x="110" y="122" text-anchor="middle" font-size="7" fill="#2563eb">detection with</text>
+        <text x="110" y="134" text-anchor="middle" font-size="7" fill="#2563eb">Transformers</text>
+
+        <text x="325" y="110" text-anchor="middle" font-size="7" fill="#16a34a">Made it fast:</text>
+        <text x="325" y="122" text-anchor="middle" font-size="7" fill="#16a34a">hybrid encoder,</text>
+        <text x="325" y="134" text-anchor="middle" font-size="7" fill="#16a34a">multi-scale, IoU queries</text>
+
+        <text x="540" y="110" text-anchor="middle" font-size="7" fill="#7c3aed">Made it accurate:</text>
+        <text x="540" y="122" text-anchor="middle" font-size="7" fill="#7c3aed">pre-trained ViT backbone,</text>
+        <text x="540" y="134" text-anchor="middle" font-size="7" fill="#7c3aed">NAS for optimal configs</text>
+
+        <defs><marker id="evo-a" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#57534e"/></marker></defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 6: REFERENCES -->
+  <section>
+    <h2>6 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2005.12872">DETR: End-to-End Object Detection with Transformers</a> — Carion et al., Facebook AI, 2020</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2010.04159">Deformable DETR</a> — Zhu et al., 2020 (deformable attention)</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2304.08069">RT-DETR: DETRs Beat YOLOs on Real-time Object Detection</a> — Zhao et al., Baidu, 2023</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2511.09554">RF-DETR: Neural Architecture Search for Real-Time Detection Transformers</a> — Robinson et al., Roboflow, 2025</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/roboflow/rf-detr">RF-DETR GitHub Repository</a></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>
