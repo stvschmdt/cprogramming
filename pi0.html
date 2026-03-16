@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>&pi;0 Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+      --layer-backbone: #dbeafe;
+      --layer-neck: #dcfce7;
+      --layer-head: #fef3c7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; }
+    .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #a855f7; }
+    .callout-purple strong { color: #7c3aed; }
+
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.backbone { border-left-color: #3b82f6; }
+    .layer-card.neck { border-left-color: #22c55e; }
+    .layer-card.head { border-left-color: #f59e0b; }
+    .layer-card.loss { border-left-color: #ef4444; }
+    .layer-card.action { border-left-color: #a855f7; }
+
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; All Walkthroughs</a></div>
+    <h1>&pi;<sub>0</sub>: A Vision-Language-Action Flow Model</h1>
+    <div class="subtitle">General Robot Control via Flow Matching</div>
+    <div class="meta-tags">
+      <span>VLA</span>
+      <span>Flow Matching</span>
+      <span>Robot Foundation Model</span>
+      <span>Physical Intelligence 2024</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/2410.24164">&pi;<sub>0</sub>: A Vision-Language-Action Flow Model for General Robot Control</a> (Black et al., 2024)
+    </div>
+  </section>
+
+  <!-- Section 1: What the Robot Actually Sees -->
+  <section>
+    <h2>1 &mdash; What the Robot Actually Sees</h2>
+
+    <p>Before understanding the model, you need to understand the <strong>inputs</strong>. &pi;<sub>0</sub> controls real physical robots &mdash; it sees through cameras, reads language instructions, and feels its own joint positions. Let's make each input concrete.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" width="720" height="340">
+        <text x="360" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">What &pi;0 Receives at Every Timestep</text>
+
+        <!-- Camera 1: Overhead -->
+        <rect x="20" y="50" width="160" height="120" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <!-- Simplified scene drawing -->
+        <rect x="35" y="65" width="130" height="80" rx="3" fill="#c7d2fe"/>
+        <!-- Table -->
+        <rect x="50" y="105" width="100" height="25" rx="2" fill="#a5b4fc"/>
+        <!-- Objects on table -->
+        <circle cx="75" cy="110" r="8" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/>
+        <rect x="95" y="100" width="15" height="20" rx="2" fill="#86efac" stroke="#22c55e" stroke-width="1"/>
+        <circle cx="130" cy="115" r="6" fill="#fca5a5" stroke="#ef4444" stroke-width="1"/>
+        <!-- Gripper -->
+        <rect x="70" y="75" width="20" height="8" rx="1" fill="#57534e"/>
+        <rect x="68" y="83" width="8" height="12" rx="1" fill="#78716c"/>
+        <rect x="84" y="83" width="8" height="12" rx="1" fill="#78716c"/>
+        <text x="100" y="160" text-anchor="middle" font-size="10" font-weight="bold" fill="#4338ca" font-family="Helvetica Neue, Arial, sans-serif">CAMERA 1 (overhead)</text>
+        <text x="100" y="174" text-anchor="middle" font-size="9" fill="#6366f1">224&times;224 RGB</text>
+
+        <!-- Camera 2: Wrist -->
+        <rect x="210" y="50" width="160" height="120" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <rect x="225" y="65" width="130" height="80" rx="3" fill="#c7d2fe"/>
+        <!-- Close-up of gripper near object -->
+        <rect x="240" y="90" width="100" height="40" rx="2" fill="#a5b4fc"/>
+        <circle cx="280" cy="105" r="15" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5"/>
+        <!-- Gripper fingers from wrist POV -->
+        <rect x="255" y="70" width="12" height="35" rx="2" fill="#57534e" opacity="0.7"/>
+        <rect x="300" y="70" width="12" height="35" rx="2" fill="#57534e" opacity="0.7"/>
+        <text x="290" y="160" text-anchor="middle" font-size="10" font-weight="bold" fill="#4338ca" font-family="Helvetica Neue, Arial, sans-serif">CAMERA 2 (wrist)</text>
+        <text x="290" y="174" text-anchor="middle" font-size="9" fill="#6366f1">224&times;224 RGB</text>
+
+        <!-- Language instruction -->
+        <rect x="400" y="50" width="300" height="50" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="550" y="72" text-anchor="middle" font-size="11" fill="#92400e" font-style="italic">"Pick up the yellow ball and</text>
+        <text x="550" y="88" text-anchor="middle" font-size="11" fill="#92400e" font-style="italic">place it in the bowl"</text>
+        <text x="550" y="112" text-anchor="middle" font-size="10" font-weight="bold" fill="#92400e" font-family="Helvetica Neue, Arial, sans-serif">LANGUAGE INSTRUCTION</text>
+        <text x="550" y="126" text-anchor="middle" font-size="9" fill="#b45309">Tokenized text sequence</text>
+
+        <!-- Proprioception -->
+        <rect x="400" y="145" width="300" height="65" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="550" y="165" text-anchor="middle" font-size="10" font-weight="bold" fill="#166534" font-family="Helvetica Neue, Arial, sans-serif">PROPRIOCEPTIVE STATE q<tspan font-size="8" dy="2">t</tspan></text>
+        <!-- Joint angle visualization -->
+        <text x="420" y="185" font-size="9" fill="#166534" font-family="SF Mono, monospace">J1: +0.32 rad</text>
+        <text x="420" y="197" font-size="9" fill="#166534" font-family="SF Mono, monospace">J2: -1.47 rad</text>
+        <text x="540" y="185" font-size="9" fill="#166534" font-family="SF Mono, monospace">J3: +0.85 rad</text>
+        <text x="540" y="197" font-size="9" fill="#166534" font-family="SF Mono, monospace">... (18-dim)</text>
+
+        <!-- Observation vector -->
+        <rect x="100" y="230" width="520" height="40" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+        <text x="360" y="248" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">o<tspan font-size="9" dy="2">t</tspan><tspan dy="-2"> = [ I</tspan><tspan font-size="8" dy="2">1</tspan><tspan dy="-2">, I</tspan><tspan font-size="8" dy="2">2</tspan><tspan dy="-2">, ..., I</tspan><tspan font-size="8" dy="2">n</tspan><tspan dy="-2">,  l</tspan><tspan font-size="8" dy="2">t</tspan><tspan dy="-2">,  q</tspan><tspan font-size="8" dy="2">t</tspan><tspan dy="-2"> ]</tspan></text>
+        <text x="360" y="264" text-anchor="middle" font-size="9" fill="#3b82f6">2&ndash;3 camera images + language tokens + 18-dim joint state</text>
+
+        <!-- Arrows into observation -->
+        <line x1="100" y1="178" x2="200" y2="230" stroke="#6366f1" stroke-width="1.2" marker-end="url(#pa)"/>
+        <line x1="290" y1="178" x2="310" y2="230" stroke="#6366f1" stroke-width="1.2" marker-end="url(#pa)"/>
+        <line x1="550" y1="126" x2="450" y2="230" stroke="#f59e0b" stroke-width="1.2" marker-end="url(#pa)"/>
+        <line x1="550" y1="210" x2="500" y2="230" stroke="#22c55e" stroke-width="1.2" marker-end="url(#pa)"/>
+
+        <!-- Down to model -->
+        <line x1="360" y1="270" x2="360" y2="300" stroke="#57534e" stroke-width="2" marker-end="url(#pa)"/>
+        <rect x="260" y="300" width="200" height="32" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="360" y="321" text-anchor="middle" font-size="12" font-weight="bold" fill="#7c3aed">&pi;<tspan font-size="9" dy="2">0</tspan><tspan dy="-2"> Model</tspan></text>
+
+        <defs>
+          <marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#57534e"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Camera Images (2&ndash;3 per robot)</h4>
+        <span class="shapes">[n, 224, 224, 3] RGB</span>
+      </div>
+      <p>Each robot has 2&ndash;3 cameras providing different viewpoints: typically an <strong>overhead/third-person view</strong> showing the workspace and a <strong>wrist-mounted camera</strong> for close-up manipulation detail. Some bimanual robots add a third camera. Images are 224&times;224 RGB, processed by a pre-trained SigLIP vision encoder.</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Language Instruction</h4>
+        <span class="shapes">tokenized text &rarr; embeddings</span>
+      </div>
+      <p>Natural language commands like "fold the shirt," "pick up the egg and place it in the carton," or "clear the table." These can be high-level task descriptions or fine-grained segment labels (~2-second sub-instructions). Tokenized by the PaliGemma tokenizer and processed through the VLM backbone.</p>
+    </div>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>Proprioceptive State q<sub>t</sub></h4>
+        <span class="shapes">[18] joint angles (zero-padded)</span>
+      </div>
+      <p>The robot's own joint angles &mdash; its sense of where its arms are. Standardized to <strong>18 dimensions</strong> across all 7 robot embodiments via zero-padding. A 7-DoF single arm uses 8 values (7 joints + gripper); a bimanual 14-DoF system uses 16 values; remaining dimensions are zeros.</p>
+    </div>
+  </section>
+
+  <!-- Section 2: What the Model Outputs -->
+  <section>
+    <h2>2 &mdash; What the Model Outputs</h2>
+
+    <p>&pi;<sub>0</sub> doesn't output a single action &mdash; it outputs an entire <strong>action chunk</strong> of H=50 future steps. This is critical for smooth, coordinated motion.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" width="720" height="200">
+        <text x="360" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Action Chunk Output: 50 Steps into the Future</text>
+
+        <!-- Timeline -->
+        <line x1="40" y1="90" x2="680" y2="90" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- Current time -->
+        <rect x="30" y="55" width="50" height="28" rx="4" fill="#a855f7" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="55" y="74" text-anchor="middle" font-size="10" font-weight="bold" fill="white">a<tspan font-size="7" dy="1">t</tspan></text>
+        <line x1="55" y1="83" x2="55" y2="90" stroke="#7c3aed" stroke-width="1.5"/>
+
+        <!-- Future actions -->
+        <rect x="100" y="55" width="50" height="28" rx="4" fill="#c4b5fd" stroke="#a855f7" stroke-width="1"/>
+        <text x="125" y="74" text-anchor="middle" font-size="9" fill="#5b21b6">a<tspan font-size="7" dy="1">t+1</tspan></text>
+
+        <rect x="170" y="55" width="50" height="28" rx="4" fill="#c4b5fd" stroke="#a855f7" stroke-width="1"/>
+        <text x="195" y="74" text-anchor="middle" font-size="9" fill="#5b21b6">a<tspan font-size="7" dy="1">t+2</tspan></text>
+
+        <rect x="240" y="55" width="50" height="28" rx="4" fill="#ddd6fe" stroke="#a855f7" stroke-width="1"/>
+        <text x="265" y="74" text-anchor="middle" font-size="9" fill="#6d28d9">a<tspan font-size="7" dy="1">t+3</tspan></text>
+
+        <text x="320" y="74" text-anchor="middle" font-size="14" fill="#a855f7">&hellip;</text>
+
+        <rect x="370" y="55" width="50" height="28" rx="4" fill="#ddd6fe" stroke="#a855f7" stroke-width="1"/>
+        <text x="395" y="74" text-anchor="middle" font-size="9" fill="#6d28d9">a<tspan font-size="7" dy="1">t+15</tspan></text>
+
+        <text x="455" y="74" text-anchor="middle" font-size="14" fill="#a855f7">&hellip;</text>
+
+        <rect x="500" y="55" width="60" height="28" rx="4" fill="#ede9fe" stroke="#a855f7" stroke-width="1"/>
+        <text x="530" y="74" text-anchor="middle" font-size="9" fill="#6d28d9">a<tspan font-size="7" dy="1">t+49</tspan></text>
+
+        <!-- Execution window -->
+        <rect x="28" y="103" width="195" height="22" rx="3" fill="#22c55e" opacity="0.15"/>
+        <rect x="28" y="103" width="195" height="22" rx="3" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="125" y="118" text-anchor="middle" font-size="9" font-weight="bold" fill="#166534" font-family="Helvetica Neue, Arial, sans-serif">EXECUTED (16 steps at 20Hz = 0.8s)</text>
+
+        <!-- Discarded -->
+        <text x="460" y="118" text-anchor="middle" font-size="9" fill="#a8a29e" font-family="Helvetica Neue, Arial, sans-serif">Remaining 34 steps discarded &mdash; re-plan with new observation</text>
+
+        <!-- What each action contains -->
+        <rect x="100" y="140" width="520" height="50" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="1"/>
+        <text x="360" y="158" text-anchor="middle" font-size="10" font-weight="bold" fill="#7c3aed" font-family="Helvetica Neue, Arial, sans-serif">EACH ACTION a<tspan font-size="8" dy="1">t+i</tspan><tspan dy="-1"> CONTAINS:</tspan></text>
+        <text x="360" y="177" text-anchor="middle" font-size="10" fill="#6d28d9">&Delta;joint<tspan font-size="8" dy="1">1</tspan><tspan dy="-1">, &Delta;joint</tspan><tspan font-size="8" dy="1">2</tspan><tspan dy="-1">, ..., &Delta;joint</tspan><tspan font-size="8" dy="1">7</tspan><tspan dy="-1">, gripper &rarr; continuous values via flow matching</tspan></text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <strong>Open-loop chunking:</strong> The robot executes 16 of the 50 predicted actions (0.8 seconds at 20Hz), then re-plans from scratch with a new observation. This provides reactive closed-loop behavior at the re-planning frequency while maintaining smooth, coordinated motion within each chunk. Mobile robots at 50Hz execute 25 steps (0.5s) before re-planning.
+    </div>
+  </section>
+
+  <!-- Section 3: Architecture Overview -->
+  <section>
+    <h2>3 &mdash; Architecture Overview</h2>
+
+    <p>&pi;<sub>0</sub> combines a pre-trained Vision-Language Model (PaliGemma, 3B params) with a dedicated <strong>Action Expert</strong> module (300M params). The VLM understands what it sees and reads; the Action Expert generates smooth motor commands via flow matching.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" width="720" height="480">
+        <text x="360" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">&pi;0 Full Architecture</text>
+
+        <!-- Input row -->
+        <rect x="30" y="45" width="120" height="36" rx="5" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="90" y="68" text-anchor="middle" font-size="10" font-weight="bold" fill="#4338ca">Images I<tspan font-size="8" dy="1">1..n</tspan></text>
+
+        <rect x="180" y="45" width="130" height="36" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="245" y="68" text-anchor="middle" font-size="10" font-weight="bold" fill="#92400e">Language l<tspan font-size="8" dy="1">t</tspan></text>
+
+        <rect x="340" y="45" width="110" height="36" rx="5" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="395" y="68" text-anchor="middle" font-size="10" font-weight="bold" fill="#166534">State q<tspan font-size="8" dy="1">t</tspan></text>
+
+        <rect x="480" y="45" width="200" height="36" rx="5" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="580" y="63" text-anchor="middle" font-size="10" font-weight="bold" fill="#7c3aed">Noisy Actions A<tspan font-size="8" dy="1">t</tspan><tspan dy="-1" font-size="7">&tau;</tspan></text>
+        <text x="580" y="76" text-anchor="middle" font-size="8" fill="#7c3aed">(50 steps &times; action_dim)</text>
+
+        <!-- Image Encoder -->
+        <rect x="30" y="105" width="120" height="36" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="90" y="121" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e40af">SigLIP Encoder</text>
+        <text x="90" y="134" text-anchor="middle" font-size="8" fill="#1e40af">(frozen)</text>
+        <line x1="90" y1="81" x2="90" y2="105" stroke="#57534e" stroke-width="1.2" marker-end="url(#pa)"/>
+
+        <!-- Image tokens -->
+        <text x="90" y="160" text-anchor="middle" font-size="8" fill="#3b82f6">Image tokens</text>
+
+        <!-- Timestep embedding for actions -->
+        <rect x="480" y="95" width="200" height="28" rx="5" fill="#faf5ff" stroke="#a855f7" stroke-width="1"/>
+        <text x="580" y="114" text-anchor="middle" font-size="9" fill="#7c3aed">+ &tau; timestep embedding</text>
+
+        <!-- BIG TRANSFORMER -->
+        <rect x="30" y="175" width="660" height="120" rx="10" fill="#fafaf9" stroke="#1c1917" stroke-width="2"/>
+        <text x="360" y="198" text-anchor="middle" font-size="13" font-weight="bold" fill="#1c1917">Transformer (Blockwise Causal Attention)</text>
+
+        <!-- Three attention blocks inside -->
+        <rect x="50" y="210" width="190" height="65" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="145" y="230" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e40af">VLM Backbone</text>
+        <text x="145" y="246" text-anchor="middle" font-size="9" fill="#1e40af">Images + Language</text>
+        <text x="145" y="260" text-anchor="middle" font-size="8" fill="#3b82f6">3B params (PaliGemma)</text>
+        <text x="145" y="272" text-anchor="middle" font-size="8" fill="#3b82f6">Bidirectional attention</text>
+
+        <rect x="260" y="210" width="100" height="65" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="310" y="230" text-anchor="middle" font-size="10" font-weight="bold" fill="#166534">State</text>
+        <text x="310" y="246" text-anchor="middle" font-size="9" fill="#166534">q<tspan font-size="8" dy="1">t</tspan></text>
+        <text x="310" y="262" text-anchor="middle" font-size="8" fill="#22c55e">Causal</text>
+
+        <rect x="380" y="210" width="290" height="65" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="525" y="230" text-anchor="middle" font-size="10" font-weight="bold" fill="#7c3aed">Action Expert</text>
+        <text x="525" y="246" text-anchor="middle" font-size="9" fill="#7c3aed">50 action tokens + flow &tau;</text>
+        <text x="525" y="260" text-anchor="middle" font-size="8" fill="#a855f7">300M params (width=1024)</text>
+        <text x="525" y="272" text-anchor="middle" font-size="8" fill="#a855f7">Full attention to all inputs</text>
+
+        <!-- Attention arrows -->
+        <path d="M240,242 L260,242" fill="none" stroke="#57534e" stroke-width="1" marker-end="url(#pa)"/>
+        <path d="M360,242 L380,242" fill="none" stroke="#57534e" stroke-width="1" marker-end="url(#pa)"/>
+        <text x="250" y="238" font-size="7" fill="#57534e">&rarr;</text>
+        <text x="370" y="238" font-size="7" fill="#57534e">&rarr;</text>
+
+        <!-- Inputs flowing in -->
+        <line x1="90" y1="165" x2="90" y2="175" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#pa)"/>
+        <line x1="245" y1="81" x2="200" y2="175" stroke="#f59e0b" stroke-width="1.2" marker-end="url(#pa)"/>
+        <line x1="395" y1="81" x2="310" y2="175" stroke="#22c55e" stroke-width="1.2" marker-end="url(#pa)"/>
+        <line x1="580" y1="123" x2="525" y2="175" stroke="#a855f7" stroke-width="1.5" marker-end="url(#pa)"/>
+
+        <!-- Output: velocity field -->
+        <rect x="380" y="320" width="290" height="40" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="525" y="345" text-anchor="middle" font-size="11" font-weight="bold" fill="#7c3aed">Velocity Field v<tspan font-size="8" dy="2">&theta;</tspan><tspan dy="-2">(A</tspan><tspan font-size="8" dy="2">t</tspan><tspan dy="-2" font-size="7">&tau;</tspan><tspan dy="0">, o</tspan><tspan font-size="8" dy="2">t</tspan><tspan dy="-2">)</tspan></text>
+        <line x1="525" y1="295" x2="525" y2="320" stroke="#a855f7" stroke-width="2" marker-end="url(#pa)"/>
+
+        <!-- Euler integration -->
+        <rect x="380" y="385" width="290" height="40" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+        <text x="525" y="402" text-anchor="middle" font-size="10" font-weight="bold" fill="#b45309">Euler Integration (10 steps)</text>
+        <text x="525" y="417" text-anchor="middle" font-size="9" fill="#b45309">A<tspan font-size="7" dy="1">&tau;+&delta;</tspan><tspan dy="-1"> = A</tspan><tspan font-size="7" dy="1">&tau;</tspan><tspan dy="-1"> + &delta; &middot; v</tspan><tspan font-size="7" dy="1">&theta;</tspan><tspan dy="-1">, &delta;=0.1</tspan></text>
+        <line x1="525" y1="360" x2="525" y2="385" stroke="#b45309" stroke-width="1.5" marker-end="url(#pa)"/>
+
+        <!-- Final output -->
+        <rect x="410" y="445" width="230" height="30" rx="6" fill="#a855f7" stroke="#7c3aed" stroke-width="2"/>
+        <text x="525" y="465" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Clean Actions A<tspan font-size="8" dy="1">t</tspan><tspan dy="-1"> (50 steps)</tspan></text>
+        <line x1="525" y1="425" x2="525" y2="445" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#pa)"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Section 4: The VLM Backbone -->
+  <section>
+    <h2>4 &mdash; The VLM Backbone (PaliGemma)</h2>
+
+    <p>&pi;<sub>0</sub> builds on <strong>PaliGemma</strong>, a 3B-parameter vision-language model from Google. This gives &pi;<sub>0</sub> a rich understanding of what it sees and reads &mdash; pre-trained on billions of image-text pairs from the internet before ever touching a robot.</p>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>SigLIP Vision Encoder</h4>
+        <span class="shapes">[224, 224, 3] &rarr; image tokens</span>
+      </div>
+      <p>Each camera image is encoded by a frozen SigLIP vision transformer into a sequence of visual tokens. For n cameras, this produces n &times; (number of patches) tokens. These tokens contain rich semantic information: object identities, spatial relationships, textures, and physical state of the scene.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Gemma Language Model</h4>
+        <span class="shapes">tokens &rarr; contextualized embeddings</span>
+      </div>
+      <p>PaliGemma's language backbone processes both the visual tokens and language tokens together. The key insight: by starting from a pre-trained VLM, &pi;<sub>0</sub> inherits an understanding of objects, spatial concepts, and task semantics that would be impossible to learn from robot data alone.</p>
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>Why start from a VLM?</strong> Robot demonstration data is scarce (~10,000 hours). Internet data is effectively infinite. By initializing from PaliGemma, &pi;<sub>0</sub> already knows what a "shirt" looks like, understands "left of," and can parse complex language instructions &mdash; all before seeing a single robot trajectory. This is the same pre-training/fine-tuning paradigm that made LLMs successful.
+    </div>
+  </section>
+
+  <!-- Section 5: The Action Expert -->
+  <section>
+    <h2>5 &mdash; The Action Expert</h2>
+
+    <p>The Action Expert is &pi;<sub>0</sub>'s secret weapon &mdash; a <strong>separate 300M-parameter module</strong> that lives inside the transformer and is dedicated exclusively to generating smooth, continuous robot actions.</p>
+
+    <div class="layer-card action">
+      <div class="layer-header">
+        <h4>Why a Separate Expert?</h4>
+      </div>
+      <p>Previous VLA models like RT-2 and OpenVLA discretized actions into text tokens (e.g., "move left 0.3"). This is lossy and slow &mdash; you're forcing a language model to output numbers as words. &pi;<sub>0</sub>'s Action Expert operates in continuous space via flow matching, producing precise floating-point joint commands at much higher bandwidth.</p>
+    </div>
+
+    <h3>Blockwise Causal Attention</h3>
+    <p>The transformer uses three attention blocks with a specific causal structure:</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" width="700" height="220">
+        <text x="350" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Blockwise Causal Attention Mask</text>
+
+        <!-- Column headers -->
+        <text x="250" y="52" text-anchor="middle" font-size="9" fill="#4338ca" font-weight="bold">Images+Lang</text>
+        <text x="400" y="52" text-anchor="middle" font-size="9" fill="#166534" font-weight="bold">State</text>
+        <text x="560" y="52" text-anchor="middle" font-size="9" fill="#7c3aed" font-weight="bold">Actions</text>
+
+        <!-- Row headers -->
+        <text x="115" y="95" text-anchor="end" font-size="9" fill="#4338ca" font-weight="bold">Block 1: Images+Lang</text>
+        <text x="115" y="140" text-anchor="end" font-size="9" fill="#166534" font-weight="bold">Block 2: State</text>
+        <text x="115" y="185" text-anchor="end" font-size="9" fill="#7c3aed" font-weight="bold">Block 3: Actions</text>
+
+        <!-- Attention matrix -->
+        <!-- Row 1: Images+Lang attends to itself only -->
+        <rect x="180" y="70" width="140" height="40" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+        <text x="250" y="95" text-anchor="middle" font-size="10" fill="#1e40af" font-weight="bold">Bidirectional</text>
+
+        <rect x="330" y="70" width="140" height="40" rx="3" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+        <text x="400" y="95" text-anchor="middle" font-size="10" fill="#a8a29e">Blocked</text>
+
+        <rect x="480" y="70" width="160" height="40" rx="3" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+        <text x="560" y="95" text-anchor="middle" font-size="10" fill="#a8a29e">Blocked</text>
+
+        <!-- Row 2: State attends to VLM + self -->
+        <rect x="180" y="120" width="140" height="40" rx="3" fill="#dcfce7" stroke="#22c55e" stroke-width="1"/>
+        <text x="250" y="145" text-anchor="middle" font-size="10" fill="#166534">Attends &larr;</text>
+
+        <rect x="330" y="120" width="140" height="40" rx="3" fill="#dcfce7" stroke="#22c55e" stroke-width="1"/>
+        <text x="400" y="145" text-anchor="middle" font-size="10" fill="#166534" font-weight="bold">Self</text>
+
+        <rect x="480" y="120" width="160" height="40" rx="3" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+        <text x="560" y="145" text-anchor="middle" font-size="10" fill="#a8a29e">Blocked</text>
+
+        <!-- Row 3: Actions attend to everything -->
+        <rect x="180" y="170" width="140" height="40" rx="3" fill="#faf5ff" stroke="#a855f7" stroke-width="1"/>
+        <text x="250" y="195" text-anchor="middle" font-size="10" fill="#7c3aed">Attends &larr;</text>
+
+        <rect x="330" y="170" width="140" height="40" rx="3" fill="#faf5ff" stroke="#a855f7" stroke-width="1"/>
+        <text x="400" y="195" text-anchor="middle" font-size="10" fill="#7c3aed">Attends &larr;</text>
+
+        <rect x="480" y="170" width="160" height="40" rx="3" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="560" y="195" text-anchor="middle" font-size="10" fill="#7c3aed" font-weight="bold">Full Attention</text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <strong>Why blockwise causal?</strong> The VLM tokens (images + language) never attend to action tokens &mdash; this lets us cache the VLM computation across flow matching steps. The action tokens attend to everything (they need full context). The state block bridges the two: it can see the VLM outputs but not the actions, maintaining a clean information flow.
+    </div>
+
+    <h3>Action Expert Dimensions</h3>
+    <table class="summary-table">
+      <thead>
+        <tr><th>Component</th><th>VLM Backbone</th><th>Action Expert</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Parameters</td><td>3B</td><td>300M</td></tr>
+        <tr><td>Hidden width</td><td>2048</td><td>1024</td></tr>
+        <tr><td>MLP dim</td><td>8192</td><td>4096</td></tr>
+        <tr><td>Processes</td><td>Images + language</td><td>State + noisy actions</td></tr>
+        <tr><td>Initialized from</td><td>PaliGemma (internet)</td><td>Random</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 6: Flow Matching -->
+  <section>
+    <h2>6 &mdash; Flow Matching: From Noise to Actions</h2>
+
+    <p>The core generative mechanism in &pi;<sub>0</sub> is <strong>flow matching</strong> &mdash; a modern alternative to diffusion that learns to transform Gaussian noise into coherent action sequences via a continuous velocity field.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" width="720" height="250">
+        <text x="360" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Flow Matching: Noise &rarr; Actions in 10 Steps</text>
+
+        <!-- Noise cloud -->
+        <circle cx="70" cy="110" r="40" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="70" y="100" text-anchor="middle" font-size="18" fill="#ef4444">~</text>
+        <text x="70" y="118" text-anchor="middle" font-size="9" font-weight="bold" fill="#dc2626">N(0, I)</text>
+        <text x="70" y="133" text-anchor="middle" font-size="8" fill="#dc2626">&tau; = 0</text>
+        <text x="70" y="165" text-anchor="middle" font-size="9" fill="#dc2626">Pure noise</text>
+        <text x="70" y="177" text-anchor="middle" font-size="8" fill="#dc2626">(50 &times; action_dim)</text>
+
+        <!-- Integration steps -->
+        <line x1="110" y1="110" x2="150" y2="110" stroke="#57534e" stroke-width="1.5" marker-end="url(#pa)"/>
+
+        <!-- Step markers -->
+        <circle cx="170" cy="110" r="12" fill="#fecaca" stroke="#ef4444" stroke-width="1"/>
+        <text x="170" y="114" text-anchor="middle" font-size="7" fill="#dc2626">&tau;=.1</text>
+
+        <line x1="182" y1="110" x2="210" y2="110" stroke="#57534e" stroke-width="1"/>
+
+        <circle cx="230" cy="110" r="12" fill="#fed7aa" stroke="#f59e0b" stroke-width="1"/>
+        <text x="230" y="114" text-anchor="middle" font-size="7" fill="#92400e">&tau;=.2</text>
+
+        <line x1="242" y1="110" x2="270" y2="110" stroke="#57534e" stroke-width="1"/>
+
+        <circle cx="290" cy="110" r="12" fill="#fef08a" stroke="#eab308" stroke-width="1"/>
+        <text x="290" y="114" text-anchor="middle" font-size="7" fill="#854d0e">&tau;=.3</text>
+
+        <line x1="302" y1="110" x2="330" y2="110" stroke="#57534e" stroke-width="1"/>
+
+        <text x="360" y="114" text-anchor="middle" font-size="12" fill="#57534e">&hellip;</text>
+
+        <line x1="380" y1="110" x2="410" y2="110" stroke="#57534e" stroke-width="1"/>
+
+        <circle cx="430" cy="110" r="12" fill="#bbf7d0" stroke="#22c55e" stroke-width="1"/>
+        <text x="430" y="114" text-anchor="middle" font-size="7" fill="#166534">&tau;=.7</text>
+
+        <line x1="442" y1="110" x2="470" y2="110" stroke="#57534e" stroke-width="1"/>
+
+        <circle cx="490" cy="110" r="12" fill="#86efac" stroke="#22c55e" stroke-width="1"/>
+        <text x="490" y="114" text-anchor="middle" font-size="7" fill="#166534">&tau;=.9</text>
+
+        <line x1="502" y1="110" x2="540" y2="110" stroke="#57534e" stroke-width="1.5" marker-end="url(#pa)"/>
+
+        <!-- Clean actions -->
+        <rect x="550" y="75" width="140" height="70" rx="6" fill="#a855f7" stroke="#7c3aed" stroke-width="2"/>
+        <text x="620" y="100" text-anchor="middle" font-size="11" font-weight="bold" fill="white">Clean Actions</text>
+        <text x="620" y="118" text-anchor="middle" font-size="9" fill="#e9d5ff">&tau; = 1.0</text>
+        <text x="620" y="132" text-anchor="middle" font-size="8" fill="#e9d5ff">50 joint commands</text>
+
+        <!-- Velocity field annotation -->
+        <path d="M250,80 C280,55 320,55 350,80" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="300" y="52" text-anchor="middle" font-size="9" fill="#b45309" font-weight="bold">v<tspan font-size="7" dy="1">&theta;</tspan><tspan dy="-1"> predicts velocity at each &tau;</tspan></text>
+
+        <!-- Bottom explanation -->
+        <text x="360" y="210" text-anchor="middle" font-size="10" fill="#57534e" font-family="Georgia, serif">At each step: A<tspan font-size="8" dy="1">&tau;+0.1</tspan><tspan dy="-1"> = A</tspan><tspan font-size="8" dy="1">&tau;</tspan><tspan dy="-1"> + 0.1 &middot; v</tspan><tspan font-size="8" dy="1">&theta;</tspan><tspan dy="-1">(A</tspan><tspan font-size="8" dy="1">&tau;</tspan><tspan dy="-1">, observation) &mdash; Euler integration</tspan></text>
+
+        <text x="360" y="235" text-anchor="middle" font-size="9" fill="#57534e">The model runs 10 forward passes through the Action Expert, each refining the action sequence</text>
+      </svg>
+    </div>
+
+    <div class="layer-card loss">
+      <div class="layer-header">
+        <h4>Training Loss: Conditional Flow Matching</h4>
+      </div>
+      <p><strong>L(&theta;) = E[ || v<sub>&theta;</sub>(A<sub>t</sub><sup>&tau;</sup>, o<sub>t</sub>) &minus; u(A<sub>t</sub><sup>&tau;</sup> | A<sub>t</sub>) ||&sup2; ]</strong></p>
+      <p>During training, we know the ground-truth clean actions A<sub>t</sub> from demonstrations. We add noise to get A<sub>t</sub><sup>&tau;</sup> = &tau;A<sub>t</sub> + (1&minus;&tau;)&epsilon;, and train the model to predict the "direction" back toward clean data: u = &epsilon; &minus; A<sub>t</sub>.</p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Flow matching vs diffusion:</strong> Both transform noise into structured outputs. Diffusion uses a discrete Markov chain with many steps (50&ndash;1000). Flow matching defines a continuous ODE that can be integrated with fewer steps (just 10 in &pi;<sub>0</sub>). Inference is 10 forward passes through the Action Expert &mdash; total inference time is ~73ms on an RTX 4090.
+    </div>
+
+    <h3>Timestep Embedding</h3>
+    <p>Each noisy action token is embedded with both its own value and the flow timestep &tau;:</p>
+    <div class="callout-blue callout">
+      <strong>Input embedding:</strong> W<sub>3</sub> &middot; swish(W<sub>2</sub> &middot; concat(W<sub>1</sub> &middot; a'<sub>t</sub><sup>&tau;</sup>, &phi;(&tau;))) &mdash; where &phi;(&tau;) is a sinusoidal encoding of the flow timestep. This tells the Action Expert how noisy the current actions are, so it can calibrate the appropriate denoising velocity.
+    </div>
+  </section>
+
+  <!-- Section 7: Cross-Embodiment -->
+  <section>
+    <h2>7 &mdash; Cross-Embodiment: 7 Robots, 1 Model</h2>
+
+    <p>&pi;<sub>0</sub> trains a single model across 7 different robot configurations simultaneously &mdash; from single-arm table robots to mobile bimanual platforms.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" width="720" height="280">
+        <text x="360" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">7 Robot Embodiments, 1 Unified Model</text>
+
+        <!-- Single arm robots -->
+        <rect x="20" y="45" width="110" height="70" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="75" y="65" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e40af">UR5e</text>
+        <text x="75" y="78" text-anchor="middle" font-size="8" fill="#3b82f6">7-DoF, 2 cams</text>
+        <!-- Simple arm drawing -->
+        <line x1="50" y1="95" x2="70" y2="85" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+        <line x1="70" y1="85" x2="95" y2="90" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="95" cy="90" r="3" fill="#3b82f6"/>
+
+        <rect x="145" y="45" width="110" height="70" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="200" y="65" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e40af">Franka</text>
+        <text x="200" y="78" text-anchor="middle" font-size="8" fill="#3b82f6">8-DoF, 2 cams</text>
+        <line x1="175" y1="95" x2="195" y2="85" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+        <line x1="195" y1="85" x2="220" y2="90" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="220" cy="90" r="3" fill="#3b82f6"/>
+
+        <!-- Bimanual robots -->
+        <rect x="270" y="45" width="130" height="70" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="335" y="65" text-anchor="middle" font-size="9" font-weight="bold" fill="#166534">Bimanual UR5e</text>
+        <text x="335" y="78" text-anchor="middle" font-size="8" fill="#22c55e">14-DoF, 3 cams</text>
+        <!-- Two arms -->
+        <line x1="300" y1="95" x2="315" y2="85" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="315" y1="85" x2="330" y2="90" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="345" y1="95" x2="355" y2="85" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="355" y1="85" x2="365" y2="90" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+
+        <rect x="415" y="45" width="130" height="70" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="480" y="65" text-anchor="middle" font-size="9" font-weight="bold" fill="#166534">Bimanual ALOHA</text>
+        <text x="480" y="78" text-anchor="middle" font-size="8" fill="#22c55e">14-DoF, 3 cams</text>
+        <line x1="445" y1="95" x2="460" y2="85" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="460" y1="85" x2="475" y2="90" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="490" y1="95" x2="500" y2="85" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="500" y1="85" x2="510" y2="90" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- Mobile robots -->
+        <rect x="560" y="45" width="140" height="70" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="630" y="65" text-anchor="middle" font-size="9" font-weight="bold" fill="#92400e">Mobile Bimanual</text>
+        <text x="630" y="78" text-anchor="middle" font-size="8" fill="#f59e0b">16&ndash;17 DoF, 3 cams</text>
+        <!-- Mobile base + arms -->
+        <rect x="600" y="90" width="60" height="15" rx="3" fill="#f59e0b" opacity="0.4"/>
+        <circle cx="610" cy="108" r="4" fill="#f59e0b"/>
+        <circle cx="650" cy="108" r="4" fill="#f59e0b"/>
+        <line x1="610" y1="90" x2="605" y2="82" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+        <line x1="650" y1="90" x2="655" y2="82" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Unified action space -->
+        <rect x="140" y="145" width="440" height="40" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="360" y="162" text-anchor="middle" font-size="11" font-weight="bold" fill="#7c3aed">Unified 18-Dim Action/State Space</text>
+        <text x="360" y="178" text-anchor="middle" font-size="9" fill="#a855f7">Zero-padding for robots with fewer joints</text>
+
+        <!-- Arrows down -->
+        <line x1="75" y1="115" x2="200" y2="145" stroke="#57534e" stroke-width="1" marker-end="url(#pa)"/>
+        <line x1="200" y1="115" x2="260" y2="145" stroke="#57534e" stroke-width="1" marker-end="url(#pa)"/>
+        <line x1="335" y1="115" x2="350" y2="145" stroke="#57534e" stroke-width="1" marker-end="url(#pa)"/>
+        <line x1="480" y1="115" x2="440" y2="145" stroke="#57534e" stroke-width="1" marker-end="url(#pa)"/>
+        <line x1="630" y1="115" x2="520" y2="145" stroke="#57534e" stroke-width="1" marker-end="url(#pa)"/>
+
+        <!-- Example zero-padding -->
+        <rect x="80" y="205" width="560" height="60" rx="6" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+        <text x="360" y="222" text-anchor="middle" font-size="9" font-weight="bold" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">EXAMPLE: 7-DOF SINGLE ARM</text>
+        <text x="360" y="245" text-anchor="middle" font-size="10" fill="#57534e" font-family="SF Mono, monospace">[j1, j2, j3, j4, j5, j6, j7, grip, <tspan fill="#a8a29e">0, 0, 0, 0, 0, 0, 0, 0, 0, 0</tspan>]</text>
+        <text x="360" y="260" text-anchor="middle" font-size="8" fill="#a8a29e">active joints                            zero-padded to 18</text>
+      </svg>
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr><th>Robot</th><th>DoF</th><th>Cameras</th><th>Action Dim</th><th>Tasks</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>UR5e (single)</td><td>7</td><td>2</td><td>8</td><td>Table tasks</td></tr>
+        <tr><td>Franka (single)</td><td>8</td><td>2</td><td>8</td><td>Dexterous manipulation</td></tr>
+        <tr><td>Bimanual UR5e</td><td>14</td><td>3</td><td>16</td><td>Folding, assembly</td></tr>
+        <tr><td>Bimanual ALOHA (Trossen)</td><td>14</td><td>3</td><td>14</td><td>Dual-arm tasks</td></tr>
+        <tr><td>Bimanual ARX/AgileX</td><td>14</td><td>3</td><td>14</td><td>Dual-arm tasks</td></tr>
+        <tr><td>Mobile Trossen/ARX</td><td>14</td><td>3</td><td>16</td><td>Mobile manipulation</td></tr>
+        <tr><td>Mobile Fibocom</td><td>14</td><td>3</td><td>17</td><td>Holonomic mobile</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 8: Pre-training & Post-training -->
+  <section>
+    <h2>8 &mdash; Pre-training &amp; Post-training</h2>
+
+    <p>&pi;<sub>0</sub> follows the LLM playbook: massive pre-training on diverse data, then task-specific fine-tuning (which they call "post-training").</p>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Pre-training</h4>
+        <span class="shapes">903M timesteps, 700K gradient steps</span>
+      </div>
+      <p><strong>Data:</strong> ~10,000 hours of robot demonstrations across all 7 embodiments. 106M timesteps from single-arm, 797M from dual-arm. Plus 9.1% open-source data (OXE, Bridge v2, DROID).</p>
+      <p><strong>Task weighting:</strong> Data from task-robot combinations weighted by n<sup>0.43</sup> to prevent over-representation of common tasks.</p>
+      <p><strong>Language labels:</strong> Both high-level task names ("fold the shirt") and fine-grained segment annotations (~2-second sub-instructions like "grasp the right sleeve").</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Post-training (Fine-tuning)</h4>
+        <span class="shapes">5&ndash;100+ hours per task</span>
+      </div>
+      <p>Specializes the pre-trained model to specific downstream tasks using curated, high-quality demonstrations. The key finding: pre-training provides <strong>recovery behaviors</strong> (what to do when things go wrong) that transfer even to novel tasks, while post-training data teaches efficient task-specific strategies.</p>
+    </div>
+  </section>
+
+  <!-- Section 9: Results -->
+  <section>
+    <h2>9 &mdash; Results</h2>
+
+    <table class="summary-table">
+      <thead>
+        <tr><th>Task</th><th>&pi;<sub>0</sub></th><th>OpenVLA (7B)</th><th>Octo (93M)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Shirt folding</td><td>~95%</td><td>~40%</td><td>&lt;10%</td></tr>
+        <tr><td>Table bussing (easy)</td><td>~90%</td><td>~50%</td><td>~20%</td></tr>
+        <tr><td>Table bussing (hard)</td><td>~70%</td><td>~30%</td><td>&lt;10%</td></tr>
+        <tr><td>Grocery bagging</td><td>~85%</td><td>~45%</td><td>&lt;10%</td></tr>
+        <tr><td>Toast extraction</td><td>~80%</td><td>~35%</td><td>&lt;10%</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout-green callout">
+      <strong>Complex multi-stage tasks (10+ minutes):</strong> &pi;<sub>0</sub> achieves >50% success on laundry folding from arbitrary crumpled configurations, box assembly with deformable cardboard, egg packing (delicate objects), and mobile manipulation &mdash; tasks that require dozens of sequential sub-skills coordinated over minutes.
+    </div>
+
+    <h3>Inference Speed</h3>
+    <table class="summary-table">
+      <thead><tr><th>Stage</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>Image encoding (SigLIP)</td><td>14 ms</td></tr>
+        <tr><td>Observation processing (VLM)</td><td>32 ms</td></tr>
+        <tr><td>Flow matching (10 steps)</td><td>27 ms</td></tr>
+        <tr><td><strong>Total on-board (RTX 4090)</strong></td><td><strong>73 ms</strong></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 10: References -->
+  <section>
+    <h2>10 &mdash; References</h2>
+    <p>Black, K., et al. (2024). <a href="https://arxiv.org/abs/2410.24164">&pi;<sub>0</sub>: A Vision-Language-Action Flow Model for General Robot Control</a>. arXiv:2410.24164.</p>
+    <p>Brohan, A., et al. (2023). RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control. arXiv:2307.15818.</p>
+    <p>Kim, M.J., et al. (2024). <a href="https://arxiv.org/abs/2406.09246">OpenVLA: An Open-Source Vision-Language-Action Model</a>. arXiv:2406.09246.</p>
+    <p>Lipman, Y., et al. (2023). Flow Matching for Generative Modeling. ICLR 2023.</p>
+    <p>Chi, C., et al. (2024). Diffusion Policy: Visuomotor Policy Learning via Action Diffusion. RSS 2024.</p>
+    <p>Beyer, L., et al. (2024). PaliGemma: A versatile 3B VLM for transfer. arXiv:2407.07726.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>
