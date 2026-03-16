@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PPO Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+      --layer-backbone: #dbeafe;
+      --layer-neck: #dcfce7;
+      --layer-head: #fef3c7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero .breadcrumb {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .hero .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .hero .meta-tags span {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .hero .paper-link {
+      font-size: 0.9rem;
+    }
+
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-size: 1.1rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+
+    .callout {
+      background: var(--highlight-bg);
+      border-left: 3px solid var(--highlight-border);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 1.25rem;
+      font-size: 0.92rem;
+    }
+    .callout strong { color: var(--accent); }
+
+    .callout-blue {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+    }
+    .callout-blue strong { color: #2563eb; }
+
+    .callout-green {
+      background: #f0fdf4;
+      border-left-color: #22c55e;
+    }
+    .callout-green strong { color: #16a34a; }
+
+    .tensor {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      background: var(--code-bg);
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .arch-diagram {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .arch-diagram svg {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .layer-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--border);
+    }
+    .layer-card.backbone { border-left-color: #3b82f6; }
+    .layer-card.neck { border-left-color: #22c55e; }
+    .layer-card.head { border-left-color: #f59e0b; }
+    .layer-card.loss { border-left-color: #ef4444; }
+
+    .layer-card .layer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .layer-card .layer-header h4 {
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .layer-card .layer-header .shapes {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .layer-card p {
+      font-size: 0.92rem;
+      margin-bottom: 0.75rem;
+    }
+    .layer-card p:last-child { margin-bottom: 0; }
+
+    .layer-diagram {
+      margin: 1rem 0 0.75rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .layer-diagram svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    .summary-table th, .summary-table td {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .summary-table th {
+      background: var(--code-bg);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    footer {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.5rem; }
+      body { font-size: 16px; }
+      nav { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; All Walkthroughs</a></div>
+    <h1>PPO: Proximal Policy Optimization</h1>
+    <div class="subtitle">Stable Policy Gradient Methods for Reinforcement Learning</div>
+    <div class="meta-tags">
+      <span>Policy Gradient</span>
+      <span>On-Policy</span>
+      <span>OpenAI 2017</span>
+      <span>Actor-Critic</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization Algorithms</a> (Schulman et al., 2017)
+    </div>
+  </section>
+
+  <!-- Section 1: The Problem -->
+  <section>
+    <h2>1 &mdash; The Problem: Unstable Policy Gradients</h2>
+
+    <p>The vanilla policy gradient theorem gives us a beautiful result: we can improve a policy by estimating gradients from sampled trajectories. REINFORCE and its variants compute:</p>
+
+    <div class="callout">
+      <strong>Vanilla Policy Gradient:</strong> &nabla;J(&theta;) = E[&nabla; log &pi;<sub>&theta;</sub>(a|s) &middot; &Acirc;(s,a)] &mdash; move in the direction that increases the probability of actions with positive advantage.
+    </div>
+
+    <p>The problem? <strong>Step size is critical and fragile.</strong> Policy gradient methods compute a direction to move in parameter space, but they say nothing about how <em>far</em> to move. Too small a step and training is painfully slow. Too large a step and the policy can catastrophically collapse &mdash; a single bad update can destroy a policy that took millions of timesteps to learn.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" width="700" height="220">
+        <!-- Performance axis -->
+        <line x1="60" y1="190" x2="660" y2="190" stroke="#57534e" stroke-width="1.5"/>
+        <text x="360" y="215" text-anchor="middle" font-size="12" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Training Steps</text>
+        <line x1="60" y1="190" x2="60" y2="20" stroke="#57534e" stroke-width="1.5"/>
+        <text x="30" y="105" text-anchor="middle" font-size="12" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif" transform="rotate(-90,30,105)">Return</text>
+
+        <!-- Good learning curve -->
+        <path d="M80,170 Q200,160 300,100 Q400,55 600,40" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+        <text x="610" y="38" font-size="11" fill="#22c55e" font-family="Helvetica Neue, Arial, sans-serif">Small step (slow but stable)</text>
+
+        <!-- PPO curve -->
+        <path d="M80,170 Q180,130 280,70 Q380,30 550,25" fill="none" stroke="#b45309" stroke-width="3"/>
+        <text x="558" y="22" font-size="11" fill="#b45309" font-family="Helvetica Neue, Arial, sans-serif" font-weight="bold">PPO (fast &amp; stable)</text>
+
+        <!-- Catastrophic collapse curve -->
+        <path d="M80,170 Q150,90 220,50 L240,45 Q260,150 300,170 Q340,175 380,175" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="6,3"/>
+        <text x="390" y="178" font-size="11" fill="#ef4444" font-family="Helvetica Neue, Arial, sans-serif">Large step (collapse!)</text>
+
+        <!-- Collapse annotation -->
+        <line x1="240" y1="45" x2="240" y2="10" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="240" y="8" text-anchor="middle" font-size="9" fill="#ef4444" font-family="Helvetica Neue, Arial, sans-serif">Bad update</text>
+      </svg>
+    </div>
+
+    <p>TRPO (Trust Region Policy Optimization) solved this with a hard constraint: never let the new policy deviate too far from the old one, measured by KL divergence. But TRPO requires computing second-order derivatives and solving a constrained optimization problem &mdash; complex to implement and expensive to compute.</p>
+
+    <div class="callout-blue callout">
+      <strong>PPO's insight:</strong> Instead of a hard KL constraint (TRPO), use a simple clipped objective that automatically prevents large updates. Same stability, first-order optimization only, trivial to implement.
+    </div>
+  </section>
+
+  <!-- Section 2: Actor-Critic Architecture -->
+  <section>
+    <h2>2 &mdash; Actor-Critic Architecture</h2>
+
+    <p>PPO uses an actor-critic framework where two functions work together: the <strong>actor</strong> (policy network) decides what to do, and the <strong>critic</strong> (value network) evaluates how good the current state is. In practice, these can share a backbone or be completely separate networks.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" width="700" height="340">
+        <!-- State input -->
+        <rect x="280" y="10" width="140" height="40" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="350" y="35" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e40af">State s</text>
+
+        <!-- Shared backbone (optional) -->
+        <rect x="250" y="80" width="200" height="36" rx="6" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1.5"/>
+        <text x="350" y="103" text-anchor="middle" font-size="11" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">SHARED BACKBONE (optional)</text>
+        <line x1="350" y1="50" x2="350" y2="80" stroke="#57534e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Actor branch -->
+        <rect x="80" y="150" width="200" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="180" y="175" text-anchor="middle" font-size="13" font-weight="bold" fill="#92400e">Actor &pi;<tspan font-size="10" dy="2">&theta;</tspan><tspan dy="-2">(a|s)</tspan></text>
+
+        <!-- Critic branch -->
+        <rect x="420" y="150" width="200" height="40" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="520" y="175" text-anchor="middle" font-size="13" font-weight="bold" fill="#166534">Critic V<tspan font-size="10" dy="2">&phi;</tspan><tspan dy="-2">(s)</tspan></text>
+
+        <!-- Connections from backbone -->
+        <path d="M300,116 L180,150" fill="none" stroke="#57534e" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <path d="M400,116 L520,150" fill="none" stroke="#57534e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Actor outputs -->
+        <rect x="60" y="220" width="100" height="34" rx="5" fill="#fff7ed" stroke="#f59e0b" stroke-width="1"/>
+        <text x="110" y="241" text-anchor="middle" font-size="11" fill="#92400e">Action probs</text>
+
+        <rect x="200" y="220" width="100" height="34" rx="5" fill="#fff7ed" stroke="#f59e0b" stroke-width="1"/>
+        <text x="250" y="241" text-anchor="middle" font-size="11" fill="#92400e">Sample a ~ &pi;</text>
+
+        <line x1="140" y1="190" x2="110" y2="220" stroke="#f59e0b" stroke-width="1.2"/>
+        <line x1="220" y1="190" x2="250" y2="220" stroke="#f59e0b" stroke-width="1.2"/>
+
+        <!-- Critic output -->
+        <rect x="470" y="220" width="100" height="34" rx="5" fill="#f0fdf4" stroke="#22c55e" stroke-width="1"/>
+        <text x="520" y="241" text-anchor="middle" font-size="11" fill="#166534">Value V(s)</text>
+        <line x1="520" y1="190" x2="520" y2="220" stroke="#22c55e" stroke-width="1.2"/>
+
+        <!-- Environment -->
+        <rect x="140" y="290" width="160" height="40" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="220" y="315" text-anchor="middle" font-size="13" font-weight="bold" fill="#4338ca">Environment</text>
+        <line x1="250" y1="254" x2="220" y2="290" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Reward + next state -->
+        <text x="400" y="308" font-size="11" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">r, s' &rarr; back to top</text>
+        <path d="M300,310 L400,310" fill="none" stroke="#6366f1" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- Arrow marker -->
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#57534e"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Actor Network (Policy)</h4>
+        <span class="shapes">state &rarr; action distribution</span>
+      </div>
+      <p>Maps a state to a probability distribution over actions. For discrete actions (e.g., Atari), outputs a softmax over action logits. For continuous actions (e.g., MuJoCo), outputs a mean and standard deviation for a Gaussian distribution.</p>
+      <p>Typical architecture: 2&ndash;3 fully-connected layers with <span class="tensor">64</span> or <span class="tensor">256</span> hidden units and tanh/ReLU activations. Input is the state vector <span class="tensor">[B, state_dim]</span>, output is <span class="tensor">[B, action_dim]</span> (discrete) or <span class="tensor">[B, 2 &times; action_dim]</span> for mean + log_std (continuous).</p>
+    </div>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>Critic Network (Value Function)</h4>
+        <span class="shapes">state &rarr; scalar value</span>
+      </div>
+      <p>Estimates V(s) &mdash; the expected cumulative discounted reward from state s under the current policy. Used to compute advantages but <strong>not</strong> used during action selection at test time.</p>
+      <p>Same architecture as the actor but with a single scalar output: <span class="tensor">[B, state_dim]</span> &rarr; <span class="tensor">[B, 1]</span>. When sharing a backbone, only the final layer differs.</p>
+    </div>
+
+    <div class="callout">
+      <strong>Shared vs. Separate:</strong> Atari PPO typically shares a CNN backbone between actor and critic (saves parameters). MuJoCo PPO typically uses separate MLPs (more stable for continuous control). The loss becomes L = L<sup>CLIP</sup> &minus; c<sub>1</sub>L<sup>VF</sup> + c<sub>2</sub>S[&pi;] when sharing.
+    </div>
+  </section>
+
+  <!-- Section 3: Clipped Surrogate Objective -->
+  <section>
+    <h2>3 &mdash; The Clipped Surrogate Objective</h2>
+
+    <p>This is the core innovation of PPO. Instead of constraining the KL divergence (TRPO), PPO clips the objective function itself so the policy can never move too far in a single update.</p>
+
+    <h3>The Probability Ratio</h3>
+    <p>Define the probability ratio between the new and old policy:</p>
+
+    <div class="callout-blue callout">
+      <strong>r(&theta;) = &pi;<sub>&theta;</sub>(a|s) / &pi;<sub>&theta;<sub>old</sub></sub>(a|s)</strong> &mdash; How much more (or less) likely is action a under the new policy compared to the old one? When r = 1, the policies are identical for this state-action pair. r > 1 means the new policy is more likely to take this action; r < 1 means less likely.
+    </div>
+
+    <h3>The Clipped Objective</h3>
+    <p>The PPO-Clip objective is:</p>
+
+    <div class="layer-card loss">
+      <div class="layer-header">
+        <h4>L<sup>CLIP</sup>(&theta;)</h4>
+        <span class="shapes">&epsilon; = 0.2 (default)</span>
+      </div>
+      <p><strong>L<sup>CLIP</sup> = E[ min( r(&theta;)&Acirc;, clip(r(&theta;), 1&minus;&epsilon;, 1+&epsilon;)&Acirc; ) ]</strong></p>
+      <p>The min() takes the more pessimistic (lower) of two terms: the unclipped surrogate and the clipped surrogate. This creates a "trust region" without ever computing KL divergence.</p>
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" width="700" height="360">
+        <text x="350" y="20" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Clipped Surrogate Objective</text>
+
+        <!-- LEFT: Advantage > 0 -->
+        <text x="190" y="50" text-anchor="middle" font-size="12" font-weight="bold" fill="#22c55e" font-family="Helvetica Neue, Arial, sans-serif">ADVANTAGE &Acirc; > 0 (good action)</text>
+
+        <!-- Axes -->
+        <line x1="60" y1="280" x2="340" y2="280" stroke="#57534e" stroke-width="1"/>
+        <line x1="60" y1="280" x2="60" y2="70" stroke="#57534e" stroke-width="1"/>
+        <text x="200" y="300" text-anchor="middle" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">r(&theta;)</text>
+        <text x="45" y="175" text-anchor="middle" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif" transform="rotate(-90,45,175)">L<tspan font-size="8" dy="-4">CLIP</tspan></text>
+
+        <!-- r=1 mark -->
+        <line x1="170" y1="280" x2="170" y2="275" stroke="#57534e" stroke-width="1"/>
+        <text x="170" y="295" text-anchor="middle" font-size="9" fill="#57534e">1.0</text>
+
+        <!-- 1-eps mark -->
+        <line x1="115" y1="280" x2="115" y2="275" stroke="#57534e" stroke-width="1"/>
+        <text x="115" y="295" text-anchor="middle" font-size="9" fill="#57534e">0.8</text>
+
+        <!-- 1+eps mark -->
+        <line x1="225" y1="280" x2="225" y2="275" stroke="#57534e" stroke-width="1"/>
+        <text x="225" y="295" text-anchor="middle" font-size="9" fill="#57534e">1.2</text>
+
+        <!-- Unclipped line (gray, dashed) -->
+        <line x1="60" y1="240" x2="320" y2="100" stroke="#a8a29e" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="310" y="95" font-size="9" fill="#a8a29e">unclipped r&middot;&Acirc;</text>
+
+        <!-- Clipped objective (green, bold) -->
+        <line x1="60" y1="240" x2="225" y2="140" stroke="#22c55e" stroke-width="3"/>
+        <line x1="225" y1="140" x2="320" y2="140" stroke="#22c55e" stroke-width="3"/>
+
+        <!-- Clip boundary -->
+        <line x1="225" y1="280" x2="225" y2="140" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="270" y="135" font-size="9" fill="#22c55e" font-weight="bold">Clipped! No more benefit</text>
+
+        <!-- Shaded no-update zone -->
+        <rect x="225" y="140" width="95" height="140" fill="#22c55e" opacity="0.06"/>
+
+
+        <!-- RIGHT: Advantage < 0 -->
+        <text x="520" y="50" text-anchor="middle" font-size="12" font-weight="bold" fill="#ef4444" font-family="Helvetica Neue, Arial, sans-serif">ADVANTAGE &Acirc; &lt; 0 (bad action)</text>
+
+        <!-- Axes -->
+        <line x1="380" y1="280" x2="660" y2="280" stroke="#57534e" stroke-width="1"/>
+        <line x1="380" y1="280" x2="380" y2="70" stroke="#57534e" stroke-width="1"/>
+        <text x="520" y="300" text-anchor="middle" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">r(&theta;)</text>
+
+        <!-- r=1 mark -->
+        <line x1="490" y1="280" x2="490" y2="275" stroke="#57534e" stroke-width="1"/>
+        <text x="490" y="295" text-anchor="middle" font-size="9" fill="#57534e">1.0</text>
+
+        <!-- 1-eps mark -->
+        <line x1="435" y1="280" x2="435" y2="275" stroke="#57534e" stroke-width="1"/>
+        <text x="435" y="295" text-anchor="middle" font-size="9" fill="#57534e">0.8</text>
+
+        <!-- 1+eps mark -->
+        <line x1="545" y1="280" x2="545" y2="275" stroke="#57534e" stroke-width="1"/>
+        <text x="545" y="295" text-anchor="middle" font-size="9" fill="#57534e">1.2</text>
+
+        <!-- Unclipped line (gray, dashed) — negative slope since A<0 -->
+        <line x1="380" y1="100" x2="640" y2="240" stroke="#a8a29e" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="630" y="248" font-size="9" fill="#a8a29e">unclipped r&middot;&Acirc;</text>
+
+        <!-- Clipped objective (red, bold) -->
+        <line x1="380" y1="140" x2="435" y2="140" stroke="#ef4444" stroke-width="3"/>
+        <line x1="435" y1="140" x2="640" y2="240" stroke="#ef4444" stroke-width="3"/>
+
+        <!-- Clip boundary -->
+        <line x1="435" y1="280" x2="435" y2="140" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="400" y="135" font-size="9" fill="#ef4444" font-weight="bold" text-anchor="middle">Clipped!</text>
+
+        <!-- Shaded no-update zone -->
+        <rect x="380" y="140" width="55" height="140" fill="#ef4444" opacity="0.06"/>
+
+        <!-- Bottom explanation -->
+        <text x="350" y="340" text-anchor="middle" font-size="11" fill="#57534e" font-family="Georgia, serif">
+          The min() operator selects the lower (more pessimistic) curve at each point.
+        </text>
+      </svg>
+    </div>
+
+    <h3>Why Does This Work?</h3>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>When &Acirc; > 0 (good action)</h4>
+        <span class="shapes">Encourage, but not too much</span>
+      </div>
+      <p>The objective wants to increase r(&theta;) &mdash; make the good action more likely. But once r(&theta;) exceeds 1+&epsilon;, the clipped term becomes flat. The min() picks the flat clipped value, so there's <strong>no gradient to push r further</strong>. The policy can increase the action's probability, but only up to 20% more than before.</p>
+    </div>
+
+    <div class="layer-card loss">
+      <div class="layer-header">
+        <h4>When &Acirc; < 0 (bad action)</h4>
+        <span class="shapes">Discourage, but not too much</span>
+      </div>
+      <p>The objective wants to decrease r(&theta;) &mdash; make the bad action less likely. But once r(&theta;) drops below 1&minus;&epsilon;, the clipped term is again flat. The policy can decrease the action's probability, but only down to 20% less than before.</p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>The elegance of PPO:</strong> The clipping mechanism creates an implicit trust region. No second-order optimization, no KL penalty tuning, no line search. Just a simple min() and clip() in the loss function. This is why PPO became the default algorithm &mdash; it's almost as stable as TRPO but trivial to implement.
+    </div>
+  </section>
+
+  <!-- Section 4: GAE -->
+  <section>
+    <h2>4 &mdash; Generalized Advantage Estimation (GAE)</h2>
+
+    <p>The advantage &Acirc;(s,a) measures how much better action a is compared to the average action in state s. Computing good advantage estimates is critical &mdash; noisy advantages lead to noisy gradients and poor updates.</p>
+
+    <h3>TD Residuals</h3>
+    <p>The one-step TD residual at time t is:</p>
+
+    <div class="callout-blue callout">
+      <strong>&delta;<sub>t</sub> = r<sub>t</sub> + &gamma;V(s<sub>t+1</sub>) &minus; V(s<sub>t</sub>)</strong> &mdash; The actual reward plus the estimated future value, minus what we expected. Positive &delta; means things went better than expected.
+    </div>
+
+    <h3>The Bias-Variance Tradeoff</h3>
+    <p>We could use just &delta;<sub>t</sub> as the advantage (low variance, high bias) or a full Monte Carlo return (no bias, high variance). GAE provides a smooth interpolation controlled by &lambda; &isin; [0, 1]:</p>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>GAE(&gamma;, &lambda;)</h4>
+        <span class="shapes">&gamma; = 0.99, &lambda; = 0.95 typical</span>
+      </div>
+      <p><strong>&Acirc;<sup>GAE</sup><sub>t</sub> = &Sigma;<sub>l=0</sub><sup>&infin;</sup> (&gamma;&lambda;)<sup>l</sup> &delta;<sub>t+l</sub></strong></p>
+      <p>This is an exponentially-weighted sum of TD residuals. When &lambda; = 0, we get the one-step TD advantage (high bias, low variance). When &lambda; = 1, we get the Monte Carlo advantage (no bias, high variance). The default &lambda; = 0.95 provides a good balance.</p>
+
+      <div class="layer-diagram">
+        <svg viewBox="0 0 650 180" xmlns="http://www.w3.org/2000/svg" width="650" height="180">
+          <text x="325" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">GAE: Exponentially-Weighted TD Residuals</text>
+
+          <!-- Timeline -->
+          <line x1="50" y1="80" x2="600" y2="80" stroke="#57534e" stroke-width="1.5"/>
+
+          <!-- Timesteps -->
+          <circle cx="80" cy="80" r="18" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="80" y="85" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">s<tspan font-size="8" dy="2">t</tspan></text>
+
+          <circle cx="200" cy="80" r="18" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="200" y="85" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">s<tspan font-size="8" dy="2">t+1</tspan></text>
+
+          <circle cx="320" cy="80" r="18" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="320" y="85" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">s<tspan font-size="8" dy="2">t+2</tspan></text>
+
+          <circle cx="440" cy="80" r="18" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="440" y="85" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">s<tspan font-size="8" dy="2">t+3</tspan></text>
+
+          <text x="540" y="85" text-anchor="middle" font-size="14" fill="#57534e">&hellip;</text>
+
+          <!-- TD residuals -->
+          <text x="140" y="55" text-anchor="middle" font-size="10" fill="#ef4444" font-family="Helvetica Neue, Arial, sans-serif">&delta;<tspan font-size="8" dy="1">t</tspan></text>
+          <text x="260" y="55" text-anchor="middle" font-size="10" fill="#ef4444" font-family="Helvetica Neue, Arial, sans-serif">&delta;<tspan font-size="8" dy="1">t+1</tspan></text>
+          <text x="380" y="55" text-anchor="middle" font-size="10" fill="#ef4444" font-family="Helvetica Neue, Arial, sans-serif">&delta;<tspan font-size="8" dy="1">t+2</tspan></text>
+
+          <!-- Weights -->
+          <text x="140" y="120" text-anchor="middle" font-size="10" fill="#b45309" font-weight="bold">&times; 1.0</text>
+          <text x="260" y="120" text-anchor="middle" font-size="10" fill="#b45309" font-weight="bold">&times; &gamma;&lambda;</text>
+          <text x="380" y="120" text-anchor="middle" font-size="10" fill="#b45309" font-weight="bold">&times; (&gamma;&lambda;)&sup2;</text>
+          <text x="500" y="120" text-anchor="middle" font-size="10" fill="#b45309" font-weight="bold">&times; (&gamma;&lambda;)&sup3;</text>
+
+          <!-- Result -->
+          <rect x="130" y="145" width="390" height="28" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="1"/>
+          <text x="325" y="164" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">&Acirc;<tspan font-size="9" dy="2">t</tspan><tspan dy="-2"> = &delta;</tspan><tspan font-size="9" dy="2">t</tspan><tspan dy="-2"> + &gamma;&lambda;&delta;</tspan><tspan font-size="9" dy="2">t+1</tspan><tspan dy="-2"> + (&gamma;&lambda;)&sup2;&delta;</tspan><tspan font-size="9" dy="2">t+2</tspan><tspan dy="-2"> + &hellip;</tspan></text>
+        </svg>
+      </div>
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>&lambda; Value</th>
+          <th>Estimator</th>
+          <th>Bias</th>
+          <th>Variance</th>
+          <th>Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>&lambda; = 0</td>
+          <td>One-step TD</td>
+          <td>High</td>
+          <td>Low</td>
+          <td>Only uses immediate reward + next value</td>
+        </tr>
+        <tr>
+          <td>&lambda; = 0.95</td>
+          <td>GAE (default)</td>
+          <td>Low</td>
+          <td>Moderate</td>
+          <td>Good balance for most tasks</td>
+        </tr>
+        <tr>
+          <td>&lambda; = 1</td>
+          <td>Monte Carlo</td>
+          <td>Zero</td>
+          <td>High</td>
+          <td>Full episode return minus baseline</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 5: Training Loop -->
+  <section>
+    <h2>5 &mdash; The PPO Training Loop</h2>
+
+    <p>PPO alternates between collecting data and optimizing the policy. Unlike off-policy methods (SAC, TD3), PPO uses each batch of data for only a few epochs before discarding it &mdash; the data is "on-policy" and becomes stale as the policy changes.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" width="700" height="400">
+        <text x="350" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">PPO Training Loop</text>
+
+        <!-- Step 1: Collect -->
+        <rect x="230" y="50" width="240" height="50" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+        <text x="350" y="70" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">1. Collect Trajectories</text>
+        <text x="350" y="88" text-anchor="middle" font-size="10" fill="#1e40af">Run &pi;<tspan font-size="8" dy="1">old</tspan><tspan dy="-1"> for T steps in N environments</tspan></text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="100" x2="350" y2="125" stroke="#57534e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Step 2: Compute Advantages -->
+        <rect x="230" y="125" width="240" height="50" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+        <text x="350" y="145" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">2. Compute Advantages</text>
+        <text x="350" y="163" text-anchor="middle" font-size="10" fill="#166534">GAE(&gamma;=0.99, &lambda;=0.95) + normalize</text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="175" x2="350" y2="200" stroke="#57534e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Step 3: Mini-batch updates -->
+        <rect x="200" y="200" width="300" height="60" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="350" y="222" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">3. K Epochs of Mini-Batch Updates</text>
+        <text x="350" y="240" text-anchor="middle" font-size="10" fill="#92400e">Shuffle data &rarr; split into M mini-batches</text>
+        <text x="350" y="254" text-anchor="middle" font-size="10" fill="#92400e">Update &pi; with L<tspan font-size="8" dy="-2">CLIP</tspan><tspan dy="2"> + entropy bonus</tspan></text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="260" x2="350" y2="285" stroke="#57534e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Step 4: Update value function -->
+        <rect x="230" y="285" width="240" height="50" rx="8" fill="#fce7f3" stroke="#ec4899" stroke-width="2"/>
+        <text x="350" y="305" text-anchor="middle" font-size="12" font-weight="bold" fill="#9d174d">4. Update Value Function</text>
+        <text x="350" y="323" text-anchor="middle" font-size="10" fill="#9d174d">MSE loss: (V(s) &minus; R<tspan font-size="8" dy="1">target</tspan><tspan dy="-1">)&sup2;</tspan></text>
+
+        <!-- Loop arrow back to step 1 -->
+        <path d="M350,335 L350,370 L620,370 L620,75 L470,75" fill="none" stroke="#b45309" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="625" y="230" text-anchor="start" font-size="10" fill="#b45309" font-weight="bold" font-family="Helvetica Neue, Arial, sans-serif" transform="rotate(-90,625,230)">REPEAT</text>
+
+        <!-- Side annotations -->
+        <text x="135" y="80" text-anchor="end" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">N=8 parallel envs</text>
+        <text x="135" y="95" text-anchor="end" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">T=2048 steps each</text>
+
+        <text x="135" y="230" text-anchor="end" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">K=3&ndash;10 epochs</text>
+        <text x="135" y="245" text-anchor="end" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">M=32&ndash;64 batches</text>
+
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#57534e"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Step 1: Collect Trajectories</h4>
+        <span class="shapes">N &times; T timesteps per iteration</span>
+      </div>
+      <p>Run the current policy &pi;<sub>&theta;old</sub> in N parallel environments for T timesteps each. Store <span class="tensor">(s, a, r, s', log&pi;(a|s), V(s))</span> for each transition. Typical: N=8 environments, T=2048 steps = 16,384 transitions per batch.</p>
+    </div>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>Step 2: Compute Advantages</h4>
+        <span class="shapes">GAE with normalization</span>
+      </div>
+      <p>Using the collected rewards and value estimates, compute GAE advantages &Acirc;<sub>t</sub> for every timestep (computed in reverse order for efficiency). Then <strong>normalize advantages</strong> to zero mean and unit variance across the batch &mdash; this is a critical implementation detail that significantly improves stability.</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Step 3: K Epochs of Mini-Batch Updates</h4>
+        <span class="shapes">K=3&ndash;10, mini-batch size 64&ndash;4096</span>
+      </div>
+      <p>Shuffle the collected data and split into M mini-batches. For each mini-batch, compute the clipped surrogate loss and update the policy. Repeat for K epochs on the same data. The clipping ensures that even after K passes, the policy hasn't moved too far from &pi;<sub>old</sub>.</p>
+    </div>
+
+    <div class="callout">
+      <strong>Why K > 1 works:</strong> In vanilla policy gradient, you use each batch exactly once (one gradient step). PPO's clipping lets you reuse data for multiple epochs because it automatically stops the policy from diverging &mdash; once r(&theta;) hits the clip boundary, gradients become zero. This dramatically improves sample efficiency.
+    </div>
+  </section>
+
+  <!-- Section 6: Implementation Details -->
+  <section>
+    <h2>6 &mdash; Implementation Details That Matter</h2>
+
+    <p>PPO's simplicity is deceptive. The algorithm pseudocode fits on a napkin, but the implementation details can make a 10&times; difference in performance. Here are the ones that matter most:</p>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Entropy Bonus</h4>
+        <span class="shapes">c<sub>2</sub> = 0.01 typical</span>
+      </div>
+      <p>Add an entropy bonus to the loss: L = L<sup>CLIP</sup> &minus; c<sub>1</sub>L<sup>VF</sup> + <strong>c<sub>2</sub> H(&pi;)</strong>. Entropy regularization prevents the policy from collapsing to a deterministic action too early. Without it, PPO can get stuck in suboptimal deterministic policies, especially in environments with sparse rewards.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Advantage Normalization</h4>
+        <span class="shapes">per mini-batch</span>
+      </div>
+      <p>Normalize advantages to zero mean and unit standard deviation: &Acirc; &larr; (&Acirc; &minus; &mu;) / (&sigma; + 10<sup>&minus;8</sup>). This is done per mini-batch. Without normalization, the magnitude of advantages varies wildly across training, making the effective learning rate inconsistent.</p>
+    </div>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>Value Function Clipping</h4>
+        <span class="shapes">optional, debated</span>
+      </div>
+      <p>Some implementations clip the value function loss similarly to the policy loss: L<sup>VF</sup> = max((V &minus; V<sub>target</sub>)&sup2;, (V<sub>clipped</sub> &minus; V<sub>target</sub>)&sup2;). This is controversial &mdash; the original paper includes it, but ablation studies suggest it sometimes hurts. Most modern implementations skip this.</p>
+    </div>
+
+    <div class="layer-card loss">
+      <div class="layer-header">
+        <h4>Learning Rate Annealing</h4>
+        <span class="shapes">linear decay to 0</span>
+      </div>
+      <p>Linearly decay the learning rate from its initial value (typically 3&times;10<sup>&minus;4</sup>) to zero over the course of training. Combined with the clip range, this provides a smooth reduction in update magnitude as training progresses.</p>
+    </div>
+
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Gradient Clipping</h4>
+        <span class="shapes">max_grad_norm = 0.5</span>
+      </div>
+      <p>Clip the global gradient norm to 0.5. While PPO's objective clipping prevents catastrophic policy updates, gradient clipping adds an additional safety net against rare pathological mini-batches that produce extremely large gradients.</p>
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Orthogonal Initialization</h4>
+        <span class="shapes">gain varies by layer</span>
+      </div>
+      <p>Initialize network weights with orthogonal matrices. Use gain=&radic;2 for hidden layers (works well with ReLU), gain=0.01 for the policy output layer (initially near-uniform action distribution), and gain=1.0 for the value output layer.</p>
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Hyperparameter</th>
+          <th>Atari (Discrete)</th>
+          <th>MuJoCo (Continuous)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Parallel environments N</td><td>8</td><td>1&ndash;64</td></tr>
+        <tr><td>Rollout length T</td><td>128</td><td>2048</td></tr>
+        <tr><td>Mini-batch size</td><td>256</td><td>64</td></tr>
+        <tr><td>Epochs K</td><td>4</td><td>10</td></tr>
+        <tr><td>Clip &epsilon;</td><td>0.1</td><td>0.2</td></tr>
+        <tr><td>Learning rate</td><td>2.5&times;10<sup>&minus;4</sup></td><td>3&times;10<sup>&minus;4</sup></td></tr>
+        <tr><td>Discount &gamma;</td><td>0.99</td><td>0.99</td></tr>
+        <tr><td>GAE &lambda;</td><td>0.95</td><td>0.95</td></tr>
+        <tr><td>Entropy coeff c<sub>2</sub></td><td>0.01</td><td>0.0</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 7: PPO in Practice -->
+  <section>
+    <h2>7 &mdash; PPO in Practice</h2>
+
+    <p>PPO has become the default RL algorithm across an extraordinary range of applications. Its combination of stability, simplicity, and competitive performance makes it the first algorithm most practitioners try.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg" width="700" height="260">
+        <text x="350" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">PPO Application Landscape</text>
+
+        <!-- Center: PPO -->
+        <circle cx="350" cy="140" r="40" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+        <text x="350" y="137" text-anchor="middle" font-size="16" font-weight="bold" fill="#b45309">PPO</text>
+        <text x="350" y="152" text-anchor="middle" font-size="9" fill="#92400e">2017</text>
+
+        <!-- Application nodes -->
+        <rect x="30" y="40" width="120" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="90" y="63" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">Game AI</text>
+        <line x1="150" y1="58" x2="310" y2="130" stroke="#3b82f6" stroke-width="1.2"/>
+
+        <rect x="30" y="120" width="120" height="36" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="90" y="143" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">Robotics</text>
+        <line x1="150" y1="138" x2="310" y2="140" stroke="#22c55e" stroke-width="1.2"/>
+
+        <rect x="30" y="200" width="120" height="36" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="90" y="223" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e">RLHF / LLMs</text>
+        <line x1="150" y1="218" x2="310" y2="155" stroke="#f59e0b" stroke-width="1.2"/>
+
+        <rect x="550" y="40" width="120" height="36" rx="6" fill="#fce7f3" stroke="#ec4899" stroke-width="1.5"/>
+        <text x="610" y="63" text-anchor="middle" font-size="11" font-weight="bold" fill="#9d174d">Autonomous</text>
+        <line x1="550" y1="58" x2="390" y2="130" stroke="#ec4899" stroke-width="1.2"/>
+
+        <rect x="550" y="120" width="120" height="36" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="610" y="143" text-anchor="middle" font-size="11" font-weight="bold" fill="#4338ca">Finance</text>
+        <line x1="550" y1="138" x2="390" y2="140" stroke="#6366f1" stroke-width="1.2"/>
+
+        <rect x="550" y="200" width="120" height="36" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="610" y="223" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">Chip Design</text>
+        <line x1="550" y1="218" x2="390" y2="155" stroke="#22c55e" stroke-width="1.2"/>
+      </svg>
+    </div>
+
+    <h3>RLHF: PPO for Language Models</h3>
+    <p>PPO's most high-profile application is Reinforcement Learning from Human Feedback (RLHF), used to align large language models like ChatGPT. The setup: the LLM is the policy, generating text is the action sequence, and a trained reward model scores the output. PPO fine-tunes the LLM to maximize the reward model's score while staying close to the original model (via a KL penalty). The clip mechanism is perfect here &mdash; it prevents the LLM from diverging too far into reward-hacked outputs.</p>
+
+    <div class="callout">
+      <strong>PPO for RLHF:</strong> L = E[r<sub>reward</sub>(x, y) &minus; &beta; KL(&pi;<sub>&theta;</sub> || &pi;<sub>ref</sub>)] &mdash; maximize reward model score while staying close to the reference (pre-RLHF) model. The KL term prevents "reward hacking" where the model finds nonsensical outputs that fool the reward model.
+    </div>
+
+    <h3>Algorithm Comparison</h3>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>REINFORCE</th>
+          <th>TRPO</th>
+          <th>PPO</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Year</td>
+          <td>1992</td>
+          <td>2015</td>
+          <td>2017</td>
+        </tr>
+        <tr>
+          <td>Update rule</td>
+          <td>Vanilla gradient</td>
+          <td>KL-constrained</td>
+          <td>Clipped surrogate</td>
+        </tr>
+        <tr>
+          <td>Trust region</td>
+          <td>None</td>
+          <td>Hard KL constraint</td>
+          <td>Implicit (clipping)</td>
+        </tr>
+        <tr>
+          <td>Optimization</td>
+          <td>First-order</td>
+          <td>Second-order (conjugate gradient)</td>
+          <td>First-order (Adam)</td>
+        </tr>
+        <tr>
+          <td>Implementation complexity</td>
+          <td>Low</td>
+          <td>High</td>
+          <td>Low</td>
+        </tr>
+        <tr>
+          <td>Data reuse per batch</td>
+          <td>1 epoch</td>
+          <td>1 step</td>
+          <td>K epochs (3&ndash;10)</td>
+        </tr>
+        <tr>
+          <td>Stability</td>
+          <td>Low</td>
+          <td>High</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td>Sample efficiency</td>
+          <td>Low</td>
+          <td>Low&ndash;Medium</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td>Wall-clock speed</td>
+          <td>Fast per update</td>
+          <td>Slow (Hessian-vector products)</td>
+          <td>Fast per update</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout-green callout">
+      <strong>Why PPO won:</strong> TRPO proved that trust regions work. PPO showed that you don't need the mathematical machinery &mdash; a simple clip achieves the same effect. Combined with parallel environments, GAE, and mini-batch updates, PPO gets TRPO-level stability at REINFORCE-level implementation complexity. That combination is why every major RL library implements PPO first.
+    </div>
+  </section>
+
+  <!-- Section 8: References -->
+  <section>
+    <h2>8 &mdash; References</h2>
+    <p>Schulman, J., Wolski, F., Dhariwal, P., Radford, A., &amp; Klimov, O. (2017). <a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization Algorithms</a>. arXiv:1707.06347.</p>
+    <p>Schulman, J., Levine, S., Abbeel, P., Jordan, M., &amp; Moritz, P. (2015). <a href="https://arxiv.org/abs/1502.05477">Trust Region Policy Optimization</a>. ICML 2015.</p>
+    <p>Schulman, J., Moritz, P., Levine, S., Jordan, M., &amp; Abbeel, P. (2016). <a href="https://arxiv.org/abs/1506.02438">High-Dimensional Continuous Control Using Generalized Advantage Estimation</a>. ICLR 2016.</p>
+    <p>Williams, R.J. (1992). Simple statistical gradient-following algorithms for connectionist reinforcement learning. Machine Learning, 8(3), 229&ndash;256.</p>
+    <p>Ouyang, L., et al. (2022). <a href="https://arxiv.org/abs/2203.02155">Training language models to follow instructions with human feedback</a>. NeurIPS 2022.</p>
+    <p>Engstrom, L., Ilyas, A., Santurkar, S., Tsipras, D., Janber, F., &amp; Madry, A. (2020). <a href="https://arxiv.org/abs/2005.12729">Implementation Matters in Deep Policy Gradients: A Case Study on PPO and TRPO</a>. ICLR 2020.</p>
+    <p>Huang, S., et al. (2022). <a href="https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/">The 37 Implementation Details of Proximal Policy Optimization</a>. ICLR Blog Track 2022.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>

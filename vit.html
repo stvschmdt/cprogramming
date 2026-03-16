@@ -570,6 +570,174 @@
       <h4>Inductive Bias Trade-off</h4>
       <p>CNNs have strong inductive biases: locality (nearby pixels matter more), translation equivariance (a cat is a cat regardless of position), and hierarchical features (edges &rarr; textures &rarr; parts &rarr; objects). ViT has almost <em>none</em> of these — it must learn spatial structure entirely from data.</p>
       <p>This means ViT needs <em>much more data</em> to train well. On ImageNet alone (1.2M images), ViT underperforms ResNet. But when pre-trained on JFT-300M (300M images) or ImageNet-21K (14M images), ViT surpasses CNNs on every benchmark — with fewer computational resources at inference.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="300" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Data Scale vs. Accuracy: CNN vs. ViT</text>
+          <!-- Axes -->
+          <line x1="80" y1="120" x2="560" y2="120" stroke="#57534e" stroke-width="1.5"/>
+          <line x1="80" y1="120" x2="80" y2="30" stroke="#57534e" stroke-width="1.5"/>
+          <text x="320" y="138" text-anchor="middle" font-size="8" fill="#57534e">Pre-training dataset size &rarr;</text>
+          <text x="40" y="75" text-anchor="middle" font-size="8" fill="#57534e" transform="rotate(-90,40,75)">ImageNet Top-1 &rarr;</text>
+          <!-- Scale labels -->
+          <text x="150" y="133" text-anchor="middle" font-size="7" fill="#57534e">ImageNet-1K</text>
+          <text x="300" y="133" text-anchor="middle" font-size="7" fill="#57534e">ImageNet-21K</text>
+          <text x="480" y="133" text-anchor="middle" font-size="7" fill="#57534e">JFT-300M</text>
+          <!-- CNN line (ResNet) — starts strong, plateaus -->
+          <path d="M150,85 Q300,55 480,50" fill="none" stroke="#ef4444" stroke-width="2.5"/>
+          <circle cx="150" cy="85" r="4" fill="#ef4444"/><circle cx="300" cy="60" r="4" fill="#ef4444"/><circle cx="480" cy="50" r="4" fill="#ef4444"/>
+          <text x="500" y="53" font-size="8" fill="#ef4444" font-weight="600">ResNet</text>
+          <!-- ViT line — starts weak, surpasses -->
+          <path d="M150,95 Q300,55 480,40" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+          <circle cx="150" cy="95" r="4" fill="#3b82f6"/><circle cx="300" cy="55" r="4" fill="#3b82f6"/><circle cx="480" cy="40" r="4" fill="#3b82f6"/>
+          <text x="500" y="43" font-size="8" fill="#3b82f6" font-weight="600">ViT</text>
+          <!-- Crossover annotation -->
+          <line x1="230" y1="72" x2="230" y2="30" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="230" y="27" text-anchor="middle" font-size="7" fill="#d97706" font-weight="600">crossover: ViT wins</text>
+          <!-- Zone labels -->
+          <rect x="100" y="96" width="80" height="16" rx="3" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+          <text x="140" y="107" text-anchor="middle" font-size="6" fill="#991b1b">CNN wins (small data)</text>
+          <rect x="340" y="36" width="100" height="16" rx="3" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+          <text x="390" y="47" text-anchor="middle" font-size="6" fill="#1e40af">ViT wins (large data)</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card">
+      <h4>Attention Patterns: What ViT Learns to See</h4>
+      <p>The authors visualized attention maps from different heads and layers. Early layers attend to <strong>nearby patches</strong> (learning local features like edges — similar to CNN conv layers). Later layers attend to <strong>semantically related patches across the entire image</strong> (a dog's face attends to its tail). Different heads specialize: some track horizontal patterns, others vertical, others diagonal.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 620 140" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="310" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Attention Distance by Layer (Mean Attention Distance in Pixels)</text>
+          <!-- Layer 1: mostly local -->
+          <text x="40" y="48" text-anchor="middle" font-size="8" fill="#8b5cf6" font-weight="600">Layer 1</text>
+          <rect x="70" y="35" width="80" height="30" rx="4" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+          <!-- Grid of patches with local attention -->
+          <rect x="75" y="38" width="8" height="8" rx="1" fill="#8b5cf6"/><rect x="84" y="38" width="8" height="8" rx="1" fill="#a78bfa"/><rect x="93" y="38" width="8" height="8" rx="1" fill="#e9d5ff" opacity="0.3"/>
+          <rect x="75" y="47" width="8" height="8" rx="1" fill="#a78bfa"/><rect x="84" y="47" width="8" height="8" rx="1" fill="#7c3aed"/><rect x="93" y="47" width="8" height="8" rx="1" fill="#a78bfa"/>
+          <rect x="75" y="56" width="8" height="8" rx="1" fill="#e9d5ff" opacity="0.3"/><rect x="84" y="56" width="8" height="8" rx="1" fill="#a78bfa"/><rect x="93" y="56" width="8" height="8" rx="1" fill="#8b5cf6"/>
+          <text x="130" y="48" font-size="7" fill="#7c3aed">Local attention</text>
+          <text x="130" y="58" font-size="7" fill="#7c3aed">(~8 px avg dist)</text>
+
+          <!-- Layer 6: mixed -->
+          <text x="230" y="48" text-anchor="middle" font-size="8" fill="#3b82f6" font-weight="600">Layer 6</text>
+          <rect x="260" y="35" width="80" height="30" rx="4" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+          <rect x="265" y="38" width="8" height="8" rx="1" fill="#3b82f6"/><rect x="274" y="38" width="8" height="8" rx="1" fill="#60a5fa"/><rect x="283" y="38" width="8" height="8" rx="1" fill="#93c5fd"/>
+          <rect x="292" y="38" width="8" height="8" rx="1" fill="#bfdbfe" opacity="0.5"/><rect x="301" y="38" width="8" height="8" rx="1" fill="#60a5fa"/>
+          <rect x="265" y="47" width="8" height="8" rx="1" fill="#60a5fa"/><rect x="274" y="47" width="8" height="8" rx="1" fill="#2563eb"/><rect x="283" y="47" width="8" height="8" rx="1" fill="#60a5fa"/>
+          <rect x="292" y="47" width="8" height="8" rx="1" fill="#93c5fd"/><rect x="301" y="47" width="8" height="8" rx="1" fill="#93c5fd"/>
+          <text x="320" y="48" font-size="7" fill="#2563eb">Mixed local/global</text>
+          <text x="320" y="58" font-size="7" fill="#2563eb">(~40 px avg dist)</text>
+
+          <!-- Layer 12: global -->
+          <text x="430" y="48" text-anchor="middle" font-size="8" fill="#22c55e" font-weight="600">Layer 12</text>
+          <rect x="460" y="35" width="80" height="30" rx="4" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+          <rect x="465" y="38" width="8" height="8" rx="1" fill="#22c55e"/><rect x="474" y="38" width="8" height="8" rx="1" fill="#22c55e" opacity="0.7"/><rect x="483" y="38" width="8" height="8" rx="1" fill="#22c55e" opacity="0.6"/>
+          <rect x="492" y="38" width="8" height="8" rx="1" fill="#22c55e" opacity="0.6"/><rect x="501" y="38" width="8" height="8" rx="1" fill="#22c55e" opacity="0.5"/>
+          <rect x="465" y="47" width="8" height="8" rx="1" fill="#22c55e" opacity="0.7"/><rect x="474" y="47" width="8" height="8" rx="1" fill="#16a34a"/><rect x="483" y="47" width="8" height="8" rx="1" fill="#22c55e" opacity="0.7"/>
+          <rect x="492" y="47" width="8" height="8" rx="1" fill="#22c55e" opacity="0.8"/><rect x="501" y="47" width="8" height="8" rx="1" fill="#22c55e" opacity="0.7"/>
+          <text x="525" y="48" font-size="7" fill="#166534">Global attention</text>
+          <text x="525" y="58" font-size="7" fill="#166534">(~100 px avg dist)</text>
+
+          <!-- Arrow showing progression -->
+          <line x1="80" y1="80" x2="540" y2="80" stroke="#57534e" stroke-width="1.5" marker-end="url(#vit-a5)"/>
+          <text x="310" y="95" text-anchor="middle" font-size="8" fill="#57534e" font-weight="600">Deeper layers &rarr; larger attention distance &rarr; more global reasoning</text>
+
+          <!-- Bar chart showing average attention distance per head -->
+          <text x="310" y="115" text-anchor="middle" font-size="8" fill="#57534e">Some heads attend globally even in layer 1 — heads specialize for different spatial patterns</text>
+          <text x="310" y="130" text-anchor="middle" font-size="7" fill="#57534e" font-style="italic">This emergence of CNN-like local processing in early layers shows ViT "reinvents" convolutional behavior when given enough data</text>
+
+          <defs><marker id="vit-a5" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card">
+      <h4>Learned Position Embeddings: ViT Discovers 2D Structure</h4>
+      <p>Even though ViT's position embeddings are 1D learned vectors (not explicitly 2D), the model discovers spatial structure on its own. Visualizing cosine similarity between position embeddings reveals a <strong>clear 2D grid pattern</strong> — nearby patches in the image end up with similar position embeddings.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="280" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Position Embedding Similarity (cosine similarity with patch at &star;)</text>
+          <!-- Grid of patches showing cosine similarity -->
+          <rect x="100" y="25" width="100" height="85" rx="4" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+          <!-- Row 1 -->
+          <rect x="105" y="28" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.2"/><rect x="118" y="28" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.4"/>
+          <rect x="131" y="28" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.7"/><rect x="144" y="28" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.4"/>
+          <rect x="157" y="28" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.2"/><rect x="170" y="28" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.1"/>
+          <!-- Row 2 -->
+          <rect x="105" y="40" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.3"/><rect x="118" y="40" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.6"/>
+          <rect x="131" y="40" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.9"/><rect x="144" y="40" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.6"/>
+          <rect x="157" y="40" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.3"/><rect x="170" y="40" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.15"/>
+          <!-- Row 3 (center — reference patch) -->
+          <rect x="105" y="52" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.4"/><rect x="118" y="52" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.8"/>
+          <rect x="131" y="52" width="12" height="10" rx="1" fill="#2563eb" stroke="#1d4ed8" stroke-width="1.5"/>
+          <text x="137" y="60" text-anchor="middle" font-size="7" fill="white" font-weight="700">&star;</text>
+          <rect x="144" y="52" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.8"/><rect x="157" y="52" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.4"/>
+          <rect x="170" y="52" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.2"/>
+          <!-- Row 4 -->
+          <rect x="105" y="64" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.3"/><rect x="118" y="64" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.6"/>
+          <rect x="131" y="64" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.9"/><rect x="144" y="64" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.6"/>
+          <rect x="157" y="64" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.3"/><rect x="170" y="64" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.15"/>
+          <!-- Row 5 -->
+          <rect x="105" y="76" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.2"/><rect x="118" y="76" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.4"/>
+          <rect x="131" y="76" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.7"/><rect x="144" y="76" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.4"/>
+          <rect x="157" y="76" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.2"/><rect x="170" y="76" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.1"/>
+          <!-- Row 6 -->
+          <rect x="105" y="88" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.1"/><rect x="118" y="88" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.2"/>
+          <rect x="131" y="88" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.4"/><rect x="144" y="88" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.2"/>
+          <rect x="157" y="88" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.1"/><rect x="170" y="88" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.05"/>
+
+          <!-- Legend -->
+          <rect x="220" y="40" width="12" height="10" rx="1" fill="#2563eb"/><text x="238" y="49" font-size="7" fill="#57534e">High similarity (nearby)</text>
+          <rect x="220" y="55" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.5"/><text x="238" y="64" font-size="7" fill="#57534e">Medium similarity</text>
+          <rect x="220" y="70" width="12" height="10" rx="1" fill="#3b82f6" opacity="0.15"/><text x="238" y="79" font-size="7" fill="#57534e">Low similarity (far away)</text>
+
+          <!-- Annotation -->
+          <text x="420" y="50" text-anchor="middle" font-size="8" fill="#57534e" font-weight="600">Key observation:</text>
+          <text x="420" y="65" text-anchor="middle" font-size="7" fill="#57534e">1D position embeddings</text>
+          <text x="420" y="77" text-anchor="middle" font-size="7" fill="#57534e">spontaneously learn</text>
+          <text x="420" y="89" text-anchor="middle" font-size="7" fill="#57534e">2D spatial structure!</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4.5: ViT Variants -->
+  <section>
+    <h2>4.5 &mdash; ViT Model Variants</h2>
+    <p>ViT comes in three sizes. The naming convention is ViT-{Size}/{Patch Size} — so ViT-B/16 means Base model with 16&times;16 patches.</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 620 130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="310" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">ViT Model Family</text>
+
+        <!-- ViT-Base -->
+        <rect x="30" y="30" width="170" height="85" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+        <text x="115" y="48" text-anchor="middle" font-size="10" fill="#2563eb" font-weight="700">ViT-Base</text>
+        <text x="115" y="63" text-anchor="middle" font-size="7" fill="#3b82f6">12 layers &bull; 12 heads &bull; 768 dim</text>
+        <text x="115" y="76" text-anchor="middle" font-size="7" fill="#3b82f6">MLP: 3072 &bull; 86M params</text>
+        <text x="115" y="92" text-anchor="middle" font-size="8" fill="#57534e">B/16: 84.0% &bull; B/32: 80.7%</text>
+        <text x="115" y="107" text-anchor="middle" font-size="7" fill="#57534e" font-style="italic">(ImageNet-21K pre-train)</text>
+
+        <!-- ViT-Large -->
+        <rect x="220" y="30" width="170" height="85" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="2"/>
+        <text x="305" y="48" text-anchor="middle" font-size="10" fill="#7c3aed" font-weight="700">ViT-Large</text>
+        <text x="305" y="63" text-anchor="middle" font-size="7" fill="#8b5cf6">24 layers &bull; 16 heads &bull; 1024 dim</text>
+        <text x="305" y="76" text-anchor="middle" font-size="7" fill="#8b5cf6">MLP: 4096 &bull; 307M params</text>
+        <text x="305" y="92" text-anchor="middle" font-size="8" fill="#57534e">L/16: 87.8%</text>
+        <text x="305" y="107" text-anchor="middle" font-size="7" fill="#57534e" font-style="italic">(JFT-300M pre-train)</text>
+
+        <!-- ViT-Huge -->
+        <rect x="410" y="30" width="180" height="85" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="500" y="48" text-anchor="middle" font-size="10" fill="#d97706" font-weight="700">ViT-Huge</text>
+        <text x="500" y="63" text-anchor="middle" font-size="7" fill="#f59e0b">32 layers &bull; 16 heads &bull; 1280 dim</text>
+        <text x="500" y="76" text-anchor="middle" font-size="7" fill="#f59e0b">MLP: 5120 &bull; 632M params</text>
+        <text x="500" y="92" text-anchor="middle" font-size="8" fill="#57534e" font-weight="600">H/14: 88.6% (SOTA)</text>
+        <text x="500" y="107" text-anchor="middle" font-size="7" fill="#57534e" font-style="italic">(JFT-300M pre-train)</text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <strong>Patch size matters:</strong> Smaller patches (14&times;14 vs 16&times;16) produce more tokens (256 vs 196 for a 224&times;224 image), giving finer spatial resolution but costing quadratically more in self-attention. ViT-H/14 uses 14&times;14 patches — the extra resolution helps it hit the best accuracy but increases compute by ~1.7&times; vs /16.
     </div>
   </section>
 
@@ -606,9 +774,73 @@
     </div>
   </section>
 
-  <!-- SECTION 7: REFERENCES -->
+  <!-- SECTION 7: ViT's Descendants -->
   <section>
-    <h2>7 &mdash; References &amp; Further Reading</h2>
+    <h2>7 &mdash; ViT's Descendants: The Vision Transformer Family Tree</h2>
+
+    <p>ViT's impact was enormous — it launched an entire subfield. Here's how the key descendants address ViT's limitations:</p>
+
+    <div class="layer-diagram">
+      <svg viewBox="0 0 650 200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="325" y="15" text-anchor="middle" font-size="11" fill="#57534e" font-weight="600">ViT Family Tree</text>
+
+        <!-- ViT (root) -->
+        <rect x="260" y="25" width="120" height="30" rx="6" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+        <text x="320" y="44" text-anchor="middle" font-size="9" fill="white" font-weight="700">ViT (2020)</text>
+
+        <!-- Branches -->
+        <line x1="270" y1="58" x2="95" y2="80" stroke="#57534e" stroke-width="1.5"/>
+        <line x1="300" y1="58" x2="255" y2="80" stroke="#57534e" stroke-width="1.5"/>
+        <line x1="340" y1="58" x2="410" y2="80" stroke="#57534e" stroke-width="1.5"/>
+        <line x1="370" y1="58" x2="560" y2="80" stroke="#57534e" stroke-width="1.5"/>
+
+        <!-- DeiT -->
+        <rect x="20" y="82" width="150" height="45" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="95" y="97" text-anchor="middle" font-size="8" fill="#92400e" font-weight="600">DeiT (2020)</text>
+        <text x="95" y="109" text-anchor="middle" font-size="6" fill="#d97706">Train ViT on ImageNet-1K only</text>
+        <text x="95" y="119" text-anchor="middle" font-size="6" fill="#d97706">Knowledge distillation + augmentation</text>
+
+        <!-- Swin -->
+        <rect x="180" y="82" width="150" height="45" rx="5" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="255" y="97" text-anchor="middle" font-size="8" fill="#166534" font-weight="600">Swin Transformer (2021)</text>
+        <text x="255" y="109" text-anchor="middle" font-size="6" fill="#22c55e">Shifted windows: local attention</text>
+        <text x="255" y="119" text-anchor="middle" font-size="6" fill="#22c55e">Hierarchical: multi-scale features</text>
+
+        <!-- MAE / BEiT -->
+        <rect x="340" y="82" width="140" height="45" rx="5" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="410" y="97" text-anchor="middle" font-size="8" fill="#7c3aed" font-weight="600">MAE / BEiT (2021)</text>
+        <text x="410" y="109" text-anchor="middle" font-size="6" fill="#8b5cf6">Self-supervised pre-training</text>
+        <text x="410" y="119" text-anchor="middle" font-size="6" fill="#8b5cf6">Mask &amp; reconstruct patches</text>
+
+        <!-- DINO / DINOv2 -->
+        <rect x="490" y="82" width="140" height="45" rx="5" fill="#fecaca" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="560" y="97" text-anchor="middle" font-size="8" fill="#991b1b" font-weight="600">DINO / DINOv2 (2021/23)</text>
+        <text x="560" y="109" text-anchor="middle" font-size="6" fill="#ef4444">Self-distillation: no labels needed</text>
+        <text x="560" y="119" text-anchor="middle" font-size="6" fill="#ef4444">Emergent object segmentation</text>
+
+        <!-- Second generation from Swin -->
+        <line x1="255" y1="130" x2="255" y2="148" stroke="#57534e" stroke-width="1"/>
+
+        <!-- Downstream applications -->
+        <rect x="30" y="150" width="590" height="40" rx="6" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1.5"/>
+        <text x="325" y="167" text-anchor="middle" font-size="9" fill="#57534e" font-weight="600">Downstream: CLIP &bull; DALL-E &bull; SAM &bull; Stable Diffusion &bull; GPT-4V &bull; LLaVA &bull; RF-DETR</text>
+        <text x="325" y="182" text-anchor="middle" font-size="7" fill="#57534e">ViT is now the default vision backbone for multimodal foundation models</text>
+      </svg>
+    </div>
+
+    <table class="summary-table">
+      <tr><th>Model</th><th>Key Innovation</th><th>ViT Limitation Addressed</th></tr>
+      <tr><td>DeiT</td><td>Distillation token + heavy augmentation</td><td>Data hunger — trains on ImageNet-1K alone</td></tr>
+      <tr><td>Swin</td><td>Shifted window attention + hierarchical stages</td><td>Quadratic cost — O(n) local attention + multi-scale</td></tr>
+      <tr><td>MAE</td><td>Mask 75% of patches, reconstruct</td><td>Need for labels — self-supervised pre-training</td></tr>
+      <tr><td>DINO/DINOv2</td><td>Self-distillation without labels</td><td>Label dependency — learns without any annotation</td></tr>
+      <tr><td>Hiera</td><td>Hierarchical ViT, MAE pre-trained</td><td>Speed — multi-scale features, 6&times; faster than ViT-H</td></tr>
+    </table>
+  </section>
+
+  <!-- SECTION 8: REFERENCES -->
+  <section>
+    <h2>8 &mdash; References &amp; Further Reading</h2>
     <ul style="padding-left: 1.25rem;">
       <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2010.11929">An Image is Worth 16x16 Words</a> — Dosovitskiy et al., 2020 (original paper)</li>
       <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2012.12877">DeiT: Training Data-Efficient Image Transformers</a> — Touvron et al., 2020</li>

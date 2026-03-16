@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAC Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+      --layer-backbone: #dbeafe;
+      --layer-neck: #dcfce7;
+      --layer-head: #fef3c7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero .breadcrumb {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .hero .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .hero .meta-tags span {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .hero .paper-link {
+      font-size: 0.9rem;
+    }
+
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-size: 1.1rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+
+    .callout {
+      background: var(--highlight-bg);
+      border-left: 3px solid var(--highlight-border);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 1.25rem;
+      font-size: 0.92rem;
+    }
+    .callout strong { color: var(--accent); }
+
+    .callout-blue {
+      background: #eff6ff;
+      border-left-color: #3b82f6;
+    }
+    .callout-blue strong { color: #2563eb; }
+
+    .callout-green {
+      background: #f0fdf4;
+      border-left-color: #22c55e;
+    }
+    .callout-green strong { color: #16a34a; }
+
+    .callout-purple {
+      background: #faf5ff;
+      border-left-color: #a855f7;
+    }
+    .callout-purple strong { color: #7c3aed; }
+
+    .tensor {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      background: var(--code-bg);
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .arch-diagram {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .arch-diagram svg {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .layer-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--border);
+    }
+    .layer-card.backbone { border-left-color: #3b82f6; }
+    .layer-card.neck { border-left-color: #22c55e; }
+    .layer-card.head { border-left-color: #f59e0b; }
+    .layer-card.loss { border-left-color: #ef4444; }
+    .layer-card.entropy { border-left-color: #a855f7; }
+
+    .layer-card .layer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .layer-card .layer-header h4 {
+      font-size: 1.05rem;
+      margin: 0;
+    }
+    .layer-card .layer-header .shapes {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .layer-card p {
+      font-size: 0.92rem;
+      margin-bottom: 0.75rem;
+    }
+    .layer-card p:last-child { margin-bottom: 0; }
+
+    .layer-diagram {
+      margin: 1rem 0 0.75rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .layer-diagram svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    .summary-table th, .summary-table td {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .summary-table th {
+      background: var(--code-bg);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    footer {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.5rem; }
+      body { font-size: 16px; }
+      nav { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; All Walkthroughs</a></div>
+    <h1>SAC: Soft Actor-Critic</h1>
+    <div class="subtitle">Maximum Entropy Reinforcement Learning for Continuous Control</div>
+    <div class="meta-tags">
+      <span>Maximum Entropy</span>
+      <span>Off-Policy</span>
+      <span>Continuous Control</span>
+      <span>Haarnoja 2018</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/1801.01290">Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor</a> (Haarnoja et al., 2018)<br/>
+      Follow-up: <a href="https://arxiv.org/abs/1812.05905">Soft Actor-Critic Algorithms and Applications</a> (Haarnoja et al., 2019)
+    </div>
+  </section>
+
+  <!-- Section 1: The Problem -->
+  <section>
+    <h2>1 &mdash; Why Stochastic? Why Entropy?</h2>
+
+    <p>Most RL algorithms aim to learn a single best action for each state &mdash; a deterministic policy. But deterministic policies have fundamental weaknesses:</p>
+
+    <div class="layer-card loss">
+      <div class="layer-header">
+        <h4>Problems with Deterministic Policies</h4>
+      </div>
+      <p><strong>Brittle exploration:</strong> A deterministic policy explores only via added noise (e.g., Gaussian perturbation in DDPG/TD3). This noise is task-agnostic and doesn't adapt &mdash; it doesn't know where to explore more or less.</p>
+      <p><strong>Mode collapse:</strong> When multiple action sequences lead to equally good outcomes, a deterministic policy collapses to one arbitrary mode. If that mode becomes suboptimal due to environment changes, recovery is difficult.</p>
+      <p><strong>Fragility:</strong> Small perturbations in the environment (friction changes, sensor noise) can disproportionately affect a policy that commits to one exact action per state.</p>
+    </div>
+
+    <p>SAC's solution is elegant: instead of finding the single best action, learn a <strong>distribution</strong> over good actions. The policy should be as random as possible while still achieving high reward. This idea comes from the <strong>maximum entropy</strong> framework.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg" width="700" height="240">
+        <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Standard RL vs Maximum Entropy RL</text>
+
+        <!-- Left: Standard RL -->
+        <rect x="30" y="50" width="280" height="170" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+        <text x="170" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626" font-family="Helvetica Neue, Arial, sans-serif">STANDARD RL</text>
+
+        <text x="170" y="100" text-anchor="middle" font-size="13" fill="#1c1917">J(&pi;) = &Sigma; E[r(s, a)]</text>
+        <text x="170" y="125" text-anchor="middle" font-size="10" fill="#57534e">Maximize reward only</text>
+
+        <!-- Deterministic arrow -->
+        <rect x="80" y="145" width="180" height="28" rx="4" fill="#fef2f2" stroke="#ef4444" stroke-width="1"/>
+        <text x="170" y="164" text-anchor="middle" font-size="10" fill="#dc2626">Single action per state</text>
+
+        <!-- Arrow showing narrow -->
+        <text x="170" y="200" text-anchor="middle" font-size="20" fill="#ef4444">&darr;</text>
+        <text x="170" y="218" text-anchor="middle" font-size="9" fill="#dc2626">Fragile, poor exploration</text>
+
+
+        <!-- Right: MaxEnt RL -->
+        <rect x="390" y="50" width="280" height="170" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+        <text x="530" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#16a34a" font-family="Helvetica Neue, Arial, sans-serif">MAXIMUM ENTROPY RL (SAC)</text>
+
+        <text x="530" y="100" text-anchor="middle" font-size="13" fill="#1c1917">J(&pi;) = &Sigma; E[r(s,a) + &alpha;H(&pi;)]</text>
+        <text x="530" y="125" text-anchor="middle" font-size="10" fill="#57534e">Maximize reward AND entropy</text>
+
+        <!-- Stochastic -->
+        <rect x="430" y="145" width="200" height="28" rx="4" fill="#f0fdf4" stroke="#22c55e" stroke-width="1"/>
+        <text x="530" y="164" text-anchor="middle" font-size="10" fill="#166534">Distribution over good actions</text>
+
+        <text x="530" y="200" text-anchor="middle" font-size="20" fill="#22c55e">&darr;</text>
+        <text x="530" y="218" text-anchor="middle" font-size="9" fill="#166534">Robust, explores automatically</text>
+      </svg>
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>Maximum entropy principle:</strong> Among all policies that achieve a given expected reward, prefer the one with maximum entropy (maximum randomness). Entropy H(&pi;) = &minus;E[log &pi;(a|s)] measures how spread out the action distribution is. High entropy = exploring many actions; low entropy = committing to few. SAC balances reward and entropy automatically.
+    </div>
+  </section>
+
+  <!-- Section 2: Maximum Entropy Framework -->
+  <section>
+    <h2>2 &mdash; The Maximum Entropy Framework</h2>
+
+    <p>SAC optimizes a modified RL objective that includes an entropy bonus at every timestep:</p>
+
+    <div class="layer-card entropy">
+      <div class="layer-header">
+        <h4>Soft RL Objective</h4>
+        <span class="shapes">&alpha; controls entropy weight</span>
+      </div>
+      <p><strong>J(&pi;) = &Sigma;<sub>t</sub> E[ r(s<sub>t</sub>, a<sub>t</sub>) + &alpha; H(&pi;(&middot;|s<sub>t</sub>)) ]</strong></p>
+      <p>= &Sigma;<sub>t</sub> E[ r(s<sub>t</sub>, a<sub>t</sub>) &minus; &alpha; log &pi;(a<sub>t</sub>|s<sub>t</sub>) ]</p>
+      <p>The temperature parameter &alpha; > 0 controls the tradeoff: large &alpha; prioritizes entropy (exploration), small &alpha; prioritizes reward (exploitation). When &alpha; &rarr; 0, SAC reduces to a standard RL algorithm.</p>
+    </div>
+
+    <p>This modified objective gives rise to <strong>soft</strong> versions of standard RL quantities:</p>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Soft Value Functions</h4>
+      </div>
+      <p><strong>Soft Q-function:</strong> Q<sup>soft</sup>(s, a) = r(s,a) + &gamma; E[Q<sup>soft</sup>(s', a') &minus; &alpha; log &pi;(a'|s')]</p>
+      <p>The soft Q-value includes future entropy bonuses &mdash; an action is "valuable" if it leads to states where the agent can both get high reward and maintain randomness.</p>
+      <p><strong>Soft V-function:</strong> V<sup>soft</sup>(s) = E<sub>a~&pi;</sub>[Q<sup>soft</sup>(s,a) &minus; &alpha; log &pi;(a|s)]</p>
+      <p>Note: SAC v2 (2019) eliminates the explicit V-function network and computes it implicitly. This simplification reduces the number of networks from 6 to 5.</p>
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>Entropy benefits in practice:</strong> (1) <em>Exploration</em>: the entropy term drives the policy to try different actions, discovering potentially better strategies. (2) <em>Multi-modality</em>: if two equally good paths exist, SAC's policy can represent both. (3) <em>Robustness</em>: a stochastic policy is more resilient to perturbations. (4) <em>Pre-training transfer</em>: high-entropy policies preserve optionality, making fine-tuning to new tasks easier.
+    </div>
+  </section>
+
+  <!-- Section 3: Architecture Overview -->
+  <section>
+    <h2>3 &mdash; Architecture Overview</h2>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" width="700" height="380">
+        <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">SAC Architecture (v2, 2019)</text>
+
+        <!-- State input -->
+        <rect x="280" y="40" width="140" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="350" y="63" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">State s</text>
+
+        <!-- Stochastic Actor -->
+        <rect x="40" y="110" width="200" height="55" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="140" y="130" text-anchor="middle" font-size="12" font-weight="bold" fill="#7c3aed">Stochastic Actor &pi;<tspan font-size="9" dy="2">&theta;</tspan></text>
+        <text x="140" y="148" text-anchor="middle" font-size="9" fill="#7c3aed">&mu;(s), log&sigma;(s) &rarr; Gaussian</text>
+        <text x="140" y="160" text-anchor="middle" font-size="8" fill="#7c3aed">a = tanh(&mu; + &sigma; &odot; &epsilon;), &epsilon;~N(0,1)</text>
+        <line x1="310" y1="76" x2="140" y2="110" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+        <!-- Twin Critics -->
+        <rect x="430" y="100" width="170" height="36" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+        <text x="515" y="123" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">Critic Q<tspan font-size="9" dy="2">1</tspan><tspan dy="-2">(s, a)</tspan></text>
+        <line x1="390" y1="76" x2="515" y2="100" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+        <rect x="430" y="150" width="170" height="36" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+        <text x="515" y="173" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">Critic Q<tspan font-size="9" dy="2">2</tspan><tspan dy="-2">(s, a)</tspan></text>
+
+        <!-- Action from actor -->
+        <rect x="70" y="195" width="140" height="28" rx="5" fill="#faf5ff" stroke="#a855f7" stroke-width="1"/>
+        <text x="140" y="214" text-anchor="middle" font-size="10" fill="#7c3aed">a ~ &pi;(·|s)</text>
+        <line x1="140" y1="165" x2="140" y2="195" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+        <!-- Action to critics -->
+        <path d="M210,207 Q340,195 430,118" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arw2)"/>
+        <path d="M210,212 Q340,210 430,168" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arw2)"/>
+
+        <!-- Temperature -->
+        <rect x="40" y="250" width="120" height="36" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+        <text x="100" y="268" text-anchor="middle" font-size="12" font-weight="bold" fill="#b45309">&alpha; (temperature)</text>
+        <text x="100" y="280" text-anchor="middle" font-size="8" fill="#b45309">auto-tuned</text>
+
+        <!-- Temperature connection -->
+        <path d="M160,268 L230,140" fill="none" stroke="#b45309" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="208" y="200" font-size="8" fill="#b45309">scales entropy</text>
+
+        <!-- Separator -->
+        <line x1="30" y1="310" x2="670" y2="310" stroke="#e7e5e4" stroke-width="1" stroke-dasharray="6,4"/>
+        <text x="350" y="328" text-anchor="middle" font-size="10" fill="#a8a29e" font-family="Helvetica Neue, Arial, sans-serif">TARGET NETWORKS (&tau; = 0.005)</text>
+
+        <!-- Target Critics only (no target actor!) -->
+        <rect x="430" y="340" width="170" height="30" rx="6" fill="#fafaf9" stroke="#d6d3d1" stroke-width="1.5"/>
+        <text x="515" y="360" text-anchor="middle" font-size="10" fill="#a8a29e">Target Q'<tspan font-size="8" dy="1">1</tspan><tspan dy="-1">, Q'</tspan><tspan font-size="8" dy="1">2</tspan></text>
+
+        <!-- No target actor annotation -->
+        <rect x="40" y="340" width="200" height="30" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="140" y="360" text-anchor="middle" font-size="10" fill="#dc2626">No target actor needed!</text>
+
+        <!-- Soft update -->
+        <path d="M515,186 L515,340" fill="none" stroke="#a8a29e" stroke-width="1" stroke-dasharray="3,2"/>
+
+        <defs>
+          <marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#57534e"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <p>SAC v2 uses <strong>5 networks</strong>: a stochastic actor, two critics, and two target critics. Notably, there is <strong>no target actor</strong> &mdash; the current actor is used to sample next-state actions for target computation. This works because SAC's stochastic policy produces diverse actions naturally (no need for target policy smoothing like TD3).</p>
+
+    <div class="callout">
+      <strong>SAC vs TD3 networks:</strong> TD3 has 6 networks (actor + 2 critics + 3 targets). SAC has 5 (actor + 2 critics + 2 target critics). SAC drops the target actor because its stochastic policy already provides the smoothing that TD3 achieves through explicit target noise.
+    </div>
+  </section>
+
+  <!-- Section 4: The Stochastic Actor -->
+  <section>
+    <h2>4 &mdash; The Stochastic Actor &amp; Reparameterization</h2>
+
+    <p>SAC's actor outputs a Gaussian distribution, not a single action. The key challenge: how do you backpropagate through random sampling?</p>
+
+    <div class="layer-card entropy">
+      <div class="layer-header">
+        <h4>Squashed Gaussian Policy</h4>
+        <span class="shapes">state &rarr; (&mu;, log&sigma;) &rarr; tanh(sample)</span>
+      </div>
+      <p>The actor network outputs two vectors: a mean <strong>&mu;(s)</strong> and log standard deviation <strong>log&sigma;(s)</strong>. An action is sampled from the resulting Gaussian, then squashed through tanh to bound it to [-1, 1]:</p>
+      <p><strong>u = &mu;(s) + &sigma;(s) &odot; &epsilon;</strong>, where &epsilon; ~ N(0, I)</p>
+      <p><strong>a = tanh(u)</strong></p>
+      <p>The log-probability must account for the tanh squashing via the change-of-variables formula:</p>
+      <p><strong>log &pi;(a|s) = log N(u; &mu;, &sigma;) &minus; &Sigma; log(1 &minus; tanh&sup2;(u<sub>i</sub>))</strong></p>
+
+      <div class="layer-diagram">
+        <svg viewBox="0 0 650 200" xmlns="http://www.w3.org/2000/svg" width="650" height="200">
+          <text x="325" y="20" text-anchor="middle" font-size="12" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Reparameterization Trick</text>
+
+          <!-- State -->
+          <rect x="10" y="70" width="80" height="36" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="50" y="93" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">State s</text>
+
+          <!-- Network -->
+          <rect x="120" y="55" width="110" height="66" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="175" y="75" text-anchor="middle" font-size="10" font-weight="bold" fill="#7c3aed">Neural Net</text>
+          <text x="175" y="93" text-anchor="middle" font-size="9" fill="#7c3aed">&mu;(s)</text>
+          <text x="175" y="108" text-anchor="middle" font-size="9" fill="#7c3aed">log&sigma;(s)</text>
+          <line x1="90" y1="88" x2="120" y2="88" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+          <!-- Noise (external) -->
+          <rect x="270" y="30" width="80" height="28" rx="5" fill="#fef2f2" stroke="#ef4444" stroke-width="1"/>
+          <text x="310" y="49" text-anchor="middle" font-size="10" fill="#dc2626">&epsilon; ~ N(0,I)</text>
+
+          <!-- Reparameterize -->
+          <rect x="270" y="75" width="120" height="36" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+          <text x="330" y="92" text-anchor="middle" font-size="10" font-weight="bold" fill="#b45309">u = &mu; + &sigma;&epsilon;</text>
+          <text x="330" y="104" text-anchor="middle" font-size="8" fill="#b45309">reparameterize</text>
+          <line x1="230" y1="88" x2="270" y2="93" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+          <line x1="310" y1="58" x2="310" y2="75" stroke="#ef4444" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+          <!-- Tanh -->
+          <rect x="420" y="75" width="80" height="36" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="460" y="98" text-anchor="middle" font-size="11" font-weight="bold" fill="#4338ca">tanh</text>
+          <line x1="390" y1="93" x2="420" y2="93" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+          <!-- Output -->
+          <rect x="530" y="75" width="100" height="36" rx="6" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="580" y="93" text-anchor="middle" font-size="10" font-weight="bold" fill="#166534">a &isin; [-1, 1]</text>
+          <line x1="500" y1="93" x2="530" y2="93" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+          <!-- Gradient flow -->
+          <path d="M580,111 L580,160 L50,160 L50,106" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arw2)"/>
+          <text x="325" y="155" text-anchor="middle" font-size="9" fill="#22c55e" font-weight="bold" font-family="Helvetica Neue, Arial, sans-serif">GRADIENT FLOWS THROUGH (deterministic path)</text>
+
+          <!-- No gradient through noise -->
+          <text x="310" y="28" text-anchor="middle" font-size="8" fill="#ef4444" font-family="Helvetica Neue, Arial, sans-serif">No gradient needed</text>
+          <text x="310" y="175" text-anchor="middle" font-size="9" fill="#57534e">&epsilon; is external noise &mdash; randomness is "outside" the computation graph</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>The reparameterization trick:</strong> Instead of sampling a ~ &pi;(·|s) directly (which blocks gradient flow), we sample &epsilon; from a fixed distribution and compute a = f(&epsilon;, s; &theta;) deterministically. Now &nabla;<sub>&theta;</sub>a is well-defined, and we can backpropagate through the sampling operation. This is the same trick used in VAEs.
+    </div>
+
+    <div class="layer-card backbone">
+      <div class="layer-header">
+        <h4>Actor Network Architecture</h4>
+        <span class="shapes">state &rarr; (&mu;, log&sigma;)</span>
+      </div>
+
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 110" xmlns="http://www.w3.org/2000/svg" width="600" height="110">
+          <rect x="10" y="35" width="80" height="30" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="50" y="50" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e40af">State</text>
+          <text x="50" y="60" text-anchor="middle" font-size="8" fill="#1e40af">[B, s_dim]</text>
+
+          <line x1="90" y1="50" x2="115" y2="50" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+          <rect x="115" y="35" width="90" height="30" rx="5" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1.5"/>
+          <text x="160" y="48" text-anchor="middle" font-size="9" font-weight="bold" fill="#57534e">FC+ReLU</text>
+          <text x="160" y="60" text-anchor="middle" font-size="8" fill="#57534e">[B, 256]</text>
+
+          <line x1="205" y1="50" x2="230" y2="50" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+          <rect x="230" y="35" width="90" height="30" rx="5" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1.5"/>
+          <text x="275" y="48" text-anchor="middle" font-size="9" font-weight="bold" fill="#57534e">FC+ReLU</text>
+          <text x="275" y="60" text-anchor="middle" font-size="8" fill="#57534e">[B, 256]</text>
+
+          <!-- Split into two outputs -->
+          <line x1="320" y1="45" x2="370" y2="30" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+          <line x1="320" y1="55" x2="370" y2="70" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+          <rect x="370" y="15" width="100" height="30" rx="5" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="420" y="28" text-anchor="middle" font-size="9" font-weight="bold" fill="#7c3aed">FC (mean)</text>
+          <text x="420" y="40" text-anchor="middle" font-size="8" fill="#7c3aed">[B, a_dim]</text>
+
+          <rect x="370" y="55" width="100" height="30" rx="5" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="420" y="68" text-anchor="middle" font-size="9" font-weight="bold" fill="#7c3aed">FC (log_std)</text>
+          <text x="420" y="80" text-anchor="middle" font-size="8" fill="#7c3aed">[B, a_dim]</text>
+
+          <!-- Labels -->
+          <text x="500" y="33" font-size="8" fill="#7c3aed">&mu;(s)</text>
+          <text x="500" y="73" font-size="8" fill="#7c3aed">log&sigma;(s)</text>
+          <text x="500" y="85" font-size="7" fill="#a8a29e">clamped to [-20, 2]</text>
+        </svg>
+      </div>
+
+      <p>The network outputs both mean and log-standard-deviation. The log_std is clamped to [-20, 2] for numerical stability (prevents the variance from becoming zero or exploding). The actual standard deviation is &sigma; = exp(log_std).</p>
+    </div>
+  </section>
+
+  <!-- Section 5: Soft Bellman & Twin Critics -->
+  <section>
+    <h2>5 &mdash; Soft Bellman Equation &amp; Twin Critics</h2>
+
+    <p>SAC's critics learn the <strong>soft Q-function</strong>, which accounts for future entropy bonuses. The target includes a log-probability penalty from the current policy:</p>
+
+    <div class="layer-card neck">
+      <div class="layer-header">
+        <h4>Soft TD Target</h4>
+        <span class="shapes">includes entropy from next-state actions</span>
+      </div>
+      <p><strong>y = r + &gamma; ( min(Q'<sub>1</sub>(s', a'), Q'<sub>2</sub>(s', a')) &minus; &alpha; log &pi;(a'|s') )</strong></p>
+      <p>where a' ~ &pi;(&middot;|s') is sampled from the <em>current</em> actor (not a target actor)</p>
+      <p>The &minus;&alpha; log &pi; term is the entropy bonus: actions that are more random (higher log-probability magnitude, more spread-out distribution) get higher soft Q-values. This encourages the critic to value states where the policy has room to be uncertain.</p>
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg" width="700" height="240">
+        <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Soft Bellman Backup</text>
+
+        <!-- Current transition -->
+        <rect x="30" y="50" width="100" height="30" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="80" y="70" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e40af">s, a</text>
+
+        <line x1="130" y1="65" x2="160" y2="65" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+        <rect x="160" y="50" width="70" height="30" rx="5" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="195" y="70" text-anchor="middle" font-size="10" font-weight="bold" fill="#166534">r</text>
+
+        <line x1="230" y1="65" x2="260" y2="65" stroke="#57534e" stroke-width="1.2"/>
+        <text x="248" y="58" font-size="12" fill="#57534e">+</text>
+        <text x="270" y="58" font-size="10" fill="#57534e">&gamma; &times;</text>
+
+        <!-- Next state processing -->
+        <rect x="300" y="40" width="100" height="30" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="350" y="60" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e40af">s'</text>
+
+        <!-- Sample action from actor -->
+        <line x1="350" y1="70" x2="350" y2="95" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arw2)"/>
+        <rect x="290" y="95" width="120" height="28" rx="5" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="350" y="114" text-anchor="middle" font-size="9" fill="#7c3aed">a' ~ &pi;(&middot;|s')</text>
+
+        <!-- Twin target critics -->
+        <line x1="350" y1="123" x2="300" y2="150" stroke="#57534e" stroke-width="1" marker-end="url(#arw2)"/>
+        <line x1="350" y1="123" x2="450" y2="150" stroke="#57534e" stroke-width="1" marker-end="url(#arw2)"/>
+
+        <rect x="220" y="150" width="120" height="28" rx="5" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+        <text x="280" y="169" text-anchor="middle" font-size="9" fill="#166534">Q'<tspan font-size="7" dy="1">1</tspan><tspan dy="-1">(s', a')</tspan></text>
+
+        <rect x="400" y="150" width="120" height="28" rx="5" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+        <text x="460" y="169" text-anchor="middle" font-size="9" fill="#166534">Q'<tspan font-size="7" dy="1">2</tspan><tspan dy="-1">(s', a')</tspan></text>
+
+        <!-- Min -->
+        <line x1="280" y1="178" x2="350" y2="200" stroke="#b45309" stroke-width="1.2"/>
+        <line x1="460" y1="178" x2="400" y2="200" stroke="#b45309" stroke-width="1.2"/>
+
+        <rect x="310" y="200" width="130" height="28" rx="5" fill="#fffbeb" stroke="#b45309" stroke-width="1.5"/>
+        <text x="375" y="219" text-anchor="middle" font-size="9" font-weight="bold" fill="#b45309">min(Q'1, Q'2)</text>
+
+        <!-- Entropy penalty -->
+        <rect x="500" y="95" width="150" height="28" rx="5" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="575" y="114" text-anchor="middle" font-size="9" fill="#7c3aed">&minus;&alpha; log &pi;(a'|s')</text>
+
+        <line x1="575" y1="123" x2="440" y2="207" stroke="#a855f7" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arw2)"/>
+        <text x="530" y="175" font-size="8" fill="#a855f7" font-family="Helvetica Neue, Arial, sans-serif">subtracted from target</text>
+      </svg>
+    </div>
+
+    <p>Both critics Q<sub>1</sub> and Q<sub>2</sub> are trained independently on the same target (using the twin minimum from TD3). The critic loss for each is simply MSE:</p>
+
+    <div class="callout">
+      <strong>Critic loss:</strong> L(Q<sub>i</sub>) = E[(Q<sub>i</sub>(s, a) &minus; y)&sup2;] for i &isin; {1, 2}, where transitions (s, a, r, s') come from the replay buffer and a' is freshly sampled from the current policy.
+    </div>
+  </section>
+
+  <!-- Section 6: Automatic Temperature Tuning -->
+  <section>
+    <h2>6 &mdash; Automatic Temperature Tuning</h2>
+
+    <p>The temperature &alpha; is the most critical hyperparameter in SAC &mdash; it determines the reward-entropy tradeoff. The 2019 follow-up paper showed how to tune it automatically, removing the burden from the practitioner entirely.</p>
+
+    <div class="layer-card entropy">
+      <div class="layer-header">
+        <h4>Constrained Optimization for &alpha;</h4>
+        <span class="shapes">target entropy H&#772; = &minus;dim(A)</span>
+      </div>
+      <p>Instead of fixing &alpha;, solve a constrained optimization problem: maximize expected return subject to the policy's entropy being at least H&#772; (a target entropy). Using Lagrangian duality, this becomes:</p>
+      <p><strong>&alpha;* = arg min<sub>&alpha;</sub> E[&minus;&alpha; (log &pi;(a|s) + H&#772;)]</strong></p>
+      <p>In practice: if the policy's entropy is below the target, &alpha; increases (more entropy weight). If above the target, &alpha; decreases (more reward focus). The target entropy is heuristically set to <strong>H&#772; = &minus;dim(A)</strong>, i.e., negative the number of action dimensions.</p>
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" width="700" height="200">
+        <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Automatic Temperature Regulation</text>
+
+        <!-- Current entropy measurement -->
+        <rect x="40" y="55" width="180" height="44" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="130" y="73" text-anchor="middle" font-size="10" font-weight="bold" fill="#7c3aed">Current Entropy</text>
+        <text x="130" y="90" text-anchor="middle" font-size="10" fill="#7c3aed">H(&pi;) = E[&minus;log &pi;(a|s)]</text>
+
+        <!-- Target -->
+        <rect x="40" y="125" width="180" height="36" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="130" y="143" text-anchor="middle" font-size="10" font-weight="bold" fill="#4338ca">Target: H&#772; = &minus;dim(A)</text>
+        <text x="130" y="157" text-anchor="middle" font-size="9" fill="#4338ca">e.g., &minus;6 for 6-DoF arm</text>
+
+        <!-- Comparison -->
+        <line x1="220" y1="77" x2="290" y2="100" stroke="#57534e" stroke-width="1.2"/>
+        <line x1="220" y1="143" x2="290" y2="120" stroke="#57534e" stroke-width="1.2"/>
+
+        <rect x="290" y="90" width="120" height="36" rx="6" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1.5"/>
+        <text x="350" y="108" text-anchor="middle" font-size="10" font-weight="bold" fill="#57534e">Compare</text>
+        <text x="350" y="120" text-anchor="middle" font-size="9" fill="#57534e">H(&pi;) vs H&#772;</text>
+
+        <!-- Two outcomes -->
+        <line x1="410" y1="100" x2="470" y2="68" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+        <line x1="410" y1="118" x2="470" y2="148" stroke="#57534e" stroke-width="1.2" marker-end="url(#arw2)"/>
+
+        <!-- Entropy too low -->
+        <rect x="470" y="48" width="200" height="40" rx="6" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="570" y="65" text-anchor="middle" font-size="10" font-weight="bold" fill="#dc2626">H(&pi;) &lt; H&#772;</text>
+        <text x="570" y="80" text-anchor="middle" font-size="9" fill="#dc2626">&alpha; increases &uarr; (more exploration)</text>
+
+        <!-- Entropy too high -->
+        <rect x="470" y="130" width="200" height="40" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="570" y="147" text-anchor="middle" font-size="10" font-weight="bold" fill="#166534">H(&pi;) > H&#772;</text>
+        <text x="570" y="162" text-anchor="middle" font-size="9" fill="#166534">&alpha; decreases &darr; (more exploitation)</text>
+      </svg>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Why this matters:</strong> Before auto-tuning, &alpha; required careful per-task tuning. Too high and the agent never converges (just explores). Too low and you lose entropy benefits (fragile, poor exploration). Auto-tuning removed the single most sensitive hyperparameter from the algorithm, making SAC dramatically more robust out of the box.
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>SAC Version</th>
+          <th>Temperature</th>
+          <th>Networks</th>
+          <th>Key Difference</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>SAC v1 (2018)</td>
+          <td>Fixed &alpha; (hyperparameter)</td>
+          <td>6 (actor, V, Q1, Q2, V', Q1')</td>
+          <td>Separate value network V(s)</td>
+        </tr>
+        <tr>
+          <td>SAC v2 (2019)</td>
+          <td>Auto-tuned &alpha; (learned)</td>
+          <td>5 (actor, Q1, Q2, Q1', Q2')</td>
+          <td>No V network, auto-temperature</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 7: Training Algorithm -->
+  <section>
+    <h2>7 &mdash; Training Algorithm</h2>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 430" xmlns="http://www.w3.org/2000/svg" width="700" height="430">
+        <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">SAC Training Loop</text>
+
+        <!-- Step 1 -->
+        <rect x="210" y="40" width="280" height="44" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+        <text x="350" y="58" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">1. Sample mini-batch from replay buffer</text>
+        <text x="350" y="75" text-anchor="middle" font-size="9" fill="#1e40af">(s, a, r, s', done) &times; 256</text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="84" x2="350" y2="105" stroke="#57534e" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- Step 2 -->
+        <rect x="170" y="105" width="360" height="55" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+        <text x="350" y="122" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">2. Compute soft target</text>
+        <text x="350" y="138" text-anchor="middle" font-size="9" fill="#166534">a' ~ &pi;(&middot;|s'), compute log &pi;(a'|s')</text>
+        <text x="350" y="152" text-anchor="middle" font-size="9" fill="#166534">y = r + &gamma;(min(Q'<tspan font-size="7" dy="1">1</tspan><tspan dy="-1">, Q'</tspan><tspan font-size="7" dy="1">2</tspan><tspan dy="-1">) &minus; &alpha; log &pi;(a'|s'))</tspan></text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="160" x2="350" y2="180" stroke="#57534e" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- Step 3 -->
+        <rect x="210" y="180" width="280" height="44" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+        <text x="350" y="198" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">3. Update both critics</text>
+        <text x="350" y="215" text-anchor="middle" font-size="9" fill="#166534">L(Q<tspan font-size="7" dy="1">i</tspan><tspan dy="-1">) = E[(Q</tspan><tspan font-size="7" dy="1">i</tspan><tspan dy="-1">(s,a) &minus; y)&sup2;]</tspan></text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="224" x2="350" y2="245" stroke="#57534e" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- Step 4 -->
+        <rect x="170" y="245" width="360" height="52" rx="8" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="350" y="263" text-anchor="middle" font-size="11" font-weight="bold" fill="#7c3aed">4. Update actor</text>
+        <text x="350" y="279" text-anchor="middle" font-size="9" fill="#7c3aed">a<tspan font-size="7" dy="1">new</tspan><tspan dy="-1"> ~ &pi;(&middot;|s), maximize: E[min(Q</tspan><tspan font-size="7" dy="1">1</tspan><tspan dy="-1">, Q</tspan><tspan font-size="7" dy="1">2</tspan><tspan dy="-1">)(s, a</tspan><tspan font-size="7" dy="1">new</tspan><tspan dy="-1">) &minus; &alpha; log &pi;(a</tspan><tspan font-size="7" dy="1">new</tspan><tspan dy="-1">|s)]</tspan></text>
+        <text x="350" y="292" text-anchor="middle" font-size="8" fill="#7c3aed">(gradient through reparameterized sample)</text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="297" x2="350" y2="316" stroke="#57534e" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- Step 5 -->
+        <rect x="210" y="316" width="280" height="44" rx="8" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
+        <text x="350" y="334" text-anchor="middle" font-size="11" font-weight="bold" fill="#b45309">5. Update temperature &alpha;</text>
+        <text x="350" y="352" text-anchor="middle" font-size="9" fill="#b45309">L(&alpha;) = E[&minus;&alpha;(log &pi;(a|s) + H&#772;)]</text>
+
+        <!-- Arrow -->
+        <line x1="350" y1="360" x2="350" y2="378" stroke="#57534e" stroke-width="1.5" marker-end="url(#arw2)"/>
+
+        <!-- Step 6 -->
+        <rect x="210" y="378" width="280" height="36" rx="8" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1.5"/>
+        <text x="350" y="395" text-anchor="middle" font-size="11" font-weight="bold" fill="#57534e">6. Soft-update target critics</text>
+        <text x="350" y="409" text-anchor="middle" font-size="9" fill="#57534e">Q'<tspan font-size="7" dy="1">i</tspan><tspan dy="-1"> &larr; &tau;Q</tspan><tspan font-size="7" dy="1">i</tspan><tspan dy="-1"> + (1&minus;&tau;)Q'</tspan><tspan font-size="7" dy="1">i</tspan></text>
+
+        <!-- Loop -->
+        <path d="M490,397 L660,397 L660,62 L490,62" fill="none" stroke="#b45309" stroke-width="2" marker-end="url(#arw2)"/>
+        <text x="665" y="240" text-anchor="start" font-size="10" fill="#b45309" font-weight="bold" font-family="Helvetica Neue, Arial, sans-serif" transform="rotate(-90,665,240)">REPEAT</text>
+
+        <!-- Annotations -->
+        <text x="120" y="270" text-anchor="end" font-size="9" fill="#7c3aed" font-family="Helvetica Neue, Arial, sans-serif">Every step</text>
+        <text x="120" y="284" text-anchor="end" font-size="9" fill="#7c3aed" font-family="Helvetica Neue, Arial, sans-serif">(no delay!)</text>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <strong>No delayed updates:</strong> Unlike TD3, SAC updates the actor <em>every step</em>. The stochastic policy provides natural regularization (entropy prevents the actor from exploiting sharp Q-peaks), making delayed updates unnecessary. This simplifies the algorithm.
+    </div>
+
+    <h3>Key Hyperparameters</h3>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Hyperparameter</th>
+          <th>Default Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Hidden layers</td><td>2 &times; 256 (actor and critic)</td></tr>
+        <tr><td>Learning rate</td><td>3 &times; 10<sup>&minus;4</sup> (Adam, all networks + &alpha;)</td></tr>
+        <tr><td>Discount &gamma;</td><td>0.99</td></tr>
+        <tr><td>Soft update &tau;</td><td>0.005</td></tr>
+        <tr><td>Target entropy H&#772;</td><td>&minus;dim(A)</td></tr>
+        <tr><td>Initial &alpha;</td><td>0.2 (then auto-tuned)</td></tr>
+        <tr><td>Replay buffer size</td><td>10<sup>6</sup></td></tr>
+        <tr><td>Batch size</td><td>256</td></tr>
+        <tr><td>Warmup steps</td><td>5,000&ndash;10,000 (random actions)</td></tr>
+        <tr><td>Updates per step</td><td>1 (gradient step per environment step)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 8: Comparison -->
+  <section>
+    <h2>8 &mdash; SAC vs TD3 vs PPO</h2>
+
+    <p>These three algorithms represent the dominant approaches to different RL problem settings. Choosing between them depends on your specific requirements.</p>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>PPO</th>
+          <th>TD3</th>
+          <th>SAC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>On/Off-Policy</td>
+          <td>On-policy</td>
+          <td>Off-policy</td>
+          <td>Off-policy</td>
+        </tr>
+        <tr>
+          <td>Policy type</td>
+          <td>Stochastic</td>
+          <td>Deterministic</td>
+          <td>Stochastic</td>
+        </tr>
+        <tr>
+          <td>Action space</td>
+          <td>Discrete &amp; continuous</td>
+          <td>Continuous only</td>
+          <td>Continuous (discrete variants exist)</td>
+        </tr>
+        <tr>
+          <td>Exploration</td>
+          <td>Policy entropy + bonus</td>
+          <td>Gaussian noise (manual)</td>
+          <td>Entropy-driven (automatic)</td>
+        </tr>
+        <tr>
+          <td>Sample efficiency</td>
+          <td>Low (on-policy)</td>
+          <td>High</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td>Wall-clock efficiency</td>
+          <td>High (parallel envs)</td>
+          <td>Medium</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td>Hyperparameter sensitivity</td>
+          <td>Medium</td>
+          <td>Low&ndash;Medium</td>
+          <td>Low (auto-tuned &alpha;)</td>
+        </tr>
+        <tr>
+          <td>Multi-modal behaviors</td>
+          <td>Yes (stochastic)</td>
+          <td>No (deterministic)</td>
+          <td>Yes (entropy-encouraged)</td>
+        </tr>
+        <tr>
+          <td>Replay buffer</td>
+          <td>No (uses rollout buffer)</td>
+          <td>Yes</td>
+          <td>Yes</td>
+        </tr>
+        <tr>
+          <td>Key innovation</td>
+          <td>Clipped surrogate</td>
+          <td>Twin critics + delay</td>
+          <td>Max entropy + auto-&alpha;</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout-green callout">
+      <strong>When to use SAC:</strong> SAC is the go-to off-policy algorithm for continuous control. It's more robust than TD3 (automatic exploration tuning, no noise schedule needed), more sample-efficient than PPO (off-policy replay), and handles multi-modal tasks better than either. Use it when: (1) your action space is continuous, (2) you want sample efficiency, (3) your task may have multiple valid strategies, or (4) you want minimal hyperparameter tuning.
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>When NOT to use SAC:</strong> (1) Discrete action spaces (use PPO). (2) You have cheap simulation and need maximum throughput (PPO with parallel envs may be faster in wall-clock time). (3) Your task provably has a single optimal deterministic policy and you want maximum performance (TD3 may slightly outperform on some benchmarks).
+    </div>
+
+    <div class="callout">
+      <strong>The evolution:</strong> DDPG (2016) showed continuous control was possible &rarr; TD3 (2018) fixed DDPG's instability with twin critics, delay, and smoothing &rarr; SAC (2018) replaced handcrafted fixes with a principled entropy framework. SAC adopted TD3's twin critics but replaced delay and smoothing with entropy regularization, which provides similar benefits more elegantly.
+    </div>
+  </section>
+
+  <!-- Section 9: References -->
+  <section>
+    <h2>9 &mdash; References</h2>
+    <p>Haarnoja, T., Zhou, A., Abbeel, P., &amp; Levine, S. (2018). <a href="https://arxiv.org/abs/1801.01290">Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor</a>. ICML 2018.</p>
+    <p>Haarnoja, T., Zhou, A., Hartikainen, K., Tucker, G., Ha, S., Tan, J., Kumar, V., Zhu, H., Gupta, A., Abbeel, P., &amp; Levine, S. (2019). <a href="https://arxiv.org/abs/1812.05905">Soft Actor-Critic Algorithms and Applications</a>. arXiv:1812.05905.</p>
+    <p>Ziebart, B.D. (2010). Modeling Purposeful Adaptive Behavior with the Principle of Maximum Causal Entropy. PhD thesis, Carnegie Mellon University.</p>
+    <p>Fujimoto, S., van Hoof, H., &amp; Meger, D. (2018). <a href="https://arxiv.org/abs/1802.09477">Addressing Function Approximation Error in Actor-Critic Methods</a>. ICML 2018.</p>
+    <p>Kingma, D.P. &amp; Welling, M. (2014). <a href="https://arxiv.org/abs/1312.6114">Auto-Encoding Variational Bayes</a>. ICLR 2014. (Reparameterization trick origin.)</p>
+    <p>Schulman, J., Wolski, F., Dhariwal, P., Radford, A., &amp; Klimov, O. (2017). <a href="https://arxiv.org/abs/1707.06347">Proximal Policy Optimization Algorithms</a>. arXiv:1707.06347.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>

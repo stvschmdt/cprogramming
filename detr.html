@@ -220,9 +220,166 @@
       </div>
     </div>
 
+    <h3><span class="step-num amber">5</span> Prediction Heads (FFN)</h3>
+    <div class="layer-card head">
+      <div class="layer-header">
+        <h4>Class + Box FFN per Query</h4>
+        <div class="shapes">100 &times; 256 &rarr; 100 &times; (class + 4 coords)</div>
+      </div>
+      <p>Each decoder output token independently passes through two feed-forward networks: one predicts the <strong>class label</strong> (91 COCO categories + "no object") and one predicts <strong>normalized box coordinates</strong> (center_x, center_y, width, height). The "no object" class (&empty;) is predicted for most queries — it means that query slot found nothing.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 560 100" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="280" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Per-Query Prediction Heads</text>
+
+          <!-- Decoder output -->
+          <rect x="20" y="30" width="70" height="45" rx="3" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="55" y="50" text-anchor="middle" font-size="7" fill="white" font-weight="600">Query i</text>
+          <text x="55" y="63" text-anchor="middle" font-size="6" fill="#ddd6fe">256-dim</text>
+
+          <!-- Branch to class -->
+          <line x1="93" y1="45" x2="130" y2="35" stroke="#57534e" stroke-width="1.5"/>
+          <!-- Branch to box -->
+          <line x1="93" y1="60" x2="130" y2="70" stroke="#57534e" stroke-width="1.5"/>
+
+          <!-- Class FFN -->
+          <rect x="135" y="22" width="80" height="28" rx="3" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="175" y="38" text-anchor="middle" font-size="7" fill="white" font-weight="600">Class FFN</text>
+          <text x="175" y="48" text-anchor="middle" font-size="6" fill="#bfdbfe">256 &rarr; 92</text>
+
+          <line x1="218" y1="36" x2="245" y2="36" stroke="#57534e" stroke-width="1" marker-end="url(#detr-a2)"/>
+
+          <rect x="250" y="24" width="90" height="24" rx="3" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="295" y="40" text-anchor="middle" font-size="7" fill="#166534" font-weight="600">"person" (0.95)</text>
+
+          <!-- Box FFN -->
+          <rect x="135" y="57" width="80" height="28" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="175" y="73" text-anchor="middle" font-size="7" fill="white" font-weight="600">Box FFN</text>
+          <text x="175" y="83" text-anchor="middle" font-size="6" fill="#fef3c7">256 &rarr; 4</text>
+
+          <line x1="218" y1="71" x2="245" y2="71" stroke="#57534e" stroke-width="1" marker-end="url(#detr-a2)"/>
+
+          <rect x="250" y="59" width="90" height="24" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="295" y="75" text-anchor="middle" font-size="7" fill="#92400e" font-weight="600">[0.4, 0.3, 0.5, 0.7]</text>
+
+          <!-- For empty query -->
+          <text x="420" y="35" font-size="7" fill="#57534e">Most queries predict:</text>
+          <rect x="420" y="42" width="80" height="20" rx="3" fill="#9ca3af" stroke="#6b7280" stroke-width="1"/>
+          <text x="460" y="55" text-anchor="middle" font-size="7" fill="white">&empty; (no object)</text>
+          <text x="460" y="78" text-anchor="middle" font-size="7" fill="#57534e">Only 5-20 of 100 queries</text>
+          <text x="460" y="88" text-anchor="middle" font-size="7" fill="#57534e">typically find objects</text>
+
+          <defs><marker id="detr-a2" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <h3>Hungarian Matching: How DETR Trains Without NMS</h3>
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>Bipartite Matching Loss</h4>
+        <div class="shapes">N predictions &times; M ground truths &rarr; 1-to-1 assignment</div>
+      </div>
+      <p>During training, DETR uses the <strong>Hungarian algorithm</strong> to find the optimal one-to-one matching between its 100 predictions and the ground-truth objects. The matching cost combines classification probability, L1 box distance, and GIoU. Each ground truth is assigned exactly one prediction; unmatched predictions are trained to predict &empty;.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 580 140" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="290" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Hungarian Matching: One Prediction per Object</text>
+
+          <!-- Predictions column -->
+          <text x="80" y="32" text-anchor="middle" font-size="8" fill="#8b5cf6" font-weight="600">100 Predictions</text>
+          <rect x="40" y="38" width="80" height="14" rx="2" fill="#22c55e" stroke="#16a34a" stroke-width="1"/><text x="80" y="48" text-anchor="middle" font-size="6" fill="white">P1: dog [0.4,0.3,0.5,0.6]</text>
+          <rect x="40" y="55" width="80" height="14" rx="2" fill="#22c55e" stroke="#16a34a" stroke-width="1"/><text x="80" y="65" text-anchor="middle" font-size="6" fill="white">P2: cat [0.2,0.5,0.3,0.4]</text>
+          <rect x="40" y="72" width="80" height="14" rx="2" fill="#9ca3af" stroke="#6b7280" stroke-width="1"/><text x="80" y="82" text-anchor="middle" font-size="6" fill="white">P3: &empty; (no object)</text>
+          <rect x="40" y="89" width="80" height="14" rx="2" fill="#9ca3af" stroke="#6b7280" stroke-width="1"/><text x="80" y="99" text-anchor="middle" font-size="6" fill="white">P4: &empty;</text>
+          <text x="80" y="116" font-size="8" fill="#8b5cf6">&vellip; (96 more &empty;)</text>
+
+          <!-- Hungarian matching -->
+          <rect x="170" y="35" width="100" height="90" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="220" y="55" text-anchor="middle" font-size="8" fill="#92400e" font-weight="700">Hungarian</text>
+          <text x="220" y="68" text-anchor="middle" font-size="8" fill="#92400e" font-weight="700">Algorithm</text>
+          <text x="220" y="85" text-anchor="middle" font-size="6" fill="#d97706">Find min-cost</text>
+          <text x="220" y="95" text-anchor="middle" font-size="6" fill="#d97706">1-to-1 matching</text>
+          <text x="220" y="108" text-anchor="middle" font-size="6" fill="#d97706">L_match = class + L1 + GIoU</text>
+
+          <!-- Matching lines -->
+          <line x1="123" y1="45" x2="168" y2="55" stroke="#22c55e" stroke-width="2"/>
+          <line x1="123" y1="62" x2="168" y2="65" stroke="#22c55e" stroke-width="2"/>
+
+          <!-- Ground truths column -->
+          <text x="370" y="32" text-anchor="middle" font-size="8" fill="#16a34a" font-weight="600">Ground Truths</text>
+          <rect x="330" y="38" width="80" height="14" rx="2" fill="#16a34a" stroke="#166534" stroke-width="1"/><text x="370" y="48" text-anchor="middle" font-size="6" fill="white">GT1: dog [0.4,0.3,0.5,0.6]</text>
+          <rect x="330" y="55" width="80" height="14" rx="2" fill="#16a34a" stroke="#166534" stroke-width="1"/><text x="370" y="65" text-anchor="middle" font-size="6" fill="white">GT2: cat [0.2,0.5,0.3,0.4]</text>
+
+          <line x1="273" y1="55" x2="327" y2="45" stroke="#22c55e" stroke-width="2"/>
+          <line x1="273" y1="65" x2="327" y2="62" stroke="#22c55e" stroke-width="2"/>
+
+          <!-- Result -->
+          <rect x="440" y="35" width="120" height="90" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="500" y="53" text-anchor="middle" font-size="7" fill="#166534" font-weight="600">After matching:</text>
+          <text x="500" y="68" text-anchor="middle" font-size="6" fill="#22c55e">P1 &harr; GT1: train on dog box</text>
+          <text x="500" y="80" text-anchor="middle" font-size="6" fill="#22c55e">P2 &harr; GT2: train on cat box</text>
+          <text x="500" y="95" text-anchor="middle" font-size="6" fill="#6b7280">P3-P100: train to predict &empty;</text>
+          <text x="500" y="112" text-anchor="middle" font-size="7" fill="#166534" font-weight="600">No duplicates possible!</text>
+        </svg>
+      </div>
+    </div>
+
     <h3>DETR Limitations</h3>
     <div class="callout">
       <strong>Slow convergence:</strong> DETR requires 500 epochs to train (vs. 36 for Faster R-CNN). <strong>Weak on small objects:</strong> Using only the final backbone feature map loses fine-grained detail. These limitations motivated the next generation.
+    </div>
+
+    <h3>Decoder Cross-Attention: Where Queries Look</h3>
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>Attention Visualization Across Decoder Layers</h4>
+      </div>
+      <p>A fascinating property of DETR's decoder: in early layers, queries attend broadly across the image (exploring). In later layers, attention sharpens to focus precisely on the object boundaries. This progressive refinement is why the decoder needs multiple layers.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 580 105" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="290" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Decoder Attention Sharpening</text>
+
+          <!-- Layer 1 -->
+          <text x="70" y="35" text-anchor="middle" font-size="8" fill="#8b5cf6" font-weight="600">Decoder Layer 1</text>
+          <rect x="20" y="40" width="100" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+          <!-- Diffuse attention blobs -->
+          <circle cx="50" cy="60" r="18" fill="#8b5cf6" opacity="0.15"/><circle cx="80" cy="55" r="15" fill="#8b5cf6" opacity="0.12"/>
+          <circle cx="60" cy="75" r="12" fill="#8b5cf6" opacity="0.1"/>
+          <text x="70" y="98" text-anchor="middle" font-size="6" fill="#7c3aed">Broad, diffuse attention</text>
+
+          <!-- Arrow -->
+          <line x1="125" y1="65" x2="152" y2="65" stroke="#57534e" stroke-width="1.5" marker-end="url(#detr-a3)"/>
+
+          <!-- Layer 3 -->
+          <text x="215" y="35" text-anchor="middle" font-size="8" fill="#3b82f6" font-weight="600">Decoder Layer 3</text>
+          <rect x="165" y="40" width="100" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+          <!-- More focused -->
+          <circle cx="200" cy="60" r="12" fill="#3b82f6" opacity="0.25"/>
+          <circle cx="230" cy="55" r="8" fill="#3b82f6" opacity="0.2"/>
+          <text x="215" y="98" text-anchor="middle" font-size="6" fill="#2563eb">Narrowing to objects</text>
+
+          <!-- Arrow -->
+          <line x1="270" y1="65" x2="297" y2="65" stroke="#57534e" stroke-width="1.5" marker-end="url(#detr-a3)"/>
+
+          <!-- Layer 6 -->
+          <text x="360" y="35" text-anchor="middle" font-size="8" fill="#22c55e" font-weight="600">Decoder Layer 6</text>
+          <rect x="310" y="40" width="100" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+          <!-- Tight extremity attention -->
+          <rect x="335" y="50" width="20" height="30" rx="2" fill="#22c55e" opacity="0.35" stroke="#16a34a" stroke-width="1.5"/>
+          <circle cx="345" cy="52" r="2" fill="#22c55e" opacity="0.5"/>
+          <circle cx="345" cy="78" r="2" fill="#22c55e" opacity="0.5"/>
+          <circle cx="335" cy="65" r="2" fill="#22c55e" opacity="0.5"/>
+          <circle cx="355" cy="65" r="2" fill="#22c55e" opacity="0.5"/>
+          <text x="360" y="98" text-anchor="middle" font-size="6" fill="#166534">Extremities: head, feet, tail</text>
+
+          <!-- Annotation -->
+          <rect x="435" y="42" width="130" height="50" rx="4" fill="#f0fdf4" stroke="#22c55e" stroke-width="1"/>
+          <text x="500" y="58" text-anchor="middle" font-size="7" fill="#166534" font-weight="600">Final layer attends to</text>
+          <text x="500" y="70" text-anchor="middle" font-size="7" fill="#166534" font-weight="600">object extremities to</text>
+          <text x="500" y="82" text-anchor="middle" font-size="7" fill="#166534" font-weight="600">precisely locate the box</text>
+
+          <defs><marker id="detr-a3" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
     </div>
   </section>
   </div>
@@ -401,9 +558,30 @@
   </section>
   </div>
 
-  <!-- SECTION 5: Evolution comparison -->
+  <!-- SECTION 5: Full Architecture Comparison -->
   <section>
-    <h2>5 &mdash; Evolution Summary</h2>
+    <h2>5 &mdash; Architecture Comparison</h2>
+
+    <table class="summary-table">
+      <tr><th>Component</th><th>DETR (2020)</th><th>RT-DETR (2023)</th><th>RF-DETR (2025)</th></tr>
+      <tr><td>Backbone</td><td>ResNet-50 (single scale)</td><td>HGNetv2 (multi-scale S3/S4/S5)</td><td>DINOv2 ViT (pre-trained, multi-scale via projector)</td></tr>
+      <tr><td>Encoder</td><td>6&times; standard self-attention</td><td>AISM (intra-scale) + CCFM (cross-scale CNN)</td><td>ViT backbone + windowed/global attention mix</td></tr>
+      <tr><td>Decoder</td><td>6&times; cross-attention + self-attention</td><td>6&times; standard decoder (flexible: 1-6 at inference)</td><td>LW-DETR decoder w/ deformable cross-attention</td></tr>
+      <tr><td>Queries</td><td>100 fixed learned embeddings</td><td>IoU-aware top-K from encoder features</td><td>Content-based from encoder features</td></tr>
+      <tr><td>NMS</td><td>Not needed</td><td>Not needed</td><td>Not needed</td></tr>
+      <tr><td>Training</td><td>500 epochs</td><td>72 epochs</td><td>Fast convergence via pre-trained backbone</td></tr>
+      <tr><td>Best COCO AP</td><td>43.3</td><td>54.8</td><td><strong>60+</strong></td></tr>
+      <tr><td>Real-time?</td><td>No (~12 FPS)</td><td>Yes (~114 FPS)</td><td>Yes (NAS-optimized)</td></tr>
+    </table>
+
+    <div class="callout-blue callout">
+      <strong>The DETR family trend:</strong> Each generation keeps the core idea (set prediction, no NMS, bipartite matching) while fixing a specific limitation: DETR fixed the pipeline complexity, RT-DETR fixed the speed, RF-DETR fixed the accuracy ceiling by leveraging self-supervised pre-training.
+    </div>
+  </section>
+
+  <!-- SECTION 6: Evolution Visual -->
+  <section>
+    <h2>6 &mdash; Evolution Summary</h2>
 
     <div class="layer-diagram">
       <svg viewBox="0 0 650 160" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
@@ -455,7 +633,7 @@
 
   <!-- SECTION 6: REFERENCES -->
   <section>
-    <h2>6 &mdash; References &amp; Further Reading</h2>
+    <h2>7 &mdash; References &amp; Further Reading</h2>
     <ul style="padding-left: 1.25rem;">
       <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2005.12872">DETR: End-to-End Object Detection with Transformers</a> — Carion et al., Facebook AI, 2020</li>
       <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2010.04159">Deformable DETR</a> — Zhu et al., 2020 (deformable attention)</li>

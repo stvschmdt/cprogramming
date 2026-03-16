@@ -236,8 +236,110 @@
       <p>The decoder outputs <strong>3 masks</strong> at different granularity levels (whole object, part, sub-part) plus an IoU confidence score for each. This handles ambiguity — when you click on a person's shirt, SAM gives you the shirt, the torso, and the whole person as three options.</p>
     </div>
 
-    <div class="callout">
-      <strong>SA-1B Dataset:</strong> Meta built the largest segmentation dataset ever — 1.1 billion masks on 11 million images. They used a "data engine" where SAM was iteratively trained, used to assist human annotators, then retrained on the annotations. The final phase was fully automatic — SAM generated masks with no human help.
+    <h3>Ambiguity-Aware Outputs: Why Three Masks?</h3>
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>Multi-Granularity Mask Prediction</h4>
+        <div class="shapes">1 prompt &rarr; 3 masks at different levels</div>
+      </div>
+      <p>When you click on a shirt button, do you mean the button, the shirt, or the whole person? SAM doesn't guess — it gives you all three. Each mask comes with an IoU confidence score so you can pick the best one (or the model can auto-select).</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="300" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Ambiguity Resolution: One Click, Three Masks</text>
+
+          <!-- Image with click -->
+          <rect x="20" y="25" width="90" height="80" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <!-- Person outline -->
+          <ellipse cx="65" cy="50" rx="8" ry="10" fill="none" stroke="#9ca3af" stroke-width="0.8"/>
+          <rect x="50" y="62" width="30" height="25" rx="3" fill="none" stroke="#9ca3af" stroke-width="0.8"/>
+          <line x1="50" y1="87" x2="45" y2="100" stroke="#9ca3af" stroke-width="0.8"/>
+          <line x1="80" y1="87" x2="85" y2="100" stroke="#9ca3af" stroke-width="0.8"/>
+          <!-- Click on shirt -->
+          <circle cx="65" cy="72" r="4" fill="#ef4444" stroke="white" stroke-width="1.5"/>
+          <text x="65" y="115" text-anchor="middle" font-size="7" fill="#57534e">Click on shirt</text>
+
+          <!-- Arrow -->
+          <line x1="115" y1="65" x2="145" y2="65" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam-a2)"/>
+
+          <!-- Mask 1: sub-part (button) -->
+          <rect x="155" y="30" width="70" height="65" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+          <circle cx="190" cy="55" r="6" fill="#8b5cf6" opacity="0.5" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="190" y="105" text-anchor="middle" font-size="7" fill="#7c3aed" font-weight="600">Mask 1: Part</text>
+          <text x="190" y="115" text-anchor="middle" font-size="6" fill="#7c3aed">IoU: 0.72</text>
+
+          <!-- Mask 2: shirt -->
+          <rect x="240" y="30" width="70" height="65" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+          <rect x="255" y="48" width="40" height="30" rx="3" fill="#3b82f6" opacity="0.4" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="275" y="105" text-anchor="middle" font-size="7" fill="#2563eb" font-weight="600">Mask 2: Object</text>
+          <text x="275" y="115" text-anchor="middle" font-size="6" fill="#2563eb">IoU: 0.91</text>
+
+          <!-- Mask 3: whole person -->
+          <rect x="325" y="30" width="70" height="65" rx="4" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+          <ellipse cx="360" cy="42" rx="10" ry="12" fill="#22c55e" opacity="0.3" stroke="#16a34a" stroke-width="1"/>
+          <rect x="345" y="55" width="30" height="28" rx="3" fill="#22c55e" opacity="0.3" stroke="#16a34a" stroke-width="1"/>
+          <text x="360" y="105" text-anchor="middle" font-size="7" fill="#16a34a" font-weight="600">Mask 3: Whole</text>
+          <text x="360" y="115" text-anchor="middle" font-size="6" fill="#16a34a">IoU: 0.85</text>
+
+          <!-- Best mask indicator -->
+          <rect x="420" y="45" width="80" height="35" rx="4" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="460" y="60" text-anchor="middle" font-size="7" fill="#2563eb" font-weight="600">Auto-select:</text>
+          <text x="460" y="72" text-anchor="middle" font-size="7" fill="#2563eb">highest IoU &rarr; Mask 2</text>
+
+          <!-- IoU head annotation -->
+          <text x="530" y="55" font-size="7" fill="#57534e">IoU prediction</text>
+          <text x="530" y="67" font-size="7" fill="#57534e">head: 3-layer MLP</text>
+          <text x="530" y="79" font-size="7" fill="#57534e">256 &rarr; 256 &rarr; 3</text>
+
+          <defs><marker id="sam-a2" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <h3>The Data Engine: How Meta Built SA-1B</h3>
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Three-Phase Data Engine</h4>
+        <div class="shapes">130K &rarr; 4.3M &rarr; 1.1B masks</div>
+      </div>
+      <p>SA-1B wasn't built all at once. Meta used a <strong>three-phase data engine</strong> where SAM and human annotators improved each other iteratively:</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 620 130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="310" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">SA-1B Data Engine: Model-in-the-Loop Annotation</text>
+
+          <!-- Phase 1 -->
+          <rect x="15" y="28" width="175" height="65" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+          <text x="102" y="44" text-anchor="middle" font-size="8" fill="#2563eb" font-weight="700">Phase 1: Assisted Manual</text>
+          <text x="102" y="58" text-anchor="middle" font-size="6" fill="#3b82f6">Annotators click, SAM suggests masks</text>
+          <text x="102" y="70" text-anchor="middle" font-size="6" fill="#3b82f6">Human corrects &amp; approves</text>
+          <text x="102" y="84" text-anchor="middle" font-size="7" fill="#1e40af" font-weight="600">4.3M masks (120K images)</text>
+
+          <!-- Arrow -->
+          <line x1="195" y1="60" x2="215" y2="60" stroke="#57534e" stroke-width="2" marker-end="url(#sam-a3)"/>
+
+          <!-- Phase 2 -->
+          <rect x="220" y="28" width="175" height="65" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+          <text x="307" y="44" text-anchor="middle" font-size="8" fill="#16a34a" font-weight="700">Phase 2: Semi-Automatic</text>
+          <text x="307" y="58" text-anchor="middle" font-size="6" fill="#22c55e">SAM auto-generates masks</text>
+          <text x="307" y="70" text-anchor="middle" font-size="6" fill="#22c55e">Annotators fill in gaps</text>
+          <text x="307" y="84" text-anchor="middle" font-size="7" fill="#166534" font-weight="600">5.9M masks (180K images)</text>
+
+          <!-- Arrow -->
+          <line x1="400" y1="60" x2="420" y2="60" stroke="#57534e" stroke-width="2" marker-end="url(#sam-a3)"/>
+
+          <!-- Phase 3 -->
+          <rect x="425" y="28" width="180" height="65" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="515" y="44" text-anchor="middle" font-size="8" fill="#92400e" font-weight="700">Phase 3: Fully Automatic</text>
+          <text x="515" y="58" text-anchor="middle" font-size="6" fill="#f59e0b">SAM generates all masks alone</text>
+          <text x="515" y="70" text-anchor="middle" font-size="6" fill="#f59e0b">No human annotation needed</text>
+          <text x="515" y="84" text-anchor="middle" font-size="7" fill="#d97706" font-weight="600">1.1B masks (11M images)</text>
+
+          <!-- Loop arrow -->
+          <path d="M515,95 Q515,115 310,115 Q102,115 102,95" fill="none" stroke="#57534e" stroke-width="1.5" stroke-dasharray="4,2"/>
+          <text x="310" y="128" text-anchor="middle" font-size="7" fill="#57534e">Retrain SAM on new data after each phase &rarr; model improves &rarr; generates better data</text>
+
+          <defs><marker id="sam-a3" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#57534e"/></marker></defs>
+        </svg>
+      </div>
     </div>
   </section>
   </div>
@@ -344,8 +446,104 @@
       <p>The mask decoder uses the same two-way cross-attention design as SAM, but now operates on memory-conditioned features instead of raw image features. It still produces multiple mask hypotheses with confidence scores.</p>
     </div>
 
+    <h3>SAM 2 Per-Frame Processing Pipeline</h3>
+    <div class="layer-card memory">
+      <div class="layer-header">
+        <h4>Detailed Frame Processing Flow</h4>
+        <div class="shapes">image &rarr; encode &rarr; memory attend &rarr; decode &rarr; mask + update memory</div>
+      </div>
+      <p>For each frame in the video, SAM 2 executes a precise sequence. When no prompt is given (non-prompted frames), the model relies entirely on the memory bank to identify and segment the tracked object.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <text x="320" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">SAM 2: Per-Frame Processing (for frame t)</text>
+
+          <!-- Step 1: Image Encoder -->
+          <rect x="10" y="30" width="85" height="50" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+          <text x="52" y="48" text-anchor="middle" font-size="7" fill="white" font-weight="700">Hiera</text>
+          <text x="52" y="60" text-anchor="middle" font-size="7" fill="#bfdbfe">Encoder</text>
+          <text x="52" y="72" text-anchor="middle" font-size="6" fill="#93c5fd">frame_t &rarr; F_t</text>
+
+          <!-- Arrow -->
+          <line x1="98" y1="55" x2="118" y2="55" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam2-b)"/>
+
+          <!-- Step 2: Memory Attention -->
+          <rect x="122" y="25" width="110" height="60" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+          <text x="177" y="42" text-anchor="middle" font-size="7" fill="white" font-weight="700">Memory</text>
+          <text x="177" y="54" text-anchor="middle" font-size="7" fill="white" font-weight="700">Attention</text>
+          <text x="177" y="68" text-anchor="middle" font-size="6" fill="#fef3c7">L transformer blocks</text>
+          <text x="177" y="78" text-anchor="middle" font-size="6" fill="#fef3c7">self-attn + cross-attn</text>
+
+          <!-- Memory Bank input -->
+          <rect x="130" y="100" width="95" height="45" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="177" y="115" text-anchor="middle" font-size="6" fill="#92400e" font-weight="600">Memory Bank</text>
+          <text x="177" y="126" text-anchor="middle" font-size="5" fill="#d97706">recent N frame memories</text>
+          <text x="177" y="135" text-anchor="middle" font-size="5" fill="#d97706">prompted frame memories</text>
+          <text x="177" y="144" text-anchor="middle" font-size="5" fill="#d97706">object pointers</text>
+          <!-- Arrow from memory bank up -->
+          <line x1="177" y1="98" x2="177" y2="88" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#sam2-c)"/>
+
+          <!-- Arrow -->
+          <line x1="235" y1="55" x2="265" y2="55" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam2-b)"/>
+
+          <!-- Step 3: Prompt Encoder (if prompted) -->
+          <rect x="270" y="30" width="80" height="50" rx="4" fill="#22c55e" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="310" y="48" text-anchor="middle" font-size="7" fill="white" font-weight="600">Prompt</text>
+          <text x="310" y="60" text-anchor="middle" font-size="7" fill="white" font-weight="600">Encoder</text>
+          <text x="310" y="72" text-anchor="middle" font-size="6" fill="#dcfce7">(if prompted)</text>
+
+          <!-- Arrow -->
+          <line x1="353" y1="55" x2="378" y2="55" stroke="#57534e" stroke-width="1.5" marker-end="url(#sam2-b)"/>
+
+          <!-- Step 4: Mask Decoder -->
+          <rect x="382" y="25" width="90" height="60" rx="4" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2"/>
+          <text x="427" y="42" text-anchor="middle" font-size="7" fill="white" font-weight="700">Mask</text>
+          <text x="427" y="54" text-anchor="middle" font-size="7" fill="white" font-weight="700">Decoder</text>
+          <text x="427" y="67" text-anchor="middle" font-size="6" fill="#ddd6fe">2-way cross-attn</text>
+          <text x="427" y="78" text-anchor="middle" font-size="6" fill="#ddd6fe">+ occlusion head</text>
+
+          <!-- Outputs -->
+          <line x1="475" y1="45" x2="502" y2="40" stroke="#57534e" stroke-width="1.5"/>
+          <line x1="475" y1="60" x2="502" y2="65" stroke="#57534e" stroke-width="1.5"/>
+
+          <!-- Mask output -->
+          <rect x="505" y="28" width="60" height="22" rx="3" fill="#8b5cf6" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="535" y="42" text-anchor="middle" font-size="7" fill="white" font-weight="600">Mask_t</text>
+
+          <!-- Occlusion output -->
+          <rect x="505" y="55" width="60" height="22" rx="3" fill="#ef4444" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="535" y="69" text-anchor="middle" font-size="7" fill="white" font-weight="600">Occ score</text>
+
+          <!-- Step 5: Memory Encoder -->
+          <line x1="535" y1="80" x2="535" y2="105" stroke="#f59e0b" stroke-width="1.5"/>
+          <rect x="490" y="108" width="90" height="35" rx="4" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+          <text x="535" y="122" text-anchor="middle" font-size="7" fill="white" font-weight="600">Memory Encoder</text>
+          <text x="535" y="135" text-anchor="middle" font-size="6" fill="#fef3c7">mask + features &rarr; memory</text>
+
+          <!-- Arrow back to memory bank -->
+          <line x1="488" y1="125" x2="228" y2="125" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#sam2-c)"/>
+          <text x="360" y="118" text-anchor="middle" font-size="6" fill="#d97706" font-weight="600">write to memory bank</text>
+
+          <!-- Legend -->
+          <text x="320" y="170" text-anchor="middle" font-size="7" fill="#57534e">On single images: memory bank is empty &rarr; SAM 2 reduces to SAM (strict generalization)</text>
+
+          <defs>
+            <marker id="sam2-b" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#57534e"/></marker>
+            <marker id="sam2-c" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b"/></marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
     <div class="callout-green callout">
-      <strong>Occlusion handling:</strong> SAM 2 can predict that an object is <em>occluded</em> (hidden behind something) and generate an occlusion score. When the object reappears, the memory bank helps re-identify it. This is a key advantage over simple frame-by-frame segmentation.
+      <strong>Occlusion handling:</strong> SAM 2 adds a dedicated <strong>occlusion prediction head</strong> — a small MLP that estimates whether the target object is currently visible. When the occlusion score is high, the model knows not to produce a mask for that frame and relies on the memory bank to re-identify the object when it reappears. This is critical for videos where objects go behind other objects, leave the frame, or get temporarily hidden.
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Interactive Video Annotation</h4>
+        <div class="shapes">Click on frame 1 &rarr; track through video &rarr; correct on frame N &rarr; refine</div>
+      </div>
+      <p>SAM 2's streaming architecture enables <strong>interactive video annotation</strong>: a user clicks on an object in one frame, SAM 2 propagates the mask through the video, and if the tracking goes wrong, the user can add corrections on later frames. Each correction is fed back into the memory bank, improving tracking for all subsequent frames. This achieves equivalent accuracy with <strong>3&times; fewer user interactions</strong> than previous annotation tools.</p>
     </div>
 
     <h3>SA-V Dataset</h3>

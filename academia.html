@@ -263,14 +263,52 @@
     </div>
 
     <div class="walkthrough-card">
-      <h3><a href="foundation-stereo.html">FoundationStereo: Zero-Shot Stereo Matching</a></h3>
+      <h3><a href="foundation-stereo.html">FoundationStereo &amp; Fast-FoundationStereo</a></h3>
       <div class="meta">
         <span>Stereo Depth</span>
         <span>Foundation Model</span>
-        <span>NVIDIA CVPR 2025</span>
+        <span>NVIDIA CVPR 2025/2026</span>
       </div>
-      <p>NVIDIA's foundation model for stereo depth estimation. Uses a side-tuning adapter that pairs a CNN with a frozen DepthAnythingV2 ViT to bridge the sim-to-real gap, trained on 1M photorealistic synthetic pairs. Achieved 1st place on Middlebury and ETH3D — as a zero-shot model competing against fine-tuned methods.</p>
+      <p>NVIDIA's foundation model for stereo depth estimation — and its 10&times; faster successor. FoundationStereo uses a side-tuning adapter pairing a CNN with a frozen DepthAnythingV2 ViT, trained on 1M synthetic pairs. Fast-FoundationStereo compresses it via knowledge distillation, NAS, and structured pruning for real-time robotics.</p>
       <a href="foundation-stereo.html" class="read-link">Read walkthrough &rarr;</a>
+    </div>
+
+  </section>
+
+  <section>
+    <h2>Reinforcement Learning</h2>
+
+    <div class="walkthrough-card">
+      <h3><a href="ppo.html">PPO: Proximal Policy Optimization</a></h3>
+      <div class="meta">
+        <span>Policy Gradient</span>
+        <span>On-Policy</span>
+        <span>OpenAI 2017</span>
+      </div>
+      <p>The workhorse of modern RL. PPO simplifies TRPO's constrained optimization with a clipped surrogate objective that prevents destructive policy updates. We trace the actor-critic architecture, GAE advantage estimation, and the elegant clipping mechanism that makes PPO both stable and easy to implement.</p>
+      <a href="ppo.html" class="read-link">Read walkthrough &rarr;</a>
+    </div>
+
+    <div class="walkthrough-card">
+      <h3><a href="td3.html">TD3: Twin Delayed Deep Deterministic Policy Gradient</a></h3>
+      <div class="meta">
+        <span>Actor-Critic</span>
+        <span>Off-Policy</span>
+        <span>Fujimoto 2018</span>
+      </div>
+      <p>Three tricks to fix DDPG's overestimation bias: twin critics with clipped double Q-learning, delayed policy updates, and target policy smoothing. We trace state through the actor and twin critic networks, showing how each technique stabilizes continuous control.</p>
+      <a href="td3.html" class="read-link">Read walkthrough &rarr;</a>
+    </div>
+
+    <div class="walkthrough-card">
+      <h3><a href="sac.html">SAC: Soft Actor-Critic</a></h3>
+      <div class="meta">
+        <span>Maximum Entropy</span>
+        <span>Off-Policy</span>
+        <span>Haarnoja 2018</span>
+      </div>
+      <p>Entropy-regularized RL for robust continuous control. SAC maximizes both reward and policy entropy — encouraging exploration and learning multi-modal behaviors. We walk through the stochastic actor, twin critics, reparameterization trick, and automatic temperature tuning that make SAC the go-to off-policy algorithm.</p>
+      <a href="sac.html" class="read-link">Read walkthrough &rarr;</a>
     </div>
 
   </section>
