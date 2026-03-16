@@ -1,297 +1,305 @@
-
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
-"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<title>Steve Schmidt</title>
-</head>
-
-
-<body>
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-48086341-1', 'uchicago.edu');
-  ga('send', 'pageview');
-
-</script>
-<div id="content">
-
-<center>
-<div id="header">
-<div id="photo">
-<img src="uccrest.jpeg" height"100" width="100" alt="UC"/><br/>
-</center>
-</div>
-
-
-<div id="header">
-</div>
-<div id="title">
-	<div id="name"><center><h1><b>Steve Schmidt</b></center></div></h1><br>
-<div id="affil">
-<center>
-<div id="header">
-<div id="photo">
-<img src="nike_hs.jpg" height"100" width="100" alt="UC"/><br/>
-<br>
-</center>
-</div>
-	<center><b><i>Applied Mathematician</b></i></center>
-	<center><b><i>Artificial Intelligence</i></center></b><br/>
-</div>
-<div id="email"><center>steveschmidt at uchicago dot edu</center></div><br>
-</div>
-</div>
-	  <style>
-    div.container {
-      display: inline-block;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steve Schmidt — Applied Mathematician</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
     }
 
-    p {
-      text-align:center;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 0;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Hero */
+    .hero {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .hero .contact {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    /* Sections */
+    section { margin-bottom: 2.5rem; }
+    section h2 {
+      font-size: 1.1rem;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    section p { margin-bottom: 1rem; }
+
+    /* Awards */
+    .awards {
+      background: var(--highlight-bg);
+      border-left: 3px solid var(--highlight-border);
+      padding: 1.25rem 1.5rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 1rem;
+    }
+    .awards ul {
+      list-style: none;
+      padding: 0;
+    }
+    .awards li {
+      margin-bottom: 0.6rem;
+      padding-left: 0;
+      font-size: 0.95rem;
+    }
+    .awards li:last-child { margin-bottom: 0; }
+    .awards .year {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--accent);
+      display: inline-block;
+      min-width: 3rem;
+    }
+
+    /* Project list */
+    .projects ul {
+      list-style: none;
+      padding: 0;
+    }
+    .projects li {
+      margin-bottom: 0.5rem;
+      padding-left: 1rem;
+      position: relative;
+      font-size: 0.95rem;
+    }
+    .projects li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--muted);
+    }
+
+    /* Publications */
+    .publications ol {
+      padding-left: 1.25rem;
+    }
+    .publications li {
+      margin-bottom: 0.75rem;
+      font-size: 0.92rem;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* Experience logos */
+    .experience-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .experience-grid span {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      background: var(--card-bg);
+    }
+
+    /* Footer */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.7rem; }
+      body { font-size: 16px; }
+      nav { gap: 1rem; }
     }
   </style>
+</head>
+<body>
 
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+</nav>
 
-    <style>
-        .image-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .image-container img {
-            max-width: 200px;
-            height: auto;
-            border-radius: 10px;
-        }
-    </style>
+<main>
 
+  <section class="hero">
+    <h1>Steve Schmidt</h1>
+    <div class="subtitle">Applied Mathematician</div>
+    <div class="contact">steveschmidt at uchicago dot edu</div>
+  </section>
 
-<style>
-* {
-  box-sizing: border-box;
-}
+  <section>
+    <h2>About</h2>
+    <p>Scientist, mathematician, engineer, lecturer — if there is a novel unanswered problem or research area, I'm excited for it. Academically, I received a second M.S. in Computer Science from the University of Chicago following my Algebra &amp; Analysis Qualification Exams for my first M.S. in Theoretical Mathematics from DePaul University. The intersection of my experiences is in applying Deep Machine and Reinforcement Learning to decision making in marketing, business, finance and operations management.</p>
+    <p>My work is guided by a "systems-first" philosophy — a problem-agnostic thought process proven across seemingly unrelated domains, from DARPA-scale cyber defense to Nobel Prize-winning FCC auctions to Robotics. As I like to say: "It's the same math that's used to train an unmanned undersea vehicle as we use to personalize your website experience at Nike."</p>
+    <p>I am always open to looking at data sets of varying size, obscure fields, applying Deep Learning to weird problems and basically any use of algorithms and predictive models to replace our legacy decision processes.</p>
+    <p>My pursuit is always looking for more folks who are extremely "Driven, Intelligent, Humble, and Chaotic...wherever I can get it" — Jack Donaghy, 30 Rock.</p>
+  </section>
 
-.column {
-  float: left;
-  width: 20%;
-  padding: 5px;
-}
+  <section>
+    <h2>Awards &amp; Recognition</h2>
+    <div class="awards">
+      <ul>
+        <li><span class="year">2024</span> EMMY Award (National Academy of Television Arts &amp; Sciences) for creativity and engineering of the FCC's Broadband Incentive Auction</li>
+        <li><span class="year">2023</span> US Patent Award US/2023/0004767 A1 — Radio Frequency Environment Awareness With Explainable Results</li>
+        <li><span class="year">2021</span> INFORMS Operations Research &amp; Analytics Prize (Wayfair Data Science)</li>
+        <li><span class="year">2020</span> BAE Systems Chairman's Award Nominations — Innovation of the Year Award (Mindful&trade;)</li>
+        <li><span class="year">2018</span> INFORMS Franz Edelman Award (Operations Research for the novel 2016 FCC Incentive Auction)</li>
+        <li><span class="year">2016</span> DARPA Cyber Grand Challenge Finalist (Deep Red)</li>
+      </ul>
+    </div>
+  </section>
 
-/* Clearfix (clear floats) */
-.row::after {
-  content: "";
-  clear: both;
-  display: table;
-}
-</style>
-<center>
-<div class="image-container">
-    <img src="pytorch.jpeg" height="125" width="200" />
-    <img src="openai.png" height="125" width="225" />
-    <img src="rllib.png" height="150" width="225" />
-    <img src="nvidia.png" height="125" width="150" />
-</div>
-</center>
-  <b>
-<div class="center">
-<div class="navbar">
-<ul>
-<a href="index.html">Home</a><br>
-<br>My Stuff<br>
-<a href="steveschmidtdir.pdf">Resume</a><br>
-<a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a><br>
-<a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Adjunct Professor @ Northeastern</a><br>
-<a href="https://github.com/stvschmdt">GitHub</a><br>
-<a href="academia.html">Academia</a><br>
-<br>
-Investing & Trading<br>
-<a href="https://drive.google.com/drive/folders/1UqjZP_QPqD0tP82cqLhBWmR6B3zDV7fe?usp=drive_link">Bar Fly Trading & Investing Drive</a><br>
-<a href="investing.pdf">Bar Fly Investing 2nd Edition, 2020</a><br>
-<a href="investing_2022.pdf">Bar Fly Investing 3rd Edition, 2022</a><br>
-<br>
-Great Stuff<br>
-<a href="DLBook.pdf">Goodfellow, Bengio & Courville: Deep Learning</a><br>
-<a href="RLbook2020.pdf">Sutton & Barto: Reinforcement Learning</a><br>
-<a href="https://spinningup.openai.com/en/latest/spinningup/keypapers.html">OpenAI Key Papers in Deep RL</a><br>
-<a href="https://www.darpa.mil/">DARPA</a><br>
-<ul>
-</div>
-</div>
-<div class="wrapper">
-<div class="left">
-<div class="mainbox">
-<p>
-<ul>Scientist, Mathematician, Engineer, Lecturer...if there is a novel unanswered problem or research area, I'm excited for it! Adacemically, I received a second M.S. in Computer Science from the University of Chicago following my Algebra & Analysis Qualification Exams for my first M.S. in Theoretical Mathematics from DePaul University. The intersection of my experiences is in applying Deep {Machine, Reinforcement} Learning to decision making in marketing, business, finance or operations management. This site is frequently updated to highlight evolving interests, projects and research. Please feel free to contact me via email or LinkedIn to connect on similar interests!
-<br><br>
+  <section>
+    <h2>Reinforcement Learning</h2>
+    <p>In the realm of Deep Reinforcement Learning, I have worked on everything from testing learning algorithms in operational settings to working on novel neural network design. RL, loosely, is comprised of an agent existing in an environment — or the math version of controlling Zelda's Link or the infamous Super Mario in their respective environments. The interaction is simply deciding to take defined actions given the current defined state. The training of the policy results from the feedback of experiences from state transitions.</p>
+    <p>The challenge area I tend to focus on is the problem breakdown. Using state-of-the-art algorithms, can I find novel problems in which to coordinate complex agent control decisions or preferably multi-agent control decisions and situational awareness. The challenge becomes reward shaping, observation space transformations and in many cases hierarchical decision formulations. The second challenge then arises: explainability. In many cases strategy is not defined by the output of activation layers as in academic settings, but rather a defined human-understandable sense. This mapping of continuous state and action pairs along with neural processing is an intriguing path toward what a domain expert may deem as reasonable behavior for an agent.</p>
+  </section>
 
-In the realm of Deep Reinforcement Learning (RL), I have worked on everything from testing learning algorithms in operational settings to working on novel neural network design. RL, loosely, is comprised of an agent, existing in an environment - or the math version of controlling Zelda's Link or the infamous Super Mario - in their respective environments. The interaction is simply deciding to tak defined actions (based on your controller) or decision space, given the current defined state (monitor, graphics, sound, etc). The training of the policy (agent playing the game), results from the feedback (rewards) of the experiences from state transitions. 
-<br><br>
-The challenge area I tend to focus on is the problem breakdown. Using state-of-the-art algorithms, can I find novel problems (environments) in which to coordinate complex agent control decisions or preferably multi-agent control decisions and situational awarenesss. The challenge becomes reward shaping (incentives), observation space transformations and in many cases hierarchical decision formulations. At that point, tuning of algorithms and watching tensorboard do its thing becomes an overnight process. The second challenge then arises, which is explainability. In many cases strategy is not defined by the output of the activation layers such as in academic settings, but rather a defined human understandable sense. This mapping of continuous state and action pairs along with neural processing is an intriguing path toward what a domain expert may deem as reasonable behavior for an agent. Rinsing and repeating this process is where all the fun is. Mixtures of analytics, deep learning for computer vision, classification or ensembles of algorithmic processes help turn observations and rewards from raw and trivial to complex and innovative. 
-<br><br>
+  <section>
+    <h2>DEEPMISSION</h2>
+    <p>A customized AI Research Lab built on top of RLlib (OpenAI Gym based). Similar to Single Agent &amp; Multi-Agent Reinforcement Learning frameworks being produced by leading Open Source and Academic Institutions, this platform leverages state-of-the-art &amp; proprietary learning algorithms with the Gym Framework. In addition to connecting algorithms to Gym Environments of Atari Games or custom builds from real time strategy games such as StarCraft II, the platform extends and adds APIs with connections to high TRL operational platforms, systems and planner environments for live, robust, open world agent exploration.</p>
+    <p>This allows the ability to quickly prototype new learning algorithms within real live operational systems, along with creating sandboxes for researcher scientists and academic partners to jointly develop new low TRL approaches. The platform's highly modular framework allows researchers to quickly create wrapper add-on components for advancing state-of-the-art techniques in Hierarchical Rewards, Empowerment, Intrinsic Motivation, Imitation Learning, and Parallel Learning Implementations.</p>
+  </section>
 
+  <section class="projects">
+    <h2>Select Projects</h2>
+    <ul>
+      <li>Deep RL for Series of Pursuit &amp; Evasion Games — Single, Multi, Hierarchical Forms</li>
+      <li>Deep RL for Improving RF Classification</li>
+      <li>Deep RL for Multi-Agent Hierarchical Command &amp; Control with Low Level Tactical Movement</li>
+      <li>Deep RL for Force on Force Simulation Studies</li>
+      <li>Custom Architectures of Deep Dilated Convolutional Networks for Signal and Image Classification</li>
+      <li>Autoencoders for Signal Reconstruction</li>
+      <li>Generative Adversarial Network + Variational Autoencoder for Robustness Studies</li>
+      <li>Convolutional Neural Network in Gated Series for Intrusion &amp; Anomaly Detection</li>
+      <li>FCC Incentive Auction — Won the Edelman Prize for Operations Research &amp; made the Government $30+ Billion (and eventually an EMMY Award)</li>
+      <li>DARPA Cyber Grand Challenge — Took 4th in Vegas, first introduction to large-scale competitive gaming analytics in simulation</li>
+    </ul>
+  </section>
 
-<h4 style="color:red"><i>Personal rewards in the mathematical realm...</i></h4>
-2024 EMMY Award (National Academy of Television Arts &amp; Sciences) for creativity and engineering of the FCC's Broadband Incentive Auction<br>
-2023 US Patent Award US/2023/0004767 A1 - Radio Frequency Environment Awareness With Explainable Results<br>
-2021 INFORMS Operations Research &amp; Analytics Prize (Wayfair Data Science)<br> 
-2020, 2019 BAE Systems Chairmanss Award Nominations (2020 Innovation of the Year Award - Mindful&trade;)<br> 
-2018 INFORMS Franz Edelman Award (Operations Research for the novel 2016 FCC Incentive Auction)<br>
-2016 DARPA Grand Challenge Finalist (Deep Red)<br>
+  <section class="publications">
+    <h2>Publications &amp; Conferences</h2>
+    <ol>
+      <li>Multi-Agent Reinforcement Learning Approaches to RiftNet RF Fingerprint Enhancement, 14th ACM Conference on Security and Privacy in Wireless and Mobile Networks, May 2021</li>
+      <li>RiftNeXt: Explainable Deep Neural RF Scene Classification, 14th ACM Conference on Security and Privacy in Wireless and Mobile Networks, May 2021 (patent pending)</li>
+      <li>Reinforcement Learning Approach to Speed-Overmatched Pursuit Games with Uncertain Target Information, 5th Annual Naval Applications of Machine Learning (NAML 2021)</li>
+      <li>Uncovering Strategies and Commitment through Machine Learning System Introspection, Submitted for Review</li>
+      <li>Machine Learning for NetFlow Anomaly Detection with Human Readable Annotations, IEEE Transactions on Network and Service Management, April 2021</li>
+      <li>Automatic Knowledge Extraction with Human Interface, arxiv:2104.04415</li>
+    </ol>
+  </section>
 
+  <section>
+    <h2>Experience</h2>
+    <p>Currently, I lead a team for Embodied AI at Boston Dynamics and serve as an Adjunct Professor at Northeastern University teaching graduate Applied Deep Learning. Previously, I served as Director of Applied Science for Enterprise Commerce AI at Nike, Inc., where I oversaw a team developing and optimizing machine learning models for search and recommendation systems — evolving search from lexical matching to natural language models. Prior to Nike, I held research positions as Sr. Principal Scientist at Wayfair, BAE Systems (FAST Labs Division), and Raytheon, working across Internal R&amp;D, DARPA, and AFRL research projects.</p>
+    <p>Over the course of over a decade of leading dozens of DARPA and industry programs, I have been fortunate enough to work with incredible people — from undergraduates to Nobel Prize recipients — in garnering accolades as a finalist in the 2016 DARPA Grand Challenge, recipient of the 2018 Franz Edelman INFORMS Prize, a 2024 Emmy, and contributing to several journal, conference, and patent publications.</p>
+    <div class="experience-grid">
+      <span>Boston Dynamics</span>
+      <span>Nike</span>
+      <span>Wayfair</span>
+      <span>BAE Systems</span>
+      <span>Raytheon</span>
+    </div>
+  </section>
 
-<h4 style="color:red"><i>DEEPMISSION: A Deep Reinforcement Learning Platform</i></h4>
-A customized AI Research Lab built on top of RLlib (OpenAI Gym based). Similar to Single Agent &amp; Multi-Agent Reinforcement Learning (MARL) frameworks being produced by leading Open Source and Academic Institutions, this platform leverages the library of state of the art &amp; proprietary learning algorithms with the Gym Framework. However, in addition to connecting algorithms to Gym Environments of Atari Games or custom builds from real time strategy games such as StarCraft II, The Platform extends and adds API's with connections to high TRL operational platforms, systems and planner environments for live, robust, open world agent exploration. This allows the ability to quickly prototype new learning algorithms within real live operational systems, along with creating sandboxes for researcher scientists and academic partners to jointly develop new low TRL approaches. This scalable architecture also can spin up and down from laptops to server clusters to massively parallel DoD cloud infrastructures. The Platform's highly module framework allows researchers to quickly create wrapper add-on components for advancing state of the art techniques in Hierarchical Rewards, Empowerment, Intrinsic Motivation, Imitation Learning, Parallel Learning Implementations or leveraging advancements in tangential work in Computer Vision or Explainable AI while plugging directly into the latest operational systems.
+  <section>
+    <h2>Teaching</h2>
+    <p>Adjunct Professor at Northeastern University's Khoury College of Computer Sciences, where I teach graduate-level Applied Deep Learning and Machine Learning.</p>
+  </section>
 
-<br><br>
-    <img src="rlloop.png" height="125" width="300" />
-<h4 style="color:red">Deep Cuts (aka some cool things I've worked on in Deep Learning)</h4>
-* Deep RL for Series of Pursuit &amp; Evasion Games - Single, Multi, Hierarchical Forms<br>
-* Deep RL for Improving RF Classification<br>
-* Deep RL for Multi-Agent Hierarchical Command &amp; Control with Low Level Tactical Movement<br> 
-* Deep RL for Force on Force Simulation Studies<br>
-* Custom Architectures of Deep Dialated Convolutional Networks for Signal and Image Classification<br>
-* Autoencoders for Signal Reconstruction<br>
-* Generative Adversarial Network Plus Variational Autoencoder for Robustness Studies<br>
-* Generative Adversarial Networks for Image Misclassification<br>
-* Introspection Clustering Over Deep Neural Network Activations<br>
-* Convolutional Neural Network in Gated Series for Intrusion &amp; Anamoly Detection<br>
-<br>
-<br>
-<h4 style="color:green">PUBLICATIONS, PRE PRINTS &amp; CONFERENCES</b></h4>
-<i>
-	<q>Multi-Agent Reinforcement Learning Approaches to RiftNet RF Fingerprint Enhancement, 14th ACM Conference on Security and Privacy in Wireless and Mobile Networks, May 2021</q><br>
-	<q>RiftNeXt: Explainable Deep Neural RF Scene Classification, 14th ACM Conference on Security and Privacy in Wireless and Mobile Networks, May 2021 (patent pending)</q><br>
-	<q>Reinforcement Learning Approach to Speed-Overmatched Pursuit Games with Uncertain Target Information, 5th Annual Naval Applications of Machine Learning (NAML 2021)</q><br>
-	<q>Uncovering Strategies and Commitment through Machine Learning System Introspection, Submitted for Review.</q><br>
-	<q>Machine Learning for NetFlow Anomaly Detection with Human Readable Annotations. IEEE Transactions on Network and Service Management, April 2021</q><br>
-	<q>Automatic Knowledge Extraction with Human Interface, arxiv:2104.04415</q><br>
-</i>
-</p>
-<br><br>
-<u>Professional Life</u><br>
-In my professional career I've held various roles in fields ranging from Marketing to Scientific Research, always hoping to have one foot in the Board Room and one foot in the Lab. Currently, I lead Machine Learning at Nike, leveraging my work as a Staff Scientist at Wayfair, working on frameworks and algorithms for Search &amp; Recommendations. This ranges from Personalization &amp; Sort Optimization to LLMs for Search and longer term novel algorithmic (Deep RL) solutions. Previously, I held a similar role at BAE Systems (FAST Labs Division) as a Sr. Principal Research Scientist in Artificial Intelligence for Internal R&amp;D, or DARPA and AFRL low Technology Readiness Level (TRL) research projects. On these projects I have served as Principal Investigator, researcher, technical lead and idea generator leading to funding, multi-year contracts, publications and patent filings. I am always open to looking at data sets of varying size, obscure fields, applying Deep Learning to weird problems and basically any use of algorithms and predictive models to replace our legacy decision processes. In my free time, I enjoy reading other's research in related fields such as behavioral economics, finance and consult on many topics to many fields in areas of applied mathematics as well as serve as an Adjunct Professor at the College of Charleston (Data Science).
-<br><br>
+  <section>
+    <h2>Resources</h2>
+    <p>A few things I recommend and reference often:</p>
+    <ul style="padding-left: 1.25rem; margin-top: 0.5rem;">
+      <li><a href="investing_2022.pdf">Bar Fly Investing, 3rd Edition (2022)</a></li>
+      <li><a href="DLBook.pdf">Goodfellow, Bengio &amp; Courville: Deep Learning</a></li>
+      <li><a href="RLbook2020.pdf">Sutton &amp; Barto: Reinforcement Learning</a></li>
+      <li><a href="https://spinningup.openai.com/en/latest/spinningup/keypapers.html">OpenAI Key Papers in Deep RL</a></li>
+    </ul>
+  </section>
 
-
-<center>
-<div class="image-container">
-    <img src="nikelogo.png" height="150" width="225" style="margin:1px" />
-    <img src="wayfair.png" height="150" width="250" style="margin:1px" />
-    <img src="bae.jpeg" height="150" width="175" style="margin:1px" />
-    <img src="raytheon.png" height="150" width="250" style="margin:1px" />
-</div>
-</center>
-<br>
-<br>
-<center>
-<div class="image-container">
-    <img src="ogilvy.png" height="125" width="215" style="margin:1px" />
-    <img src="maritz.png"/ height="100" width="300" style="margin:1px" />
-    <img src="lxr.jpeg" height="125" width="200" style="margin:1px" />
-</div>
-</center>
-
-
-<br><br>
-<br><br>
-Project Task Forces<br>
-*FCC Incentive Auction - We won the Edelman Prize for Operations Research &amp; made the Government $30+ Billion...and eventually an EMMY Award!<br>
-*DARPA Cyber Grand Challenge - Took 4th out in Vegas (of 11), first introduction to large scale competitive gaming analytics in simulation!<br>
-<br><br>
-<center>
-    <img src="fcc.jpeg" height="125" width="200" />
-    <img src="cgc.jpeg"/ height="125" width="225" />
-</center>
-<br>
-
-<u>Personal Life</u><br>
-Outside of work for regular pay, my personal tastes mimick my professional tastes as there are always a few projects scattered around my monitors. Most of these fall into Deep Learning, Reinforcement Learning or Machine learning for marketing, advertising, finance or operations management. As well I enjoy lecturing and giving talks or presentations. It has been a continued pleasure working with a wide range of folks, from high school students to CEO's in figuring out how to make us better.<br><br>
-My pursuit is always looking for more folks who are extremely "Driven, Intelligent, Humble, and Chaotic...wherever I can get it" - Jack Donaghy, 30 Rock.
-<br><br>
-
-<u>Academic Life</u><br>
-Computer Science: Computational Mathematics (Machine Learning/Numerical Methods)<br>
-Mathematics: Linear Algebra and Mathematical Modeling<br>
-Marketing: Consumer Behavior<br><br>
-
-
-</b>
-</p>
-</div>
-</div>
-
-
-<div class="wrapper">
-<div class="left">
-<div class="mainbox">
-<ul><h2>Educational Highlights</h2>
-<p>
-
-<div class="wrapper">
-<div class="left">
-<div class="mainbox">
-<ul><h2>Computer Science &amp; Research</h2>
-	<ul><ur>My previous research was at Argonne National Laboratory/University of Chicago in the field of High Performance Computing. My research title was "Developing Efficient Methods For Parallel Data Redistribution On Hybrid Architectures", with my advisor: Dr. Andrew Siegel, who is a tenured Research Director at Argonne's Center for Exascale Simulation of Advanced Reactors (CESAR). The main goal was working to advance the performance/analysis of the C/MPI based application library The Memory-Aware Data Redistribution Engine <a href="http://vsl.cis.udel.edu/madre/">(MADRE)</a>. This entails looking into the integration of OpenMP into the MADRE Library for shared memory analysis, as well as investigating the Pinar-Hendrickson/Cyclic Scheduler Algorithms analysis for varied input maps, varied memory constraints.
-<br>Aside from adventures in High Performance Computing in education, my focus was on computational data analysis, machine learning and predictive modeling (Clustering, Support Vector Machines, Recommenders, Neural Networks, etc). 
-</div> 
-
-
-<ul><h2>Mathematics</h2>
-<p>
-<ul><ur>From 2011-2013, I completed graduate work in Theoretical Mathematics, however, I probably/actually was more interested in the applications than the theory. I took several courses in Numerical Methods and Mathematical Modeling and continue to look at numerical recipes for applications. The uses of various topics in interpolation and applications of single value decomposition are incredible. Linear Algebra of course was another favorite subject of mine as well as where it spawned into Group Theory where again, one can see immediate applications in data structures. Again a complete list of course work, topics &amp; highlighted projects can be found on my <a href="academia.html">Academia</a> page. I'm looking forward to the day where Measure Theory pops up in application...<br><br>
-<li>American Mathematical Society</p>
-
-</div>
-<div class="right">
-<div class="mainbox">
-<h2>Consulting &amp; Extracurricular</h2>
-Adjunct Professor - Machine Learning @ Northeastern University, Data Science @ College of Charleston<br><br><ul></ul>
-Guest Lecturer - DePaul University Driehaus School of Business<br><ul></ul>
-<ul>Spent classes lecturing and working with MBA students in the area of Creativity &amp; Innovation in Business, this was incredibly fun to mix backgrounds and ideas to problem solve in disruptive markets and products.<br><br></ul>
-South Loop Elementary - Gifted Students Algorithms Program<br>
-<ul>One of the most rewarding experiences ever! I worked with the school to put on a 4 week algorithms program working with their 5th-8th grade gifted students to show them fun with mathematical thinking. We started by looking at the rubik's cube and talked about how to solve it with 6 algorithms based on Group Theory. While we didn't use the words abelian or commutative, we practiced the methods a little bit each week and by week 4 a 7th grade student who saw the cube for the first time in his life only weeks prior solved it under 90 seconds! We also looked at Zeno's Paradox and some simple ciphers.<br><br></ul>
-Web Analytics Consulting - Google Analytics Consultant For Small Businesses
-<ul>Consultant to local small businesses of which it would not make sense for them to hire a large agency or full time employee to setup and run website analytics. I have a Google Analytics Individual Certification and in installing and using Google Analytics acted as their online marketing arm to help them make data driven design and pricing decisions.</ul></p>
-Method - Startup of Startups<br>
-<ul>Partnered with area eCommerce/Web Development company where my brother <a href="http://michaelschmidtonline.com">Mike</a> is Director of eCommerce and local Venture Capital firms to research disruptive technology opportunities. After reviewing many of their Labs projects, I acted as CEO of our concept incubator company called Method to work with MBA students at Chicago Universities to research and bring to life ideas using the Lean Start Up methodology.<br><br></ul>
-Behavior Quantified - Proprietary Data Warehousing Project
-<ul>In detecting a problematic scenario in my industry, I decided to create a product called LynchPyn to serve as a sort of dynamic datawarehouse for legacy technologies to map into and report out of. Our project is still in beta and looking for testers. We also ran dashboards, analytics and CRM ETL's into LynchPyn.<br><br></ul>
-<ul>
-</div>
-</div> 
-</div> 
-</div>
-
-
-<div class="center">
-<div class="navbar">
-<ul>
-
-<ul><a href="resume.html">Resume</a>     
-<a href="academia.html">Academia</a>
-
-<br><br><br></ul>
-<center>
-<img src="images.jpeg" alt="Steve"/><br/>
-</center>
-
-</div>
-</div>
-
+</main>
 
 <footer>
-    <center>© 2024 Steve B. Schmidt - All Rights Reserved</center>
+  &copy; 2025 Steve B. Schmidt
 </footer>
 
 </body>
-
 </html>
-
