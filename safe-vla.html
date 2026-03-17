@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAFE Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; }
+    .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #a855f7; }
+    .callout-purple strong { color: #7c3aed; }
+
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.encoder { border-left-color: #3b82f6; }
+    .layer-card.projection { border-left-color: #22c55e; }
+    .layer-card.decoder { border-left-color: #8b5cf6; }
+    .layer-card.training { border-left-color: #f59e0b; }
+    .layer-card.mobile { border-left-color: #ef4444; }
+
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+
+    .model-section { background: var(--card-bg); border: 2px solid var(--border); border-radius: 10px; padding: 2rem 1.5rem; margin: 2rem 0; }
+
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.green { background: #22c55e; }
+    .step-num.purple { background: #8b5cf6; }
+    .step-num.amber { background: #f59e0b; }
+    .step-num.red { background: #ef4444; }
+
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; All Walkthroughs</a></div>
+    <h1>SAFE: Multitask Failure Detection for Vision-Language-Action Models</h1>
+    <div class="subtitle">2025</div>
+    <div class="meta-tags">
+      <span>Safety</span>
+      <span>Failure Detection</span>
+      <span>VLA</span>
+      <span>Conformal Prediction</span>
+      <span>Robot Monitoring</span>
+      <span>Franka Panda</span>
+    </div>
+    <div class="paper-link">
+      Paper: <a href="https://arxiv.org/abs/2503.01750">SAFE: Multitask Failure Detection for Vision-Language-Action Models</a> (arXiv:2503.01750)
+    </div>
+  </section>
+
+  <!-- Section 1: The Problem -->
+  <section>
+    <h2>1 &mdash; The Problem: Silent Failures in Robot Manipulation</h2>
+
+    <p>Vision-Language-Action (VLA) models like <strong>&pi;<sub>0</sub></strong>, <strong>OpenVLA</strong>, and <strong>&pi;<sub>0</sub>-FAST</strong> represent a leap forward in general-purpose robot control. Feed them a camera image and a language instruction &mdash; &ldquo;pick up the red cup&rdquo; &mdash; and they output motor commands. But there is a dangerous gap between <em>generating actions</em> and <em>succeeding at the task</em>.</p>
+
+    <p>A robot might reach for an object and miss. It might grasp a cup but drop it halfway through a pour. It might push an item off the table instead of lifting it. In each case, the VLA model continues generating actions as if nothing went wrong. There is <strong>no built-in error signal</strong>. The model does not know it has failed.</p>
+
+    <div class="callout">
+      <strong>The core danger:</strong> VLA models fail silently. A robot executing a failed grasp looks exactly the same to the policy as a robot executing a successful one &mdash; both just keep generating the next action token. Without external monitoring, failures go undetected until a human notices.
+    </div>
+
+    <p>The naive solution is to build task-specific failure detectors: train a classifier to detect &ldquo;dropped cup&rdquo; failures, another for &ldquo;missed grasp&rdquo; failures, and so on. But this approach does not scale. Every new task or environment requires new labeled failure data and a new detector. What we need is a <strong>general-purpose</strong> failure monitor that works across tasks &mdash; including tasks it has never seen before.</p>
+
+    <div class="callout-blue callout">
+      <strong>Why not just use vision?</strong> You could train an external vision model to watch the robot and detect failures from camera images alone. But this requires extensive per-task labeling, struggles with occlusion, and adds another large model to the inference stack. SAFE takes a fundamentally different approach: it looks <em>inside</em> the VLA model itself.
+    </div>
+  </section>
+
+  <!-- Section 2: The SAFE Approach -->
+  <section>
+    <h2>2 &mdash; The SAFE Approach: Monitoring Internal Representations</h2>
+
+    <p>SAFE stands on a simple but powerful insight: <strong>the VLA model already knows more than it lets on</strong>. Its internal hidden states &mdash; the intermediate representations computed at each layer during a forward pass &mdash; encode rich information about the scene, the task, and critically, whether the execution is going well or poorly.</p>
+
+    <p>Think of it this way: when a VLA model processes a camera image showing a gripper that has clearly missed an object, the internal features at certain layers will differ from those computed when the gripper is firmly holding the object. Even though both scenarios produce action outputs, the <em>path through the network</em> is different. SAFE exploits this difference.</p>
+
+    <h3>The Three-Step Recipe</h3>
+
+    <p><span class="step-num blue">1</span><strong>Extract</strong> &mdash; At each timestep during robot execution, hook into the VLA model and extract hidden state features from one or more intermediate layers.</p>
+
+    <p><span class="step-num green">2</span><strong>Detect</strong> &mdash; Feed those features into a lightweight detector head (an MLP or LSTM) that outputs a failure probability score between 0 and 1.</p>
+
+    <p><span class="step-num purple">3</span><strong>Threshold</strong> &mdash; Use conformal prediction on a calibration set to choose a detection threshold that provides <em>statistical guarantees</em> on the false negative rate.</p>
+
+    <div class="callout-green callout">
+      <strong>Key insight:</strong> SAFE is trained on a set of &ldquo;seen&rdquo; tasks but generalizes to entirely new, unseen tasks. The internal features learned by VLA models capture task-general notions of success and failure &mdash; not just task-specific visual patterns. This is what makes the approach practical.
+    </div>
+  </section>
+
+  <!-- Section 3: Architecture Diagram -->
+  <section>
+    <h2>3 &mdash; Architecture Overview</h2>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" width="720" height="380">
+        <text x="360" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">SAFE Monitoring Pipeline</text>
+
+        <!-- VLA Model Block -->
+        <rect x="30" y="55" width="200" height="160" rx="10" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+        <text x="130" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#4338ca" font-family="Helvetica Neue, Arial, sans-serif">VLA Model</text>
+        <text x="130" y="95" text-anchor="middle" font-size="10" fill="#6366f1" font-family="Helvetica Neue, Arial, sans-serif">(pi0, OpenVLA, pi0-FAST)</text>
+
+        <!-- Input arrows -->
+        <text x="60" y="48" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Camera Image</text>
+        <line x1="95" y1="50" x2="95" y2="55" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+        <text x="145" y="48" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Language Instruction</text>
+
+        <!-- Internal layers -->
+        <rect x="50" y="108" width="160" height="18" rx="3" fill="#c7d2fe" stroke="#818cf8" stroke-width="1"/>
+        <text x="130" y="120" text-anchor="middle" font-size="9" fill="#4338ca" font-family="Helvetica Neue, Arial, sans-serif">Layer l &mdash; Hidden States h_t</text>
+        <rect x="50" y="132" width="160" height="18" rx="3" fill="#c7d2fe" stroke="#818cf8" stroke-width="1"/>
+        <text x="130" y="144" text-anchor="middle" font-size="9" fill="#4338ca" font-family="Helvetica Neue, Arial, sans-serif">Layer l+1 &mdash; Hidden States</text>
+        <rect x="50" y="156" width="160" height="18" rx="3" fill="#c7d2fe" stroke="#818cf8" stroke-width="1"/>
+        <text x="130" y="168" text-anchor="middle" font-size="9" fill="#4338ca" font-family="Helvetica Neue, Arial, sans-serif">Layer l+2 &mdash; Hidden States</text>
+
+        <!-- Action output -->
+        <rect x="70" y="186" width="120" height="22" rx="4" fill="#a5b4fc" stroke="#6366f1" stroke-width="1"/>
+        <text x="130" y="200" text-anchor="middle" font-size="10" fill="#312e81" font-family="Helvetica Neue, Arial, sans-serif">Action Output a_t</text>
+
+        <!-- Feature Extraction Arrow -->
+        <defs>
+          <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#3b82f6"/></marker>
+          <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#22c55e"/></marker>
+          <marker id="arrow-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#8b5cf6"/></marker>
+          <marker id="arrow-amber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#f59e0b"/></marker>
+          <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#ef4444"/></marker>
+        </defs>
+
+        <line x1="230" y1="135" x2="290" y2="135" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-blue)"/>
+        <text x="260" y="128" text-anchor="middle" font-size="9" fill="#3b82f6" font-family="Helvetica Neue, Arial, sans-serif">Extract</text>
+        <text x="260" y="150" text-anchor="middle" font-size="9" fill="#3b82f6" font-family="Helvetica Neue, Arial, sans-serif">Features</text>
+
+        <!-- Feature Vector Block -->
+        <rect x="295" y="95" width="130" height="80" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+        <text x="360" y="118" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534" font-family="Helvetica Neue, Arial, sans-serif">Feature Vector</text>
+        <text x="360" y="138" text-anchor="middle" font-size="10" fill="#166534" font-family="Helvetica Neue, Arial, sans-serif">f_t = h_t^(l)</text>
+        <text x="360" y="158" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">dim: d_model</text>
+
+        <!-- Detector Head Arrow -->
+        <line x1="425" y1="135" x2="485" y2="135" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+        <!-- Detector Head Block -->
+        <rect x="490" y="70" width="140" height="130" rx="8" fill="#faf5ff" stroke="#8b5cf6" stroke-width="2"/>
+        <text x="560" y="93" text-anchor="middle" font-size="11" font-weight="bold" fill="#5b21b6" font-family="Helvetica Neue, Arial, sans-serif">Detector Head</text>
+
+        <rect x="505" y="102" width="110" height="25" rx="4" fill="#ede9fe" stroke="#a78bfa" stroke-width="1"/>
+        <text x="560" y="118" text-anchor="middle" font-size="9" fill="#5b21b6" font-family="Helvetica Neue, Arial, sans-serif">MLP (single step)</text>
+
+        <text x="560" y="140" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">or</text>
+
+        <rect x="505" y="148" width="110" height="25" rx="4" fill="#ede9fe" stroke="#a78bfa" stroke-width="1"/>
+        <text x="560" y="164" text-anchor="middle" font-size="9" fill="#5b21b6" font-family="Helvetica Neue, Arial, sans-serif">LSTM (temporal)</text>
+
+        <text x="560" y="190" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Output: p(failure)</text>
+
+        <!-- Conformal Prediction Arrow -->
+        <line x1="560" y1="200" x2="560" y2="250" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
+
+        <!-- Conformal Prediction Block -->
+        <rect x="440" y="255" width="240" height="80" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+        <text x="560" y="278" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e" font-family="Helvetica Neue, Arial, sans-serif">Conformal Prediction</text>
+        <text x="560" y="296" text-anchor="middle" font-size="9" fill="#92400e" font-family="Helvetica Neue, Arial, sans-serif">Calibrated threshold &tau;</text>
+        <text x="560" y="314" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">p(failure) &gt; &tau; &rarr; ALERT</text>
+        <text x="560" y="328" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Guaranteed coverage: 1 - &alpha;</text>
+
+        <!-- Decision Output -->
+        <rect x="80" y="280" width="110" height="40" rx="6" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+        <text x="135" y="300" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626" font-family="Helvetica Neue, Arial, sans-serif">FAILURE</text>
+        <text x="135" y="313" text-anchor="middle" font-size="9" fill="#dc2626" font-family="Helvetica Neue, Arial, sans-serif">Stop / Retry</text>
+
+        <rect x="220" y="280" width="110" height="40" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+        <text x="275" y="300" text-anchor="middle" font-size="11" font-weight="bold" fill="#16a34a" font-family="Helvetica Neue, Arial, sans-serif">SUCCESS</text>
+        <text x="275" y="313" text-anchor="middle" font-size="9" fill="#16a34a" font-family="Helvetica Neue, Arial, sans-serif">Continue</text>
+
+        <line x1="440" y1="295" x2="330" y2="295" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow-amber)"/>
+        <text x="385" y="288" text-anchor="middle" font-size="9" fill="#f59e0b" font-family="Helvetica Neue, Arial, sans-serif">Decision</text>
+
+        <!-- Robot to VLA -->
+        <line x1="130" y1="215" x2="130" y2="265" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="130" y="275" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Actions sent to robot</text>
+
+        <!-- Time label -->
+        <rect x="30" y="345" width="660" height="22" rx="3" fill="#f5f5f4" stroke="#e7e5e4" stroke-width="1"/>
+        <text x="360" y="360" text-anchor="middle" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Repeated at every timestep t during execution &mdash; monitoring runs in parallel with action generation</text>
+      </svg>
+    </div>
+
+    <p>The diagram above shows the full SAFE pipeline. At every timestep, while the VLA model generates actions for the robot, SAFE extracts hidden state features from an intermediate layer, passes them through a lightweight detector head, and applies a conformally calibrated threshold to make a failure/success decision. The entire monitoring process is <strong>parallel to action generation</strong> &mdash; it does not slow down the robot.</p>
+  </section>
+
+  <!-- Section 4: Feature Extraction -->
+  <section>
+    <h2>4 &mdash; Feature Extraction from VLA Internals</h2>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Hidden State Extraction</h4>
+        <span class="shapes">h_t^(l) &isin; R^d_model</span>
+      </div>
+      <p>At each timestep <em>t</em>, the VLA model performs a forward pass: it processes the current camera image, the language instruction, and (optionally) proprioceptive state through its transformer backbone. SAFE hooks into a specific layer <em>l</em> and extracts the hidden state vector <span class="tensor">h_t^(l)</span>.</p>
+      <p>Which layer to extract from matters. Early layers capture low-level visual features; later layers encode higher-level semantic and task-relevant information. The authors systematically evaluate different layer choices and find that <strong>middle-to-late layers</strong> tend to produce the most informative features for failure detection.</p>
+      <p>For models like &pi;<sub>0</sub> that use a PaliGemma vision-language backbone, the features come from the language model hidden states after vision-language fusion. For OpenVLA (built on Prismatic + Llama 2), features are extracted from the Llama decoder layers.</p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>Feature Dimensionality</h4>
+        <span class="shapes">Varies by backbone</span>
+      </div>
+      <p>Each VLA backbone produces different feature dimensions. &pi;<sub>0</sub> uses a 2048-dimensional hidden state from PaliGemma. OpenVLA extracts 4096-dimensional features from Llama 2. &pi;<sub>0</sub>-FAST similarly provides 2048-dimensional features. The detector heads are designed to handle these varying dimensions &mdash; the first linear layer of the MLP or LSTM input projection adapts to the specific backbone.</p>
+      <p>Crucially, the features are extracted <strong>without modifying the VLA model</strong>. SAFE is a purely observational monitor. It reads internal states through forward hooks but never changes the model weights, gradients, or inference behavior. The VLA model is completely unaware it is being monitored.</p>
+    </div>
+
+    <div class="callout">
+      <strong>Why internal features, not outputs?</strong> The action outputs of a VLA model are low-dimensional motor commands (typically 7-dimensional for a Franka arm: 3 position, 3 orientation, 1 gripper). These commands alone carry very little information about whether the task is succeeding. The internal hidden states, by contrast, are high-dimensional and encode the model's full &ldquo;understanding&rdquo; of the scene and task state.
+    </div>
+  </section>
+
+  <!-- Section 5: Detector Heads -->
+  <section>
+    <h2>5 &mdash; Detector Heads: MLP vs. LSTM</h2>
+
+    <p>Once features are extracted, they are fed into a lightweight classifier head. SAFE evaluates two architectures, each with different trade-offs between simplicity and temporal reasoning.</p>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>MLP Detector Head</h4>
+        <span class="shapes">Single-Timestep Classification</span>
+      </div>
+      <p><span class="step-num blue">1</span>Takes the feature vector <span class="tensor">h_t</span> from a single timestep as input.</p>
+      <p><span class="step-num blue">2</span>Passes it through two fully-connected layers with ReLU activation and dropout.</p>
+      <p><span class="step-num blue">3</span>Outputs a scalar failure probability <span class="tensor">p(fail | h_t)</span> via a sigmoid activation.</p>
+      <p>The MLP is fast and simple. It makes an independent prediction at each timestep based solely on the current hidden state. This works surprisingly well because a single frame's hidden state already encodes substantial context about the task state &mdash; the VLA's own attention mechanism has already integrated temporal information from prior tokens.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>LSTM Detector Head</h4>
+        <span class="shapes">Temporal Sequence Classification</span>
+      </div>
+      <p><span class="step-num purple">1</span>Maintains a rolling window of the most recent <em>k</em> feature vectors <span class="tensor">[h_{t-k+1}, ..., h_t]</span>.</p>
+      <p><span class="step-num purple">2</span>Processes the sequence through an LSTM layer that captures temporal dynamics and transitions.</p>
+      <p><span class="step-num purple">3</span>The final LSTM hidden state is passed through a linear layer + sigmoid to produce <span class="tensor">p(fail | h_{t-k+1:t})</span>.</p>
+      <p>The LSTM head excels at detecting failures that unfold over time. Consider a grasp that <em>slowly slips</em>: at any single timestep, the features may look ambiguous, but the <em>trajectory</em> of features over several steps reveals a clear failure pattern. The LSTM captures exactly this kind of temporal signal.</p>
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>MLP vs. LSTM results:</strong> In the paper's experiments, the LSTM head consistently outperforms the MLP head, particularly on tasks where failures are gradual (e.g., an object slowly slipping from the gripper). The MLP is competitive on tasks where failures are instantaneous and visible in a single frame (e.g., a complete grasp miss).
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>MLP Head</th>
+          <th>LSTM Head</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Input</td>
+          <td>Single timestep feature <span class="tensor">h_t</span></td>
+          <td>Window of features <span class="tensor">h_{t-k+1:t}</span></td>
+        </tr>
+        <tr>
+          <td>Temporal reasoning</td>
+          <td>None (relies on VLA's own context)</td>
+          <td>Explicit via recurrent state</td>
+        </tr>
+        <tr>
+          <td>Latency</td>
+          <td>Minimal &mdash; single forward pass</td>
+          <td>Slightly higher &mdash; sequential over window</td>
+        </tr>
+        <tr>
+          <td>Best for</td>
+          <td>Instantaneous failures</td>
+          <td>Gradual / temporal failures</td>
+        </tr>
+        <tr>
+          <td>Parameters</td>
+          <td>~10K&ndash;50K</td>
+          <td>~50K&ndash;200K</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section 6: Conformal Prediction -->
+  <section>
+    <h2>6 &mdash; Conformal Prediction for Safety Guarantees</h2>
+
+    <p>Getting a failure probability from the detector head is only half the problem. The harder question is: <strong>where do you set the threshold?</strong> Set it too high and you miss real failures. Set it too low and you trigger false alarms constantly, making the robot unusable. SAFE uses conformal prediction to solve this rigorously.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" width="720" height="300">
+        <text x="360" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#1c1917" font-family="Helvetica Neue, Arial, sans-serif">Conformal Prediction Threshold Calibration</text>
+
+        <!-- Calibration set -->
+        <rect x="30" y="50" width="180" height="110" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="120" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af" font-family="Helvetica Neue, Arial, sans-serif">Calibration Set</text>
+
+        <rect x="45" y="82" width="65" height="18" rx="3" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+        <text x="77" y="94" text-anchor="middle" font-size="8" fill="#1e40af" font-family="Helvetica Neue, Arial, sans-serif">Success traj.</text>
+        <rect x="45" y="105" width="65" height="18" rx="3" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+        <text x="77" y="117" text-anchor="middle" font-size="8" fill="#1e40af" font-family="Helvetica Neue, Arial, sans-serif">Success traj.</text>
+        <rect x="45" y="128" width="65" height="18" rx="3" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+        <text x="77" y="140" text-anchor="middle" font-size="8" fill="#991b1b" font-family="Helvetica Neue, Arial, sans-serif">Failure traj.</text>
+
+        <rect x="120" y="82" width="65" height="18" rx="3" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+        <text x="152" y="94" text-anchor="middle" font-size="8" fill="#991b1b" font-family="Helvetica Neue, Arial, sans-serif">Failure traj.</text>
+        <rect x="120" y="105" width="65" height="18" rx="3" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+        <text x="152" y="117" text-anchor="middle" font-size="8" fill="#1e40af" font-family="Helvetica Neue, Arial, sans-serif">Success traj.</text>
+        <rect x="120" y="128" width="65" height="18" rx="3" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+        <text x="152" y="140" text-anchor="middle" font-size="8" fill="#991b1b" font-family="Helvetica Neue, Arial, sans-serif">Failure traj.</text>
+
+        <!-- Arrow to scores -->
+        <line x1="210" y1="105" x2="260" y2="105" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow-blue)"/>
+        <text x="235" y="98" text-anchor="middle" font-size="8" fill="#3b82f6" font-family="Helvetica Neue, Arial, sans-serif">Score</text>
+
+        <!-- Nonconformity scores -->
+        <rect x="265" y="50" width="170" height="110" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="350" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534" font-family="Helvetica Neue, Arial, sans-serif">Nonconformity Scores</text>
+        <text x="350" y="92" text-anchor="middle" font-size="10" fill="#166534" font-family="Helvetica Neue, Arial, sans-serif">s_i = 1 - p(fail | x_i)</text>
+        <text x="350" y="112" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Sort scores: s_(1) &le; s_(2) &le; ...</text>
+        <text x="350" y="132" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">For failure examples only</text>
+        <text x="350" y="150" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">n = |calibration failures|</text>
+
+        <!-- Arrow to threshold -->
+        <line x1="435" y1="105" x2="485" y2="105" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <text x="460" y="98" text-anchor="middle" font-size="8" fill="#22c55e" font-family="Helvetica Neue, Arial, sans-serif">Quantile</text>
+
+        <!-- Threshold computation -->
+        <rect x="490" y="50" width="200" height="110" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="590" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e" font-family="Helvetica Neue, Arial, sans-serif">Threshold Selection</text>
+        <text x="590" y="95" text-anchor="middle" font-size="10" fill="#92400e" font-family="Helvetica Neue, Arial, sans-serif">&tau; = s_(&lceil;(1-&alpha;)(n+1)&rceil;)</text>
+        <text x="590" y="118" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">&alpha; = desired false negative rate</text>
+        <text x="590" y="138" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">e.g., &alpha; = 0.1 &rarr; catch &ge;90%</text>
+        <text x="590" y="153" text-anchor="middle" font-size="9" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">of failures</text>
+
+        <!-- Guarantee box -->
+        <rect x="140" y="195" width="440" height="85" rx="10" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="360" y="220" text-anchor="middle" font-size="12" font-weight="bold" fill="#5b21b6" font-family="Helvetica Neue, Arial, sans-serif">Statistical Guarantee</text>
+        <text x="360" y="244" text-anchor="middle" font-size="11" fill="#5b21b6" font-family="Helvetica Neue, Arial, sans-serif">P( detecting a true failure ) &ge; 1 - &alpha;</text>
+        <text x="360" y="268" text-anchor="middle" font-size="10" fill="#57534e" font-family="Helvetica Neue, Arial, sans-serif">Holds under exchangeability &mdash; no distributional assumptions on the model</text>
+
+        <!-- Arrows down to guarantee -->
+        <line x1="350" y1="160" x2="350" y2="195" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="590" y1="160" x2="590" y2="195" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,3"/>
+      </svg>
+    </div>
+
+    <h3>How Conformal Prediction Works Here</h3>
+
+    <p>Conformal prediction is a distribution-free framework for uncertainty quantification. It requires only one assumption: that calibration and test data are <strong>exchangeable</strong> (roughly, they come from the same distribution and their order does not matter). Given this mild assumption, it provides finite-sample guarantees.</p>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Calibration Procedure</h4>
+        <span class="shapes">One-time setup</span>
+      </div>
+      <p><span class="step-num amber">1</span><strong>Collect calibration data:</strong> Run the VLA policy on a set of held-out episodes. Record which episodes succeed and which fail, along with the detector's predicted failure probabilities.</p>
+      <p><span class="step-num amber">2</span><strong>Compute nonconformity scores:</strong> For each failure episode, compute <span class="tensor">s_i = 1 - p(fail)</span>. A high score means the detector assigned low failure probability to an actual failure &mdash; i.e., the detector was &ldquo;wrong.&rdquo;</p>
+      <p><span class="step-num amber">3</span><strong>Select the threshold:</strong> Sort the scores and pick the <span class="tensor">&lceil;(1 - &alpha;)(n + 1)&rceil;</span>-th smallest value as the threshold &tau;, where &alpha; is the desired false negative rate (e.g., 0.1 for 90% detection) and <em>n</em> is the number of calibration failures.</p>
+      <p><span class="step-num amber">4</span><strong>Deploy:</strong> At test time, flag failure whenever <span class="tensor">p(fail) &gt; 1 - &tau;</span>.</p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Why this matters for safety:</strong> Traditional ML thresholds are chosen by optimizing a metric on a validation set &mdash; say, the F1 score. But this gives no formal guarantee. The threshold might work well on average but fail catastrophically in certain scenarios. Conformal prediction provides a <em>provable bound</em>: the false negative rate will not exceed &alpha; on future data (under exchangeability). For safety-critical robotics, this is the difference between &ldquo;it usually works&rdquo; and &ldquo;it is guaranteed to catch at least 90% of failures.&rdquo;
+    </div>
+  </section>
+
+  <!-- Section 7: Training Details -->
+  <section>
+    <h2>7 &mdash; Training Details and Experimental Setup</h2>
+
+    <h3>VLA Backbones Evaluated</h3>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>&pi;<sub>0</sub></h4>
+        <span class="shapes">PaliGemma backbone &bull; 2048-dim features</span>
+      </div>
+      <p>Physical Intelligence's flow-matching VLA model. Uses a PaliGemma vision-language model as the backbone with a flow-matching action head. SAFE extracts features from the PaliGemma language model layers after vision-language fusion has occurred. This model represents the state-of-the-art in generalist robot control.</p>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>OpenVLA</h4>
+        <span class="shapes">Prismatic + Llama 2 backbone &bull; 4096-dim features</span>
+      </div>
+      <p>An open-source VLA model combining a Prismatic vision encoder with a Llama 2 7B language model. Actions are tokenized and generated autoregressively as text tokens. SAFE extracts features from the Llama 2 decoder layers. OpenVLA provides a fully open-source baseline for the community.</p>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>&pi;<sub>0</sub>-FAST</h4>
+        <span class="shapes">PaliGemma backbone &bull; 2048-dim features</span>
+      </div>
+      <p>A variant of &pi;<sub>0</sub> that tokenizes actions using a discrete codebook (FAST tokenization) rather than continuous flow matching. This architectural difference means the internal representations may encode task state differently. Testing on &pi;<sub>0</sub>-FAST validates that SAFE generalizes across action decoding strategies, not just across tasks.</p>
+    </div>
+
+    <h3>Benchmarks and Tasks</h3>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>LIBERO Simulation Benchmark</h4>
+        <span class="shapes">Simulated &bull; 10 task suites</span>
+      </div>
+      <p>LIBERO provides a diverse set of tabletop manipulation tasks in simulation: picking, placing, stacking, opening drawers, pressing buttons, and more. The key experimental design splits tasks into <strong>seen</strong> (used for training the detector) and <strong>unseen</strong> (held out entirely for evaluation). This tests the critical question: can SAFE detect failures on tasks it has never encountered?</p>
+      <p>Data collection involves rolling out the VLA policy on each task multiple times and recording both the hidden state trajectories and binary success/failure labels (determined by the simulator's ground-truth task completion checker).</p>
+    </div>
+
+    <div class="layer-card mobile">
+      <div class="layer-header">
+        <h4>Real Robot: Franka Panda</h4>
+        <span class="shapes">Physical hardware &bull; Manipulation tasks</span>
+      </div>
+      <p>To validate beyond simulation, SAFE is tested on a physical Franka Emika Panda robot arm performing real manipulation tasks. This bridges the sim-to-real gap: sensor noise, lighting variation, physical dynamics, and genuine manipulation difficulty all come into play. Success/failure labels are assigned by human annotators watching the execution videos.</p>
+    </div>
+
+    <h3>Training Protocol</h3>
+
+    <p>The detector heads are trained with <strong>binary cross-entropy loss</strong> on the seen-task dataset. For the MLP, each timestep is an independent training example. For the LSTM, training examples are windows of consecutive timesteps from a single episode. Training is fast &mdash; the detector heads are tiny compared to the VLA backbone &mdash; and converges in minutes on a single GPU.</p>
+
+    <div class="callout-blue callout">
+      <strong>Frozen backbone:</strong> The VLA model's weights are never modified during SAFE training. Only the lightweight detector head is trained. This means SAFE can be attached to <em>any</em> pre-trained VLA model as a post-hoc safety monitor without re-training or fine-tuning the base model. It is truly plug-and-play.
+    </div>
+  </section>
+
+  <!-- Section 8: Results -->
+  <section>
+    <h2>8 &mdash; Key Results</h2>
+
+    <h3>Failure Detection Across VLA Backbones</h3>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>VLA Backbone</th>
+          <th>Detector</th>
+          <th>Seen Tasks (AUROC)</th>
+          <th>Unseen Tasks (AUROC)</th>
+          <th>Unseen Detection Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>&pi;<sub>0</sub></td>
+          <td>MLP</td>
+          <td>0.91</td>
+          <td>0.82</td>
+          <td>78%</td>
+        </tr>
+        <tr>
+          <td>&pi;<sub>0</sub></td>
+          <td>LSTM</td>
+          <td><strong>0.94</strong></td>
+          <td><strong>0.87</strong></td>
+          <td><strong>84%</strong></td>
+        </tr>
+        <tr>
+          <td>OpenVLA</td>
+          <td>MLP</td>
+          <td>0.88</td>
+          <td>0.79</td>
+          <td>74%</td>
+        </tr>
+        <tr>
+          <td>OpenVLA</td>
+          <td>LSTM</td>
+          <td>0.92</td>
+          <td>0.84</td>
+          <td>80%</td>
+        </tr>
+        <tr>
+          <td>&pi;<sub>0</sub>-FAST</td>
+          <td>MLP</td>
+          <td>0.90</td>
+          <td>0.81</td>
+          <td>76%</td>
+        </tr>
+        <tr>
+          <td>&pi;<sub>0</sub>-FAST</td>
+          <td>LSTM</td>
+          <td>0.93</td>
+          <td>0.86</td>
+          <td>82%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>84% detection on unseen tasks.</strong> The best configuration (&pi;<sub>0</sub> + LSTM) detects 84% of failures on tasks the detector has never seen during training. This demonstrates genuine generalization: the failure signatures in VLA hidden states transfer across tasks.
+    </div>
+
+    <h3>Key Findings</h3>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>LSTM Outperforms MLP Consistently</h4>
+      </div>
+      <p>Across all three VLA backbones, the LSTM detector head outperforms the MLP head by 3&ndash;6 AUROC points on unseen tasks. The temporal modeling provided by the LSTM is especially valuable for detecting gradual failures &mdash; cases where a single frame looks ambiguous but the trajectory reveals a clear failure pattern. For instantaneous failures (e.g., complete grasp misses), the gap is smaller.</p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>Generalization to Unseen Tasks</h4>
+      </div>
+      <p>The drop from seen to unseen task performance is modest (5&ndash;9 AUROC points), suggesting that VLA hidden states encode <em>task-general</em> failure signatures. When a robot drops an object, the internal representation shifts in a characteristic way regardless of which specific object or task is involved. This is the most important finding: SAFE is not memorizing task-specific failure patterns but learning generalizable failure features.</p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>Conformal Calibration Works</h4>
+      </div>
+      <p>When applying conformal prediction with &alpha; = 0.1 (targeting 90% failure detection), the empirical detection rate meets or exceeds the guarantee on held-out test data. This validates that the exchangeability assumption holds well enough in practice for robot manipulation settings, and that the conformal calibration procedure produces reliable, actionable thresholds.</p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>Real Robot Validation</h4>
+      </div>
+      <p>Results on the physical Franka Panda confirm that SAFE works beyond simulation. The sim-to-real gap is present but manageable &mdash; detection rates on the real robot are somewhat lower than in LIBERO, but still operationally useful. Importantly, the conformal guarantees transfer: the calibrated thresholds from real-robot calibration data provide the promised coverage.</p>
+    </div>
+  </section>
+
+  <!-- Section 9: Layer Selection -->
+  <section>
+    <h2>9 &mdash; Which Layer to Monitor?</h2>
+
+    <p>Not all layers of a VLA model are equally informative for failure detection. SAFE systematically ablates layer choice across all three backbones.</p>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Layer Position</th>
+          <th>Feature Type</th>
+          <th>Detection Quality</th>
+          <th>Intuition</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Early (0&ndash;25%)</td>
+          <td>Low-level visual / token embeddings</td>
+          <td>Poor</td>
+          <td>Too low-level; hasn't integrated task semantics</td>
+        </tr>
+        <tr>
+          <td>Middle (25&ndash;60%)</td>
+          <td>Mid-level representations</td>
+          <td>Good</td>
+          <td>Rich mix of visual and semantic information</td>
+        </tr>
+        <tr>
+          <td>Late-middle (60&ndash;80%)</td>
+          <td>High-level task representations</td>
+          <td><strong>Best</strong></td>
+          <td>Task-relevant features before action-specific compression</td>
+        </tr>
+        <tr>
+          <td>Final (80&ndash;100%)</td>
+          <td>Pre-action / action-specific</td>
+          <td>Moderate</td>
+          <td>Over-specialized for action prediction; loses some state info</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout-blue callout">
+      <strong>Sweet spot:</strong> The late-middle layers (roughly 60&ndash;80% depth) consistently produce the best features for failure detection. At this depth, the model has fully integrated visual and language information into high-level task representations, but has not yet compressed everything down to the narrow bottleneck needed for action prediction. These layers carry the richest &ldquo;world state&rdquo; information.
+    </div>
+  </section>
+
+  <!-- Section 10: Why It Works -->
+  <section>
+    <h2>10 &mdash; Why Internal Monitoring Works</h2>
+
+    <p>It may seem surprising that a model's own hidden states can reveal its failures. After all, if the model &ldquo;knew&rdquo; it was failing, why wouldn't it correct itself? The answer lies in the gap between <strong>representation</strong> and <strong>action</strong>.</p>
+
+    <div class="model-section">
+      <h3>The Representation-Action Gap</h3>
+
+      <p>A VLA model's hidden states are trained to represent the world accurately enough to <em>predict useful actions on average</em>. This means the representations encode detailed information about the current state of the scene: where objects are, whether the gripper is holding something, the spatial relationships between the arm and the target.</p>
+
+      <p>But the action head is trained to output the <em>most likely next action</em> given this representation. It is not trained to output &ldquo;I am failing&rdquo; or &ldquo;this grasp is slipping.&rdquo; The failure information is <strong>present in the representation but not exposed in the output</strong>. SAFE simply trains a small head to read what the action head ignores.</p>
+
+      <p>An analogy: imagine a doctor who can accurately describe a patient's symptoms (representation) but has been trained only to prescribe medication (action). The doctor's notes contain all the information needed to detect a misdiagnosis, but the prescription alone does not reveal it. SAFE is like a second opinion that reads the doctor's notes.</p>
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>Generalization explained:</strong> Why does SAFE generalize to unseen tasks? Because VLA models are themselves trained on diverse tasks. Their representations learn <em>general</em> concepts like &ldquo;the gripper is empty when it should be holding something&rdquo; or &ldquo;the object is not where the instruction said to put it.&rdquo; These concepts are task-independent, and SAFE's detector learns to read them.
+    </div>
+  </section>
+
+  <!-- Section 11: Practical Deployment -->
+  <section>
+    <h2>11 &mdash; Practical Deployment Considerations</h2>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Computational Overhead</h4>
+        <span class="shapes">Minimal impact on inference</span>
+      </div>
+      <p>The detector heads (MLP or LSTM) add negligible computational cost compared to the VLA forward pass itself. A &pi;<sub>0</sub> forward pass takes tens of milliseconds on a modern GPU; the MLP detector adds less than 1ms. Feature extraction via forward hooks has zero additional compute cost &mdash; the features are already computed as part of the normal VLA forward pass.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>What Happens When a Failure Is Detected?</h4>
+        <span class="shapes">Recovery strategies</span>
+      </div>
+      <p>SAFE detects failures but does not prescribe a specific recovery strategy. The simplest response is to <strong>stop execution</strong> and alert a human operator. More sophisticated approaches could include automatic retry (re-attempt the task from the current state), rollback (return to a known-good state), or escalation (switch to a more conservative policy). The choice depends on the deployment context and safety requirements.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Calibration Data Requirements</h4>
+        <span class="shapes">How much data do you need?</span>
+      </div>
+      <p>Conformal prediction requires a calibration set with both successes and failures. The more calibration failures you have, the tighter the conformal guarantee. In practice, 50&ndash;100 failure episodes provide reasonably tight bounds. This is modest: running a VLA policy 200 times on a few tasks will typically yield enough failures for calibration, even for policies with 60&ndash;70% success rates.</p>
+    </div>
+  </section>
+
+  <!-- Section 12: Takeaways -->
+  <section>
+    <h2>12 &mdash; Key Takeaways</h2>
+
+    <div class="callout">
+      <strong>First general-purpose failure detector for VLAs.</strong> SAFE is the first method to detect failures across tasks and VLA architectures without task-specific training, opening the door to scalable safety monitoring for robot foundation models.
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>Internal representations are the key.</strong> By monitoring hidden states rather than actions or external observations, SAFE accesses rich, high-dimensional signals that already encode whether execution is succeeding. The VLA model does the hard perceptual work; SAFE just reads the result.
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Conformal prediction closes the safety gap.</strong> Rather than relying on arbitrary thresholds, SAFE uses conformal prediction to provide provable guarantees on the failure detection rate. This moves robot safety monitoring from empirical heuristics to statistical rigor.
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>Generalization is real.</strong> 84% failure detection on completely unseen tasks demonstrates that VLA hidden states encode task-general notions of success and failure. This is not overfitting to specific failure modes &mdash; it is learning what &ldquo;going wrong&rdquo; looks like in the model's own language.
+    </div>
+
+    <div class="model-section">
+      <h3>Summary of Contributions</h3>
+
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Contribution</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>General failure detection</td>
+            <td>Monitor VLA hidden states to detect failures without task-specific training</td>
+          </tr>
+          <tr>
+            <td>Lightweight detector heads</td>
+            <td>MLP (single-step) and LSTM (temporal) heads that add minimal overhead</td>
+          </tr>
+          <tr>
+            <td>Conformal safety guarantees</td>
+            <td>Calibrated thresholds with provable bounds on false negative rates</td>
+          </tr>
+          <tr>
+            <td>Cross-architecture evaluation</td>
+            <td>Validated on &pi;<sub>0</sub>, OpenVLA, and &pi;<sub>0</sub>-FAST</td>
+          </tr>
+          <tr>
+            <td>Sim + real validation</td>
+            <td>LIBERO benchmark and physical Franka Panda experiments</td>
+          </tr>
+          <tr>
+            <td>Generalization</td>
+            <td>84% failure detection on tasks unseen during detector training</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Model walkthrough by Steve Schmidt. Content based on the SAFE paper (arXiv:2503.01750).
+</footer>
+
+</body>
+</html>
