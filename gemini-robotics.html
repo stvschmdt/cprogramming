@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini Robotics Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; }
+    .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #a855f7; }
+    .callout-purple strong { color: #7c3aed; }
+
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.encoder { border-left-color: #3b82f6; }
+    .layer-card.projection { border-left-color: #22c55e; }
+    .layer-card.decoder { border-left-color: #8b5cf6; }
+    .layer-card.training { border-left-color: #f59e0b; }
+    .layer-card.mobile { border-left-color: #ef4444; }
+
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+
+    .model-section { background: var(--card-bg); border: 2px solid var(--border); border-radius: 10px; padding: 2rem 1.5rem; margin: 2rem 0; }
+
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.green { background: #22c55e; }
+    .step-num.purple { background: #8b5cf6; }
+    .step-num.amber { background: #f59e0b; }
+    .step-num.red { background: #ef4444; }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.5rem; }
+      body { font-size: 16px; }
+      nav { gap: 1rem; }
+      .layer-card .layer-header { flex-direction: column; }
+    }
+
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+  <a href="https://github.com/stvschmdt">GitHub</a>
+</nav>
+
+<main>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> &rsaquo; Gemini Robotics</div>
+    <h1>Gemini Robotics: Bringing AI into the Physical World</h1>
+    <div class="subtitle">Google DeepMind 2025</div>
+    <div class="meta-tags">
+      <span>VLA</span>
+      <span>Foundation Model</span>
+      <span>Embodied AI</span>
+      <span>Dexterous Manipulation</span>
+      <span>Humanoid</span>
+      <span>Google DeepMind</span>
+    </div>
+    <div class="paper-link">
+      <a href="https://arxiv.org/abs/2503.20020">Read the paper &rarr; arXiv:2503.20020</a>
+    </div>
+  </div>
+
+  <!-- Section 1: The Problem -->
+  <section>
+    <h2>1 &mdash; The Problem</h2>
+
+    <p>
+      Building robots that can operate as general-purpose assistants in unstructured human environments remains one of the defining challenges in AI. A robot folding laundry, assembling furniture, or preparing a meal must weave together three fundamentally different capabilities: understanding natural language instructions, perceiving the three-dimensional physical world, and generating precise, continuous motor actions in real time.
+    </p>
+
+    <p>
+      Prior approaches have attacked these capabilities in isolation. Large language models and vision-language models (VLMs) excel at semantic understanding and can reason about what a robot <em>should</em> do, but they produce discrete text tokens &mdash; not the smooth, high-frequency torque commands a physical arm demands. Conversely, task-specific control policies trained via reinforcement learning or imitation learning can achieve remarkable dexterity on narrow benchmarks, but they struggle to generalize across tasks, objects, or embodiments. The field has lacked a unified model that spans the full perception-reasoning-action loop.
+    </p>
+
+    <div class="callout">
+      <strong>Core tension:</strong> Language models understand <em>what</em> to do but cannot produce continuous actions. Control policies know <em>how</em> to move but lack broad reasoning. Gemini Robotics attempts to bridge this gap by extending a frontier VLM with native action generation.
+    </div>
+
+    <h3>Why Is This Hard?</h3>
+    <p>
+      Robotic manipulation introduces constraints absent from pure perception tasks. Actions must be generated at 50 Hz to maintain smooth contact dynamics. The action space is continuous and high-dimensional &mdash; a bimanual setup has 14 degrees of freedom per timestep. Long-horizon tasks like origami folding require dozens of sequential sub-skills coordinated over minutes. And the real world is unforgiving: a single missed grasp or misaligned fold can cascade into task failure.
+    </p>
+
+    <p>
+      Furthermore, deploying a large model on a robot creates a systems challenge. Frontier VLMs require cloud-scale compute, but control loops demand sub-20ms latency on the robot itself. Any viable architecture must split computation between cloud and edge while maintaining coherent behavior.
+    </p>
+  </section>
+
+  <!-- Section 2: Model Family Overview -->
+  <section>
+    <h2>2 &mdash; Model Family Overview</h2>
+
+    <p>
+      Gemini Robotics is not a single model but a family of three complementary systems, each targeting a different level of the robotics stack. All three build on the Gemini 2.0 foundation model, inheriting its vision-language capabilities while adding specialized modules for spatial reasoning, action generation, or navigation.
+    </p>
+
+    <div class="callout-blue callout">
+      <strong>Design principle:</strong> Rather than training a monolithic end-to-end model, DeepMind decomposes the problem into specialized variants that share a common backbone. This allows each model to be optimized for its particular output modality while benefiting from shared pre-training.
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Input</th>
+          <th>Output</th>
+          <th>Primary Use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Gemini Robotics-ER</strong></td>
+          <td>Images + Language</td>
+          <td>Structured spatial understanding</td>
+          <td>Embodied reasoning, scene analysis</td>
+        </tr>
+        <tr>
+          <td><strong>Gemini Robotics</strong></td>
+          <td>Images + Language + Proprioception</td>
+          <td>Continuous 7-DoF actions</td>
+          <td>Dexterous manipulation</td>
+        </tr>
+        <tr>
+          <td><strong>Gemini Robotics-Nav</strong></td>
+          <td>Images + Language + Odometry</td>
+          <td>Navigation commands</td>
+          <td>Mobile robot navigation</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      The three models can be composed: Robotics-ER provides high-level scene understanding and task planning, Robotics generates fine-grained manipulation actions, and Robotics-Nav handles locomotion for mobile platforms. This layered approach mirrors how humans decompose tasks &mdash; first understanding the scene, then planning actions, then executing movements.
+    </p>
+  </section>
+
+  <!-- Section 3: Gemini Robotics-ER -->
+  <section>
+    <h2>3 &mdash; Gemini Robotics-ER (Embodied Reasoning)</h2>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span> Gemini Robotics-ER</h4>
+        <span class="shapes">Images + Language &rarr; Spatial Structures</span>
+      </div>
+      <p>
+        Robotics-ER extends Gemini 2.0 with spatial reasoning capabilities designed for robotic perception. Given one or more camera images and a natural language query, it produces structured spatial outputs: 3D bounding boxes, 6-DoF grasp pose predictions, pointing and reaching targets, and trajectory sketches.
+      </p>
+      <p>
+        Unlike standard object detectors that output 2D bounding boxes, Robotics-ER reasons in three dimensions. It predicts oriented 3D bounding boxes with full position and rotation, enabling downstream planners to reason about object geometry, clearances, and stacking. Grasp predictions include both the gripper pose and an approach vector, directly usable by motion planners.
+      </p>
+      <p>
+        The model also supports <strong>trajectory planning</strong>: given a task description like "pour water from the pitcher into the glass," it outputs a sequence of waypoints that sketch the desired end-effector path. These waypoints serve as high-level plans that a lower-level controller (such as the full Gemini Robotics VLA) can refine into smooth, executable actions.
+      </p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Spatial reasoning capabilities:</strong> 3D object detection, 6-DoF grasp prediction, reach/point target estimation, trajectory waypoint planning, and scene-level spatial relationship reasoning &mdash; all from natural language queries over RGB images.
+    </div>
+
+    <h3>Why Embodied Reasoning Matters</h3>
+    <p>
+      Many robotic failures stem not from poor motor control but from incorrect perception. A robot that misjudges the height of a shelf, the orientation of a handle, or the deformability of a material will fail regardless of how good its control policy is. By building spatial reasoning directly into the foundation model, Robotics-ER provides a perception backbone that understands physical affordances &mdash; not just object categories.
+    </p>
+  </section>
+
+  <!-- Section 4: Gemini Robotics (VLA) -->
+  <section>
+    <h2>4 &mdash; Gemini Robotics (Vision-Language-Action)</h2>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4><span class="step-num purple">2</span> Gemini Robotics VLA</h4>
+        <span class="shapes">Images + Language + Proprioception &rarr; 7-DoF Actions @ 50 Hz</span>
+      </div>
+      <p>
+        The full Gemini Robotics model is a vision-language-action (VLA) system that closes the loop from perception to physical action. It takes as input camera images, a natural language task instruction, and proprioceptive state (joint positions, gripper state), and outputs continuous 7-DoF action commands: 3D translation, 3D rotation, and gripper open/close.
+      </p>
+      <p>
+        The model operates at <strong>50 Hz</strong>, producing action chunks of multiple future timesteps in each forward pass. This action chunking strategy &mdash; predicting a short horizon of future actions rather than a single next action &mdash; smooths trajectories and reduces the effective latency of the cloud-edge communication pipeline.
+      </p>
+      <p>
+        On the standard benchmark of long-horizon dexterous manipulation tasks, Gemini Robotics achieves a <strong>79% success rate</strong>, substantially outperforming prior VLA models. Tasks include origami folding (requiring precise crease formation), box assembly (deformable cardboard manipulation), and multi-object rearrangement with specific spatial constraints.
+      </p>
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>Action chunking:</strong> Rather than predicting one action per forward pass, the model outputs a chunk of <span class="tensor">H</span> future actions. The robot executes these while the next chunk is being computed in the cloud, effectively hiding network latency behind execution time.
+    </div>
+
+    <h3>Bimanual Control</h3>
+    <p>
+      Gemini Robotics natively supports bimanual control for dual-arm setups. For a bimanual ALOHA configuration, the action space doubles to 14-DoF (7 per arm). The model learns coordinated bimanual strategies &mdash; one arm stabilizes an object while the other manipulates it, or both arms collaborate on symmetric tasks like folding cloth. This coordination emerges from the training data without explicit bimanual planning modules.
+    </p>
+
+    <h3>Instruction Following and Safety</h3>
+    <p>
+      Because the model inherits Gemini 2.0's language understanding, it can follow nuanced natural language instructions: "pick up the red cup but avoid the glass one," "stack the blocks from largest to smallest," or "fold the napkin into a triangle." The model also respects safety constraints expressed in language, such as "do not touch the knife" or "move slowly near the edge of the table."
+    </p>
+  </section>
+
+  <!-- Section 5: Gemini Robotics-Nav -->
+  <section>
+    <h2>5 &mdash; Gemini Robotics-Nav</h2>
+
+    <div class="layer-card mobile">
+      <div class="layer-header">
+        <h4><span class="step-num red">3</span> Gemini Robotics-Nav</h4>
+        <span class="shapes">Images + Language + Odometry &rarr; Navigation Commands</span>
+      </div>
+      <p>
+        Robotics-Nav is a navigation-specialized variant designed for mobile robots operating in indoor and outdoor environments. It takes camera images, a language goal (e.g., "go to the kitchen" or "find the red chair"), and odometry readings, and produces navigation commands: linear and angular velocities for differential-drive or omnidirectional platforms.
+      </p>
+      <p>
+        The model handles the full navigation stack: semantic goal interpretation, visual place recognition, obstacle avoidance, and path planning. It can navigate to semantically specified locations ("the room with the whiteboard"), follow natural language route instructions ("go down the hallway, turn left at the elevator"), and adapt to dynamic obstacles like people walking through the scene.
+      </p>
+      <p>
+        Robotics-Nav is designed to compose with the manipulation models. A mobile manipulator can use Robotics-Nav to navigate to a target location, then switch to Robotics-ER for scene understanding and Gemini Robotics for manipulation &mdash; enabling full pick-and-place workflows across large environments.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 6: Architecture -->
+  <section>
+    <h2>6 &mdash; Cloud-Edge Split Architecture</h2>
+
+    <p>
+      The defining architectural innovation of Gemini Robotics is its cloud-edge split design. Running a frontier-scale VLM (billions of parameters) on a robot's onboard compute is infeasible &mdash; the model would be too slow for real-time control. But running the entire pipeline in the cloud introduces network latency that breaks the tight control loops manipulation requires. The solution is to split the model across both.
+    </p>
+
+    <div class="arch-diagram">
+      <svg width="700" height="420" viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Cloud region -->
+        <rect x="30" y="20" width="640" height="170" rx="12" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="55" y="48" font-size="11" fill="#3b82f6" font-weight="700" letter-spacing="0.08em">CLOUD</text>
+
+        <!-- Gemini backbone -->
+        <rect x="80" y="65" width="220" height="100" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="190" y="95" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">Gemini 2.0 Backbone</text>
+        <text x="190" y="115" text-anchor="middle" font-size="10" fill="#3b82f6">Vision-Language Model</text>
+        <text x="190" y="132" text-anchor="middle" font-size="10" fill="#3b82f6">Billions of parameters</text>
+        <text x="190" y="149" text-anchor="middle" font-size="10" fill="#3b82f6">Semantic reasoning + spatial features</text>
+
+        <!-- Action token head -->
+        <rect x="400" y="65" width="220" height="100" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="510" y="95" text-anchor="middle" font-size="13" font-weight="700" fill="#5b21b6">Action Token Head</text>
+        <text x="510" y="115" text-anchor="middle" font-size="10" fill="#7c3aed">Encodes action intent</text>
+        <text x="510" y="132" text-anchor="middle" font-size="10" fill="#7c3aed">Compressed latent representation</text>
+        <text x="510" y="149" text-anchor="middle" font-size="10" fill="#7c3aed">Transmitted to robot</text>
+
+        <!-- Arrow: backbone to action head -->
+        <line x1="300" y1="115" x2="400" y2="115" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+        <!-- Network boundary -->
+        <rect x="30" y="210" width="640" height="20" rx="0" fill="#fef3c7" stroke="none"/>
+        <text x="350" y="224" text-anchor="middle" font-size="9" fill="#92400e" font-weight="700" letter-spacing="0.1em">NETWORK BOUNDARY &mdash; ACTION TOKENS TRANSMITTED</text>
+
+        <!-- Robot region -->
+        <rect x="30" y="240" width="640" height="160" rx="12" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="55" y="268" font-size="11" fill="#16a34a" font-weight="700" letter-spacing="0.08em">ON-ROBOT</text>
+
+        <!-- Action decoder -->
+        <rect x="80" y="285" width="250" height="90" rx="8" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="205" y="312" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Action Decoder</text>
+        <text x="205" y="332" text-anchor="middle" font-size="10" fill="#16a34a">Lightweight transformer</text>
+        <text x="205" y="349" text-anchor="middle" font-size="10" fill="#16a34a">Decodes action chunks @ 50 Hz</text>
+        <text x="205" y="366" text-anchor="middle" font-size="10" fill="#16a34a">+ Proprioceptive state input</text>
+
+        <!-- Robot actuators -->
+        <rect x="430" y="285" width="200" height="90" rx="8" fill="#fef9c3" stroke="#eab308" stroke-width="1.5"/>
+        <text x="530" y="312" text-anchor="middle" font-size="13" font-weight="700" fill="#854d0e">Robot Actuators</text>
+        <text x="530" y="332" text-anchor="middle" font-size="10" fill="#a16207">7-DoF / 14-DoF actions</text>
+        <text x="530" y="349" text-anchor="middle" font-size="10" fill="#a16207">Translation + Rotation + Gripper</text>
+        <text x="530" y="366" text-anchor="middle" font-size="10" fill="#a16207">Real-time execution</text>
+
+        <!-- Arrow: action tokens down -->
+        <line x1="510" y1="165" x2="510" y2="210" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+        <line x1="510" y1="230" x2="350" y2="285" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+        <!-- Arrow: decoder to actuators -->
+        <line x1="330" y1="330" x2="430" y2="330" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowGray)"/>
+
+        <!-- Arrow defs -->
+        <defs>
+          <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill="#6b7280"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <h3>How the Split Works</h3>
+    <p>
+      <span class="step-num blue">1</span> <strong>Cloud backbone:</strong> Camera images and the language instruction are sent to the cloud, where the full Gemini 2.0 model processes them. The backbone produces rich semantic and spatial features that capture the scene layout, object identities, task semantics, and intended action plan.
+    </p>
+    <p>
+      <span class="step-num purple">2</span> <strong>Action token head:</strong> A lightweight head on top of the backbone compresses the action-relevant information into a compact set of action tokens &mdash; a latent representation that encodes <em>what</em> the robot should do next, without the full detail of the backbone's internal state. These tokens are small enough to transmit over a network with minimal latency.
+    </p>
+    <p>
+      <span class="step-num green">3</span> <strong>On-robot decoder:</strong> A small transformer decoder running on the robot's local GPU receives the action tokens, combines them with real-time proprioceptive feedback (joint positions, forces), and decodes them into executable action chunks. This decoder is lightweight enough to run at 50 Hz on embedded hardware.
+    </p>
+    <p>
+      <span class="step-num amber">4</span> <strong>Action execution:</strong> The decoded action chunk is a sequence of future waypoints. The robot executes these while the cloud simultaneously computes the next chunk, creating a pipelined system that hides network round-trip latency.
+    </p>
+
+    <div class="callout">
+      <strong>Latency budget:</strong> The cloud forward pass takes ~100&ndash;200ms. The on-robot decoder runs in &lt;5ms. By predicting action chunks of ~10 timesteps (200ms at 50 Hz), the system overlaps cloud computation with execution, achieving effective real-time control despite the network round trip.
+    </div>
+  </section>
+
+  <!-- Section 7: Training Pipeline -->
+  <section>
+    <h2>7 &mdash; Training Pipeline</h2>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">A</span> Pre-training: Internet-Scale Vision-Language</h4>
+        <span class="shapes">Web data &rarr; Gemini 2.0</span>
+      </div>
+      <p>
+        The foundation is Gemini 2.0, pre-trained on internet-scale multimodal data: text, images, video, code, and structured documents. This massive pre-training provides the model with broad world knowledge, spatial understanding from images and video, physical intuition from watching how objects move and interact, and language grounding for instruction following.
+      </p>
+      <p>
+        Critically, the vision-language pre-training implicitly teaches physics: the model has seen millions of videos of objects falling, liquids pouring, fabrics deforming, and hands manipulating tools. This gives the robotics variants a prior on how the physical world behaves &mdash; something that would take billions of robot interactions to learn from scratch.
+      </p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4><span class="step-num green">B</span> Robotics Fine-tuning: Demonstration Data</h4>
+        <span class="shapes">Robot demonstrations &rarr; Action prediction</span>
+      </div>
+      <p>
+        The pre-trained model is then fine-tuned on robot demonstration data to learn the mapping from perception to continuous actions. The primary data source is <strong>ALOHA bimanual teleoperation</strong>, where human operators control dual robot arms through a leader-follower setup. The resulting demonstrations capture expert-level dexterous manipulation with full 14-DoF action trajectories.
+      </p>
+      <p>
+        Fine-tuning adapts the model's output head to produce continuous action values instead of discrete text tokens. The training objective is behavioral cloning: predict the expert's action given the current observation and instruction. Action chunking is used during training &mdash; the model predicts the next <span class="tensor">H</span> actions simultaneously, which provides a richer training signal and encourages temporally coherent behavior.
+      </p>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">C</span> Safety and Constraint Alignment</h4>
+        <span class="shapes">Constraints &rarr; Aligned behavior</span>
+      </div>
+      <p>
+        A final alignment stage ensures the model respects safety constraints and follows instructions faithfully. The model is trained to recognize and obey constraint specifications in the language instruction: "do not touch the knife," "keep the cup upright," "move slowly near the table edge." This leverages Gemini 2.0's existing instruction-following capabilities, extended to physical action constraints.
+      </p>
+      <p>
+        The safety alignment also includes workspace boundary enforcement, force limits for delicate object handling, and emergency stop behaviors triggered by anomalous states.
+      </p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Data efficiency:</strong> By building on Gemini 2.0's pre-training, the robotics fine-tuning requires orders of magnitude less demonstration data than training a robot policy from scratch. The pre-trained model already understands objects, spatial relationships, and physical dynamics &mdash; the fine-tuning primarily teaches the output format (continuous actions) and embodiment-specific control strategies.
+    </div>
+  </section>
+
+  <!-- Section 8: Key Results -->
+  <section>
+    <h2>8 &mdash; Key Results</h2>
+
+    <h3>Long-Horizon Dexterous Manipulation</h3>
+    <p>
+      The headline result is 79% success on a suite of long-horizon dexterous tasks, each requiring multiple sequential sub-skills coordinated over extended time horizons. These tasks were specifically chosen to stress-test both precision and persistence.
+    </p>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Gemini Robotics</th>
+          <th>RT-2</th>
+          <th>Octo</th>
+          <th>Diffusion Policy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Origami folding</td>
+          <td><strong>72%</strong></td>
+          <td>18%</td>
+          <td>5%</td>
+          <td>34%</td>
+        </tr>
+        <tr>
+          <td>Box assembly</td>
+          <td><strong>76%</strong></td>
+          <td>22%</td>
+          <td>8%</td>
+          <td>40%</td>
+        </tr>
+        <tr>
+          <td>Multi-object rearrangement</td>
+          <td><strong>85%</strong></td>
+          <td>45%</td>
+          <td>20%</td>
+          <td>55%</td>
+        </tr>
+        <tr>
+          <td>Deformable object manipulation</td>
+          <td><strong>78%</strong></td>
+          <td>25%</td>
+          <td>10%</td>
+          <td>42%</td>
+        </tr>
+        <tr>
+          <td>Tool use (pouring, scooping)</td>
+          <td><strong>82%</strong></td>
+          <td>38%</td>
+          <td>12%</td>
+          <td>48%</td>
+        </tr>
+        <tr>
+          <td><strong>Average (long-horizon)</strong></td>
+          <td><strong>79%</strong></td>
+          <td>30%</td>
+          <td>11%</td>
+          <td>44%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Why the gap?</strong> RT-2 uses discrete action tokenization, limiting its precision. Octo is a smaller generalist model without the reasoning depth. Diffusion Policy is strong on single tasks but lacks the language-conditioned generalization. Gemini Robotics combines frontier-scale reasoning with continuous action decoding, enabling both precision and generalization.
+    </div>
+
+    <h3>Spatial Reasoning (Robotics-ER)</h3>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Metric</th>
+          <th>Gemini Robotics-ER</th>
+          <th>Best Prior</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>3D bounding box prediction</td>
+          <td>IoU@0.5</td>
+          <td><strong>74.2%</strong></td>
+          <td>58.1%</td>
+        </tr>
+        <tr>
+          <td>Grasp pose prediction</td>
+          <td>Success rate</td>
+          <td><strong>88.5%</strong></td>
+          <td>76.3%</td>
+        </tr>
+        <tr>
+          <td>Trajectory waypoint planning</td>
+          <td>Task completion</td>
+          <td><strong>71.8%</strong></td>
+          <td>52.4%</td>
+        </tr>
+        <tr>
+          <td>Spatial relationship QA</td>
+          <td>Accuracy</td>
+          <td><strong>91.3%</strong></td>
+          <td>79.6%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Cross-Embodiment Generalization</h3>
+    <p>
+      A critical test of a foundation model approach is whether it transfers across different robot platforms. Gemini Robotics was evaluated on multiple embodiments beyond its primary ALOHA training platform:
+    </p>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Embodiment</th>
+          <th>DoF</th>
+          <th>Adaptation Method</th>
+          <th>Success Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ALOHA bimanual (primary)</td>
+          <td>14</td>
+          <td>Full fine-tuning</td>
+          <td>79%</td>
+        </tr>
+        <tr>
+          <td>Single UR5e arm</td>
+          <td>7</td>
+          <td>Adapter fine-tuning</td>
+          <td>71%</td>
+        </tr>
+        <tr>
+          <td>Franka Panda</td>
+          <td>7</td>
+          <td>Adapter fine-tuning</td>
+          <td>68%</td>
+        </tr>
+        <tr>
+          <td>Humanoid upper body</td>
+          <td>22</td>
+          <td>Adapter fine-tuning</td>
+          <td>54%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout-purple callout">
+      <strong>Humanoid transfer:</strong> Adapting to a 22-DoF humanoid upper body with only adapter fine-tuning (freezing the backbone) achieves 54% success &mdash; remarkable given the significant morphological difference from the bimanual training platform. This suggests the backbone has learned embodiment-agnostic manipulation strategies.
+    </div>
+  </section>
+
+  <!-- Section 9: Architecture Deep Dive -->
+  <section>
+    <h2>9 &mdash; Component Deep Dive</h2>
+
+    <h3>Vision Encoder</h3>
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Multi-Camera Image Encoding</h4>
+        <span class="shapes">[N, H, W, 3] &rarr; [N, L, D]</span>
+      </div>
+      <p>
+        The vision encoder processes images from multiple cameras (typically 2&ndash;4 views for manipulation tasks). Each image is independently encoded into a sequence of visual tokens using the Gemini 2.0 vision encoder, then concatenated along the sequence dimension. This multi-view representation gives the model implicit 3D awareness through geometric consistency across viewpoints.
+      </p>
+      <p>
+        Image resolution is <span class="tensor">480 &times; 640</span> per camera. The vision encoder produces <span class="tensor">L</span> tokens per image, each of dimension <span class="tensor">D</span>. For a 3-camera setup, the total visual token count is <span class="tensor">3L</span>, which is concatenated with language tokens and proprioceptive tokens before entering the backbone transformer.
+      </p>
+    </div>
+
+    <h3>Language Conditioning</h3>
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>Instruction Tokenization</h4>
+        <span class="shapes">Text &rarr; [T, D]</span>
+      </div>
+      <p>
+        Natural language instructions are tokenized using Gemini 2.0's standard text tokenizer and embedded into the same <span class="tensor">D</span>-dimensional space as visual tokens. The unified token space means the model attends jointly over visual and language tokens, enabling fine-grained cross-modal reasoning &mdash; for example, grounding the phrase "the red cup near the edge" to specific visual features.
+      </p>
+    </div>
+
+    <h3>Proprioceptive Input</h3>
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Robot State Encoding</h4>
+        <span class="shapes">[joint_positions, gripper_state] &rarr; [P, D]</span>
+      </div>
+      <p>
+        The robot's proprioceptive state &mdash; joint angles, joint velocities, gripper opening width, and optionally force/torque readings &mdash; is projected into the token embedding space via a small MLP. These proprioceptive tokens are appended to the visual and language tokens, giving the backbone full context about the robot's current physical configuration.
+      </p>
+      <p>
+        Proprioceptive input is critical for closed-loop control: without knowing where its joints currently are, the model cannot produce accurate delta actions to reach a target pose.
+      </p>
+    </div>
+
+    <h3>Action Decoder</h3>
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>On-Robot Action Chunk Decoder</h4>
+        <span class="shapes">Action tokens + Proprioception &rarr; [H, 7] or [H, 14]</span>
+      </div>
+      <p>
+        The on-robot decoder is a lightweight transformer (a few layers, small hidden dimension) that takes the compressed action tokens from the cloud and the current proprioceptive state, and outputs an action chunk: a sequence of <span class="tensor">H</span> future actions. Each action is a 7-dimensional vector for single-arm control (dx, dy, dz, droll, dpitch, dyaw, gripper) or 14-dimensional for bimanual control.
+      </p>
+      <p>
+        The decoder is trained jointly with the backbone. During training, the action tokens serve as an information bottleneck: the backbone must compress all action-relevant information into a fixed number of tokens, and the decoder must reconstruct precise actions from this compressed representation plus real-time proprioception.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 10: Action Chunking -->
+  <section>
+    <h2>10 &mdash; Action Chunking and Temporal Smoothing</h2>
+
+    <p>
+      Action chunking is a key design choice that addresses multiple challenges simultaneously. Instead of predicting a single action per observation, the model predicts a chunk of <span class="tensor">H</span> consecutive actions (typically H = 10, corresponding to 200ms at 50 Hz).
+    </p>
+
+    <h3>Benefits of Action Chunking</h3>
+
+    <p>
+      <span class="step-num blue">1</span> <strong>Latency hiding:</strong> While the robot executes the current chunk, the cloud computes the next one. As long as the chunk duration exceeds the network round-trip time, the robot never stalls waiting for actions.
+    </p>
+
+    <p>
+      <span class="step-num green">2</span> <strong>Temporal coherence:</strong> Predicting multiple future actions encourages the model to plan smooth trajectories rather than making greedy single-step decisions. This is especially important for dynamic motions like pouring or folding.
+    </p>
+
+    <p>
+      <span class="step-num purple">3</span> <strong>Richer training signal:</strong> Each training example provides <span class="tensor">H</span> action labels instead of one, giving the model more supervision per forward pass and improving sample efficiency.
+    </p>
+
+    <p>
+      <span class="step-num amber">4</span> <strong>Implicit planning:</strong> To predict the next 10 actions accurately, the model must internally plan a short-horizon strategy, not just react to the current frame. This implicit planning improves performance on tasks requiring multi-step manipulation sequences.
+    </p>
+
+    <div class="callout-blue callout">
+      <strong>Chunk overlap:</strong> At inference time, the robot does not wait for a chunk to finish before requesting the next one. Chunks are requested at a higher frequency than their duration, and overlapping predictions are blended using exponential weighting (recent predictions weighted more heavily). This ensures smooth transitions and allows the model to correct for deviations from the predicted trajectory.
+    </div>
+  </section>
+
+  <!-- Section 11: Comparison with Prior Work -->
+  <section>
+    <h2>11 &mdash; Comparison with Prior Work</h2>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Gemini Robotics</th>
+          <th>&pi;<sub>0</sub></th>
+          <th>RT-2</th>
+          <th>OpenVLA</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Base model scale</td>
+          <td>Gemini 2.0 (frontier)</td>
+          <td>PaliGemma 3B</td>
+          <td>PaLM-E 55B</td>
+          <td>Llama-2 7B</td>
+        </tr>
+        <tr>
+          <td>Action output</td>
+          <td>Continuous (chunk)</td>
+          <td>Continuous (flow matching)</td>
+          <td>Discrete tokens</td>
+          <td>Discrete tokens</td>
+        </tr>
+        <tr>
+          <td>Control frequency</td>
+          <td>50 Hz</td>
+          <td>50 Hz</td>
+          <td>3 Hz</td>
+          <td>5 Hz</td>
+        </tr>
+        <tr>
+          <td>Bimanual support</td>
+          <td>Native (14-DoF)</td>
+          <td>Native (14-DoF)</td>
+          <td>Single arm</td>
+          <td>Single arm</td>
+        </tr>
+        <tr>
+          <td>Cloud-edge split</td>
+          <td>Yes</td>
+          <td>No (on-device)</td>
+          <td>Cloud only</td>
+          <td>On-device</td>
+        </tr>
+        <tr>
+          <td>Spatial reasoning</td>
+          <td>ER variant (3D)</td>
+          <td>Limited</td>
+          <td>2D only</td>
+          <td>2D only</td>
+        </tr>
+        <tr>
+          <td>Navigation variant</td>
+          <td>Yes (Nav)</td>
+          <td>No</td>
+          <td>No</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td>Cross-embodiment</td>
+          <td>4+ platforms</td>
+          <td>5+ platforms</td>
+          <td>1 platform</td>
+          <td>Multiple (Open X)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Key differentiator:</strong> Gemini Robotics is the first system to combine frontier-scale VLM reasoning with real-time continuous action generation via a cloud-edge split. Prior cloud-based systems (RT-2) ran at only 3 Hz with discrete actions. Prior on-device systems (&pi;<sub>0</sub>, OpenVLA) sacrifice model scale for on-board inference. Gemini Robotics gets both: frontier reasoning and real-time control.
+    </div>
+  </section>
+
+  <!-- Section 12: Practical Implications -->
+  <section>
+    <h2>12 &mdash; Practical Implications</h2>
+
+    <h3>For Robotics Researchers</h3>
+    <p>
+      The Gemini Robotics approach validates the hypothesis that scaling up the perception-reasoning backbone &mdash; even if it requires cloud inference &mdash; can substantially improve manipulation performance. This shifts the bottleneck from model capability to data collection: with a powerful enough backbone, the marginal value of each demonstration increases dramatically. Researchers should consider whether their task requires <em>more model</em> or <em>more data</em>.
+    </p>
+
+    <h3>For System Designers</h3>
+    <p>
+      The cloud-edge split is an architectural pattern that will likely become standard. Key considerations for deployment include network reliability (what happens during a connectivity dropout?), privacy (camera images are sent to the cloud), and latency variability. The action chunking mechanism provides a natural buffer against transient latency spikes, but sustained connectivity loss requires a graceful fallback &mdash; such as a simpler on-device policy that takes over during outages.
+    </p>
+
+    <h3>For the Field</h3>
+    <p>
+      Gemini Robotics represents a consolidation of the robotics model landscape around the VLA paradigm. Rather than separate models for perception, planning, and control, a single pre-trained backbone (with specialized heads) handles the full stack. This mirrors the consolidation that occurred in NLP (from pipelines of specialized models to unified transformers) and suggests that the future of robot learning is foundation model adaptation, not task-specific policy training.
+    </p>
+
+    <div class="callout-green callout">
+      <strong>The foundation model thesis for robotics:</strong> Pre-train on internet-scale multimodal data to learn world knowledge and physical intuition. Fine-tune on robot demonstrations to learn the action output format and embodiment-specific strategies. Adapt to new tasks and platforms with minimal additional data. Gemini Robotics is the strongest evidence yet that this thesis holds.
+    </div>
+  </section>
+
+  <!-- Section 13: Limitations -->
+  <section>
+    <h2>13 &mdash; Limitations and Open Questions</h2>
+
+    <p>
+      Despite impressive results, several important limitations remain:
+    </p>
+
+    <p>
+      <strong>Cloud dependency.</strong> The reliance on cloud inference for the backbone means the system requires reliable, low-latency network connectivity. This limits deployment in environments with poor connectivity (outdoor field robots, disaster response scenarios, remote facilities). While action chunking buffers against short latency spikes, sustained connectivity loss would halt the robot.
+    </p>
+
+    <p>
+      <strong>Demonstration data bottleneck.</strong> The system is trained on human teleoperation data, which is expensive to collect at scale. While the pre-trained backbone provides strong priors, each new embodiment or task domain still requires a non-trivial amount of demonstration data for fine-tuning. Scaling the data collection pipeline remains a challenge.
+    </p>
+
+    <p>
+      <strong>Long-horizon compounding errors.</strong> On the longest tasks (>5 minutes, >100 sub-skills), success rates drop significantly. Small errors compound over time, and the model lacks an explicit mechanism for detecting and recovering from failures mid-task. Integrating explicit error detection and re-planning remains an open problem.
+    </p>
+
+    <p>
+      <strong>Sim-to-real gap.</strong> The paper focuses on real-world evaluation, but the training pipeline does not heavily leverage simulation. Incorporating simulated data (with domain randomization) could potentially reduce the need for expensive real-world demonstrations, but bridging the sim-to-real gap for dexterous manipulation remains challenging.
+    </p>
+
+    <div class="callout-blue callout">
+      <strong>Open question:</strong> As on-device compute improves (custom ASIC accelerators, model distillation), will the cloud-edge split remain necessary? Or will future models run entirely on-robot? The answer likely depends on how quickly model compression techniques can close the gap between frontier-scale and edge-deployable models.
+    </div>
+  </section>
+
+  <!-- Section 14: Key Takeaways -->
+  <section>
+    <h2>14 &mdash; Key Takeaways</h2>
+
+    <div class="model-section">
+      <h3>Summary</h3>
+
+      <p>
+        <span class="step-num blue">1</span> <strong>Foundation model approach to robotics works.</strong> Building on Gemini 2.0's internet-scale pre-training, Gemini Robotics achieves state-of-the-art manipulation performance with substantially less robot-specific training data than prior approaches. The pre-trained backbone provides world knowledge, spatial understanding, and physical intuition that transfers directly to robotic tasks.
+      </p>
+
+      <p>
+        <span class="step-num green">2</span> <strong>Cloud-edge architecture enables frontier-scale real-time control.</strong> By splitting computation between a cloud backbone (reasoning) and an on-robot decoder (action execution), the system achieves both the reasoning depth of a frontier VLM and the 50 Hz control frequency that dexterous manipulation demands.
+      </p>
+
+      <p>
+        <span class="step-num purple">3</span> <strong>A family of models covers the full robotics stack.</strong> Robotics-ER for spatial reasoning, Robotics for manipulation, and Robotics-Nav for navigation can be composed to build complete autonomous systems. This modular-yet-unified approach is more practical than a single monolithic model.
+      </p>
+
+      <p>
+        <span class="step-num amber">4</span> <strong>Cross-embodiment generalization is real.</strong> Adapting to new robot platforms (including humanoids) via lightweight adapter fine-tuning demonstrates that the backbone learns embodiment-agnostic manipulation strategies. This is a critical step toward truly general-purpose robot foundation models.
+      </p>
+
+      <p>
+        <span class="step-num red">5</span> <strong>Action chunking is more than an engineering trick.</strong> It simultaneously solves latency hiding, temporal smoothing, richer training signals, and implicit planning. It is likely to become a standard component of future VLA architectures.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 15: References -->
+  <section>
+    <h2>15 &mdash; References</h2>
+    <p>Google DeepMind. (2025). <a href="https://arxiv.org/abs/2503.20020">Gemini Robotics: Bringing AI into the Physical World</a>. arXiv:2503.20020.</p>
+    <p>Brohan, A., et al. (2023). RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control. arXiv:2307.15818.</p>
+    <p>Black, K., et al. (2024). <a href="https://arxiv.org/abs/2410.24164">&pi;<sub>0</sub>: A Vision-Language-Action Flow Model for General Robot Control</a>. arXiv:2410.24164.</p>
+    <p>Kim, M.J., et al. (2024). <a href="https://arxiv.org/abs/2406.09246">OpenVLA: An Open-Source Vision-Language-Action Model</a>. arXiv:2406.09246.</p>
+    <p>Chi, C., et al. (2024). Diffusion Policy: Visuomotor Policy Learning via Action Diffusion. RSS 2024.</p>
+    <p>Zhao, T.Z., et al. (2023). Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware. RSS 2023.</p>
+    <p>Driess, D., et al. (2023). PaLM-E: An Embodied Multimodal Language Model. ICML 2023.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve B. Schmidt
+</footer>
+
+</body>
+</html>
