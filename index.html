@@ -60,6 +60,23 @@
       margin-bottom: 3rem;
       padding-bottom: 2rem;
       border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+    .hero-text {
+      flex: 1;
+    }
+    .hero-photo {
+      flex-shrink: 0;
+    }
+    .hero-photo img {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--border);
     }
     .hero h1 {
       font-size: 2.2rem;
@@ -191,7 +208,7 @@
   <a href="index.html">Home</a>
   <a href="academia.html">Walkthroughs</a>
   <a href="steveschmidtdir.pdf">Resume</a>
-  <a href="https://github.com/stvschmdt">GitHub</a>
+  <a href="https://www.barflytrading.com">Trading</a>
   <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
   <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
 </nav>
@@ -199,9 +216,14 @@
 <main>
 
   <section class="hero">
-    <h1>Steve Schmidt</h1>
-    <div class="subtitle">Applied Mathematician</div>
-    <div class="contact">steveschmidt at uchicago dot edu</div>
+    <div class="hero-text">
+      <h1>Steve Schmidt</h1>
+      <div class="subtitle">Applied Mathematician</div>
+      <div class="contact">steveschmidt at uchicago dot edu</div>
+    </div>
+    <div class="hero-photo">
+      <img src="ss_headshot.jpg" alt="Steve Schmidt">
+    </div>
   </section>
 
   <section>
@@ -244,6 +266,10 @@
     <p>Adjunct Professor at Northeastern University's Khoury College of Computer Sciences, where I teach graduate-level Applied Deep Learning and Machine Learning.</p>
   </section>
 
+  <section>
+    <h2>Financial Markets Research Platform</h2>
+    <p>Visit <a href="https://www.barflytrading.com">www.barflytrading.com</a> — a quantitative research platform for financial markets analysis, strategy development, and systematic trading.</p>
+  </section>
 
   <section>
     <h2>Reinforcement Learning</h2>
@@ -302,7 +328,7 @@
 </main>
 
 <footer>
-  &copy; 2025 Steve B. Schmidt
+  &copy; 2025 Steve Schmidt
 </footer>
 
 </body>
