@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applied Transformers: Encoder-Only — Steve Schmidt</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0.75rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; }
+    .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #8b5cf6; }
+    .callout-purple strong { color: #7c3aed; }
+    .callout-rose { background: #fff1f2; border-left-color: #f43f5e; }
+    .callout-rose strong { color: #e11d48; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.encode { border-left-color: #3b82f6; }
+    .layer-card.pretrain { border-left-color: #8b5cf6; }
+    .layer-card.task { border-left-color: #f59e0b; }
+    .layer-card.warn { border-left-color: #f43f5e; }
+    .layer-card.use-case { border-left-color: #22c55e; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+    .layer-card ul { font-size: 0.92rem; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .layer-card li { margin-bottom: 0.4rem; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .summary-table td:first-child { font-weight: 600; font-size: 0.82rem; }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.purple { background: #8b5cf6; }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.amber { background: #f59e0b; }
+    .step-num.green { background: #22c55e; }
+    .step-num.rose { background: #f43f5e; }
+    .paper-ref { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-size: 0.88rem; }
+    .paper-ref .paper-title { font-weight: 700; }
+    .paper-ref .paper-meta { color: var(--muted); font-size: 0.82rem; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="https://www.barflytrading.com">Trading</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; Walkthroughs</a> &middot; Applied Transformers</div>
+    <h1>Encoder-Only Transformers</h1>
+    <div class="subtitle">BERT, DeBERTa &amp; Bidirectional Understanding</div>
+    <p>Encoder-only transformers see the <strong>entire input at once</strong> &mdash; every token attends to every other token bidirectionally. This makes them the natural choice when you need to <em>understand</em> text rather than <em>generate</em> it. Classification, named entity recognition, semantic similarity, retrieval, and embeddings are their home turf.</p>
+  </section>
+
+  <!-- ─── WHEN TO USE ─── -->
+  <section>
+    <h2>When to Use Encoder-Only</h2>
+
+    <div class="callout callout-blue">
+      <strong>The core insight:</strong> Bidirectional attention means each token sees the full context &mdash; both left and right. This is ideal when the task is <em>understanding</em> a complete input, not generating text token by token. If your output is a label, a span, or an embedding &mdash; not a sentence &mdash; start here.
+    </div>
+
+    <div class="layer-card encode">
+      <div class="layer-header">
+        <h4>Text Classification</h4>
+      </div>
+      <p>Sentiment analysis, spam detection, topic labeling, intent classification. The [CLS] token pools the full sequence into a single vector; a linear head maps it to class probabilities. Fine-tuning BERT on 1K&ndash;10K labeled examples often beats prompting a 70B LLM.</p>
+    </div>
+
+    <div class="layer-card encode">
+      <div class="layer-header">
+        <h4>Named Entity Recognition &amp; Token-Level Tasks</h4>
+      </div>
+      <p>NER, POS tagging, slot filling. Each output token gets its own classification head. Bidirectional context is critical &mdash; recognizing "Apple" as ORG vs. FOOD depends on what comes <em>after</em> it, not just before.</p>
+    </div>
+
+    <div class="layer-card encode">
+      <div class="layer-header">
+        <h4>Semantic Similarity &amp; Sentence Pairs</h4>
+      </div>
+      <p>Natural language inference (NLI), semantic textual similarity (STS), duplicate detection, paraphrase identification. Encode two sentences with [SEP] separator, or use Sentence-BERT's siamese architecture for fast comparison.</p>
+    </div>
+
+    <div class="layer-card encode">
+      <div class="layer-header">
+        <h4>Retrieval &amp; Ranking</h4>
+      </div>
+      <p>Encode queries and documents into dense vectors. Retrieve via approximate nearest neighbors. Cross-encoder (encode query+doc together) for reranking. Bi-encoder (encode separately) for first-stage retrieval at scale.</p>
+    </div>
+
+    <div class="layer-card encode">
+      <div class="layer-header">
+        <h4>Feature Extraction &amp; Embeddings</h4>
+      </div>
+      <p>Use the encoder as a feature extractor for downstream ML pipelines. Pool the final hidden states into fixed-size vectors. Feed into XGBoost, logistic regression, or clustering. Often the fastest path to a production system.</p>
+    </div>
+  </section>
+
+  <!-- ─── DATA GUIDANCE ─── -->
+  <section>
+    <h2>What to Look for in Your Data</h2>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Labeled vs. Unlabeled Data</h4>
+      </div>
+      <ul>
+        <li><strong>Unlabeled text</strong>: Pretrain (or use an existing pretrained model). BERT was pretrained on 3.3B words from BooksCorpus + English Wikipedia.</li>
+        <li><strong>Labeled data for fine-tuning</strong>: Encoder models are remarkably sample-efficient. BERT fine-tunes effectively on as few as <strong>1K&ndash;10K labeled examples</strong>. Compare this to decoder-only models that often need 50K+ for instruction tuning.</li>
+        <li><strong>Rule of thumb</strong>: If you have &lt;50K labeled examples and the task is classification or extraction, encoder-only will almost certainly outperform a prompted LLM at lower cost.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Task Type: Sequence-Level vs. Token-Level</h4>
+      </div>
+      <ul>
+        <li><strong>Sequence-level</strong> (classification, sentiment, NLI): Use the [CLS] token representation. One label per input.</li>
+        <li><strong>Token-level</strong> (NER, POS tagging, slot filling): Use per-token representations. One label per token. Requires token-aligned labels &mdash; be careful with subword tokenization splitting entities.</li>
+        <li><strong>Span extraction</strong> (question answering, extractive summarization): Predict start and end positions in the input. SQuAD-style &mdash; the answer must be a contiguous span.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Single Input vs. Sentence Pairs</h4>
+      </div>
+      <ul>
+        <li><strong>Single sentence</strong>: Classification, NER. Format: <span class="tensor">[CLS] tokens [SEP]</span></li>
+        <li><strong>Sentence pairs</strong>: NLI, STS, duplicate detection, reranking. Format: <span class="tensor">[CLS] sent_A [SEP] sent_B [SEP]</span>. Segment embeddings distinguish which sentence each token belongs to.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Domain Specificity</h4>
+      </div>
+      <p>If your text is outside the general web domain, consider domain-adapted models:</p>
+      <ul>
+        <li><strong>SciBERT</strong> &mdash; Scientific papers (Semantic Scholar corpus)</li>
+        <li><strong>BioBERT / PubMedBERT</strong> &mdash; Biomedical literature</li>
+        <li><strong>FinBERT</strong> &mdash; Financial text (SEC filings, earnings calls)</li>
+        <li><strong>LegalBERT</strong> &mdash; Legal documents and contracts</li>
+        <li><strong>CodeBERT</strong> &mdash; Source code and documentation</li>
+      </ul>
+      <p>Domain pretraining typically adds 2&ndash;5% accuracy on in-domain tasks compared to general BERT.</p>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Sequence Length</h4>
+      </div>
+      <ul>
+        <li><strong>BERT/RoBERTa</strong>: 512 tokens max. Fine for most sentences and short documents.</li>
+        <li><strong>Longformer / BigBird</strong>: 4,096 tokens with sparse attention. For long documents.</li>
+        <li><strong>ModernBERT</strong>: 8,192 tokens with Flash Attention. The modern default.</li>
+        <li>If your inputs regularly exceed 512 tokens, use a long-context model or truncation strategy (head-only, tail-only, or head+tail).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── ARCHITECTURE ─── -->
+  <section>
+    <h2>Architecture</h2>
+
+    <div class="callout">
+      <strong>Key distinction from decoders:</strong> No causal mask. Every token attends to every other token. The attention matrix is fully dense, not triangular. This is what gives encoders their understanding power &mdash; and why they can't generate text autoregressively.
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="360" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1917">Encoder-Only Architecture (BERT)</text>
+
+        <!-- Input tokens -->
+        <rect x="40" y="40" width="55" height="28" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="67" y="58" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">[CLS]</text>
+        <rect x="105" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="132" y="58" text-anchor="middle" font-size="9" fill="#57534e">The</text>
+        <rect x="170" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="197" y="58" text-anchor="middle" font-size="9" fill="#57534e">cat</text>
+        <rect x="235" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="262" y="58" text-anchor="middle" font-size="9" fill="#57534e">sat</text>
+        <rect x="300" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="327" y="58" text-anchor="middle" font-size="9" fill="#57534e">on</text>
+        <rect x="365" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="392" y="58" text-anchor="middle" font-size="9" fill="#57534e">the</text>
+        <rect x="430" y="40" width="55" height="28" rx="4" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="457" y="58" text-anchor="middle" font-size="9" fill="#7c3aed">[MASK]</text>
+        <rect x="495" y="40" width="55" height="28" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="522" y="58" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">[SEP]</text>
+
+        <!-- Embedding layer -->
+        <rect x="40" y="90" width="510" height="44" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="295" y="108" text-anchor="middle" font-size="11" fill="#7c3aed">Embedding Layer</text>
+        <text x="295" y="124" text-anchor="middle" font-size="9" fill="#a78bfa">Token Embedding + Segment Embedding + Position Embedding (summed)</text>
+
+        <!-- Arrow -->
+        <line x1="295" y1="134" x2="295" y2="155" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrE)"/>
+
+        <!-- Bidirectional Self-Attention -->
+        <rect x="40" y="155" width="510" height="100" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+        <text x="295" y="175" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">Bidirectional Multi-Head Self-Attention</text>
+
+        <!-- Attention grid visualization -->
+        <g transform="translate(140, 185)">
+          <!-- Grid cells - showing full bidirectional attention -->
+          <rect x="0" y="0" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="20" y="0" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="40" y="0" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="60" y="0" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="80" y="0" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="100" y="0" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+
+          <rect x="0" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="20" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="40" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="60" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="80" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="100" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+
+          <rect x="0" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="20" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="40" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="60" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="80" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="100" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+
+          <!-- Label -->
+          <text x="170" y="14" font-size="9" fill="#57534e">Every token attends</text>
+          <text x="170" y="26" font-size="9" fill="#57534e">to every other token</text>
+          <text x="170" y="44" font-size="9" font-weight="600" fill="#2563eb">Fully bidirectional</text>
+          <text x="170" y="56" font-size="9" fill="#57534e">(no causal mask)</text>
+        </g>
+
+        <!-- Arrow -->
+        <line x1="295" y1="255" x2="295" y2="275" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrE)"/>
+
+        <!-- Feed-Forward -->
+        <rect x="40" y="275" width="510" height="40" rx="6" fill="#f5f5f4" stroke="#d6d3d1" stroke-width="1.5"/>
+        <text x="295" y="295" text-anchor="middle" font-size="11" fill="#57534e">Feed-Forward Network (GELU activation)</text>
+        <text x="295" y="308" text-anchor="middle" font-size="9" fill="#78716c">+ LayerNorm + Residual Connection</text>
+
+        <!-- Repeat bracket -->
+        <text x="590" y="230" font-size="10" fill="#57534e">&times; 12</text>
+        <text x="590" y="242" font-size="9" fill="#78716c">layers</text>
+        <rect x="580" y="155" width="2" height="160" fill="#d6d3d1" rx="1"/>
+
+        <!-- Arrow to outputs -->
+        <line x1="295" y1="315" x2="295" y2="340" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrE)"/>
+
+        <!-- Output split -->
+        <!-- CLS output -->
+        <rect x="40" y="345" width="220" height="50" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="150" y="366" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309">[CLS] Pooled Output</text>
+        <text x="150" y="384" text-anchor="middle" font-size="9" fill="#d97706">Sequence classification head</text>
+
+        <!-- Per-token output -->
+        <rect x="290" y="345" width="260" height="50" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="420" y="366" text-anchor="middle" font-size="11" font-weight="600" fill="#16a34a">Per-Token Outputs</text>
+        <text x="420" y="384" text-anchor="middle" font-size="9" fill="#4ade80">NER / token classification head</text>
+
+        <!-- Output labels -->
+        <rect x="60" y="420" width="180" height="30" rx="4" fill="#fffbeb" stroke="#d97706"/>
+        <text x="150" y="440" text-anchor="middle" font-size="10" fill="#b45309">Positive / Negative / Neutral</text>
+
+        <rect x="310" y="420" width="60" height="30" rx="4" fill="#f0fdf4" stroke="#22c55e"/>
+        <text x="340" y="440" text-anchor="middle" font-size="9" fill="#16a34a">O</text>
+        <rect x="375" y="420" width="60" height="30" rx="4" fill="#f0fdf4" stroke="#22c55e"/>
+        <text x="405" y="440" text-anchor="middle" font-size="9" fill="#16a34a">B-PER</text>
+        <rect x="440" y="420" width="60" height="30" rx="4" fill="#f0fdf4" stroke="#22c55e"/>
+        <text x="470" y="440" text-anchor="middle" font-size="9" fill="#16a34a">I-PER</text>
+
+        <line x1="150" y1="395" x2="150" y2="420" stroke="#d97706" stroke-width="1" marker-end="url(#arrE)"/>
+        <line x1="420" y1="395" x2="420" y2="420" stroke="#22c55e" stroke-width="1" marker-end="url(#arrE)"/>
+
+        <!-- Shapes annotation -->
+        <text x="295" y="485" text-anchor="middle" font-size="9" fill="#78716c">BERT-Base: 12 layers, 768 hidden, 12 heads, 110M params</text>
+        <text x="295" y="500" text-anchor="middle" font-size="9" fill="#78716c">BERT-Large: 24 layers, 1024 hidden, 16 heads, 340M params</text>
+
+        <defs>
+          <marker id="arrE" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a8a29e" stroke-width="1"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ─── PRETRAINING OBJECTIVES ─── -->
+  <section>
+    <h2>Pretraining Objectives</h2>
+
+    <p>Encoder-only models learn representations through self-supervised objectives on unlabeled text. The choice of pretraining objective has a massive impact on downstream performance.</p>
+
+    <div class="layer-card pretrain">
+      <div class="layer-header">
+        <h4><span class="step-num purple">1</span> Masked Language Modeling (MLM)</h4>
+        <div class="shapes">BERT, RoBERTa, DeBERTa</div>
+      </div>
+      <p>Randomly mask 15% of input tokens. The model predicts the original token at each masked position using bidirectional context. This forces the encoder to build rich contextual representations.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Input -->
+          <text x="30" y="20" font-size="10" font-weight="600" fill="#57534e">Input:</text>
+          <rect x="80" y="6" width="50" height="24" rx="3" fill="#f5f5f4" stroke="#d6d3d1"/>
+          <text x="105" y="22" text-anchor="middle" font-size="9" fill="#57534e">The</text>
+          <rect x="135" y="6" width="50" height="24" rx="3" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="160" y="22" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">[MASK]</text>
+          <rect x="190" y="6" width="50" height="24" rx="3" fill="#f5f5f4" stroke="#d6d3d1"/>
+          <text x="215" y="22" text-anchor="middle" font-size="9" fill="#57534e">sat</text>
+          <rect x="245" y="6" width="50" height="24" rx="3" fill="#f5f5f4" stroke="#d6d3d1"/>
+          <text x="270" y="22" text-anchor="middle" font-size="9" fill="#57534e">on</text>
+          <rect x="300" y="6" width="50" height="24" rx="3" fill="#f5f5f4" stroke="#d6d3d1"/>
+          <text x="325" y="22" text-anchor="middle" font-size="9" fill="#57534e">the</text>
+          <rect x="355" y="6" width="50" height="24" rx="3" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="380" y="22" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">[MASK]</text>
+
+          <!-- Arrow -->
+          <text x="440" y="22" font-size="14" fill="#a8a29e">&rarr;</text>
+
+          <!-- Predictions -->
+          <text x="30" y="70" font-size="10" font-weight="600" fill="#57534e">Predict:</text>
+          <rect x="135" y="56" width="50" height="24" rx="3" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="160" y="72" text-anchor="middle" font-size="9" font-weight="600" fill="#16a34a">cat</text>
+          <rect x="355" y="56" width="50" height="24" rx="3" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="380" y="72" text-anchor="middle" font-size="9" font-weight="600" fill="#16a34a">mat</text>
+
+          <!-- Probability -->
+          <text x="460" y="72" font-size="9" fill="#78716c">P(cat|context) &middot; P(mat|context)</text>
+        </svg>
+      </div>
+      <p>The 15% masking budget uses: 80% [MASK] token, 10% random token, 10% original token &mdash; to prevent the model from learning that [MASK] is always the prediction target.</p>
+    </div>
+
+    <div class="layer-card pretrain">
+      <div class="layer-header">
+        <h4><span class="step-num purple">2</span> Next Sentence Prediction (NSP)</h4>
+        <div class="shapes">BERT only</div>
+      </div>
+      <p>Given two sentences, predict whether sentence B actually follows sentence A in the original text. 50% real pairs, 50% random pairs. BERT used this to learn sentence-level relationships.</p>
+      <p><strong>The verdict:</strong> RoBERTa showed that removing NSP and training with longer sequences and more data <em>improves</em> performance. NSP is now considered unnecessary &mdash; MLM alone is sufficient when trained properly.</p>
+    </div>
+
+    <div class="layer-card pretrain">
+      <div class="layer-header">
+        <h4><span class="step-num purple">3</span> Replaced Token Detection (RTD)</h4>
+        <div class="shapes">ELECTRA</div>
+      </div>
+      <p>Instead of masking, a small generator network replaces tokens with plausible alternatives. The encoder (discriminator) must detect which tokens were replaced. <strong>Every token gets a training signal</strong>, not just the 15% that are masked &mdash; making ELECTRA 4&times; more sample-efficient than BERT.</p>
+      <ul>
+        <li><strong>Generator</strong>: Small masked LM that produces replacement tokens</li>
+        <li><strong>Discriminator</strong>: The encoder being trained &mdash; binary classification at each position (original vs. replaced)</li>
+        <li>At fine-tuning time, discard the generator, use only the discriminator</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── KEY MODELS ─── -->
+  <section>
+    <h2>Key Models</h2>
+
+    <div class="paper-ref">
+      <div class="paper-title">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</div>
+      <div class="paper-meta">Devlin et al., Google 2018 &middot; MLM + NSP &middot; 110M/340M params &middot; 512 token context &middot; The paper that started it all</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">RoBERTa: A Robustly Optimized BERT Pretraining Approach</div>
+      <div class="paper-meta">Liu et al., Meta 2019 &middot; No NSP, dynamic masking, larger batches, 160GB text &middot; Same architecture, better training recipe</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">DeBERTa: Decoding-enhanced BERT with Disentangled Attention</div>
+      <div class="paper-meta">He et al., Microsoft 2020 &middot; Disentangled attention (separate content &amp; position vectors) &middot; Enhanced mask decoder &middot; Surpassed human on SuperGLUE</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">ELECTRA: Pre-training Text Encoders as Discriminators Rather Than Generators</div>
+      <div class="paper-meta">Clark et al., Google/Stanford 2020 &middot; Replaced token detection &middot; 4&times; more sample-efficient &middot; ELECTRA-Small matches GPT-Large</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks</div>
+      <div class="paper-meta">Reimers &amp; Gurevych, 2019 &middot; Siamese/triplet architecture &middot; Cosine similarity for sentence comparison &middot; 5000&times; faster than cross-encoder</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">ModernBERT: Smarter, Better, Faster, Longer</div>
+      <div class="paper-meta">Warner et al., 2024 &middot; RoPE + Flash Attention + GeGLU + 8192 context &middot; Alternating local/global attention &middot; Modern BERT for the 2020s</div>
+    </div>
+
+    <h3>Model Comparison</h3>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Pretraining</th>
+          <th>Key Innovation</th>
+          <th>Context</th>
+          <th>Params</th>
+          <th>Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>BERT</td>
+          <td>MLM + NSP</td>
+          <td>Bidirectional pretraining</td>
+          <td>512</td>
+          <td>110M/340M</td>
+          <td>Baseline, fine-tuning</td>
+        </tr>
+        <tr>
+          <td>RoBERTa</td>
+          <td>MLM only</td>
+          <td>Better training recipe</td>
+          <td>512</td>
+          <td>125M/355M</td>
+          <td>General NLU tasks</td>
+        </tr>
+        <tr>
+          <td>DeBERTa</td>
+          <td>MLM</td>
+          <td>Disentangled attention</td>
+          <td>512</td>
+          <td>140M/400M</td>
+          <td>Highest accuracy</td>
+        </tr>
+        <tr>
+          <td>ELECTRA</td>
+          <td>RTD</td>
+          <td>All-token training signal</td>
+          <td>512</td>
+          <td>14M/335M</td>
+          <td>Low-compute training</td>
+        </tr>
+        <tr>
+          <td>ModernBERT</td>
+          <td>MLM</td>
+          <td>RoPE, Flash Attn, GeGLU</td>
+          <td>8192</td>
+          <td>150M/395M</td>
+          <td>Long docs, modern stack</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─── WHEN NOT TO USE ─── -->
+  <section>
+    <h2>When NOT to Use Encoder-Only</h2>
+
+    <div class="callout callout-rose">
+      <strong>Encoder-only models cannot generate text.</strong> They produce representations, not sequences. If your task requires producing new text, you need a decoder.
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>Text Generation</h4>
+      </div>
+      <p>Chatbots, content creation, code generation, summarization (abstractive), translation. These require autoregressive decoding &mdash; use decoder-only (GPT, LLaMA) or encoder-decoder (T5, BART).</p>
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>Long-Form Reasoning &amp; Chain-of-Thought</h4>
+      </div>
+      <p>Multi-step mathematical reasoning, complex instruction following, planning. Decoder-only models excel here because they can "think out loud" token by token. Encoders produce fixed-size representations that can't expand.</p>
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>Sequence-to-Sequence Tasks</h4>
+      </div>
+      <p>Translation, abstractive summarization, data-to-text. These need both an encoder (understand input) and a decoder (generate output). Use T5, BART, or mBART.</p>
+    </div>
+  </section>
+
+  <!-- ─── DECISION FRAMEWORK ─── -->
+  <section>
+    <h2>Decision Framework</h2>
+
+    <div class="callout callout-blue">
+      <strong>The practical test:</strong> If your output is a <em>label</em> (classification), a <em>span</em> (extraction), or a <em>vector</em> (embedding) &mdash; use encoder-only. If your output is <em>text</em> &mdash; use a decoder.
+    </div>
+
+    <div class="layer-card encode">
+      <div class="layer-header">
+        <h4>Choose Encoder-Only If...</h4>
+      </div>
+      <ul>
+        <li>Your task is classification, NER, extraction, similarity, or retrieval</li>
+        <li>You have 1K&ndash;100K labeled examples (sweet spot for fine-tuning)</li>
+        <li>Latency matters &mdash; encoder inference is fast (single forward pass, no autoregressive loop)</li>
+        <li>You need deterministic, reproducible outputs (no sampling variability)</li>
+        <li>Cost matters &mdash; a fine-tuned 110M BERT beats a prompted 70B LLM on many classification tasks at 1/600th the compute</li>
+        <li>Your text is short to medium (&lt;512 tokens, or &lt;8K with ModernBERT)</li>
+        <li>You need embeddings for downstream ML pipelines or vector databases</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── USE CASES ─── -->
+  <section>
+    <h2>Use Cases in Practice</h2>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Sentiment Analysis at Scale</h4>
+        <div class="shapes">Classification</div>
+      </div>
+      <p>E-commerce reviews, social media monitoring, customer feedback. Fine-tune BERT or RoBERTa on 5K&ndash;10K labeled reviews. Single forward pass per review &mdash; process millions per hour on a single GPU. Accuracy typically 92&ndash;95% on binary sentiment, competitive with GPT-4 at a fraction of the cost.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Named Entity Recognition in Medical Records</h4>
+        <div class="shapes">Token Classification</div>
+      </div>
+      <p>Extract drug names, dosages, conditions, procedures from clinical notes. Fine-tune BioBERT or PubMedBERT with BIO tagging. Token-level classification with bidirectional context is critical &mdash; "left" means different things in "patient left the hospital" vs. "pain in left knee."</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Semantic Search with Sentence-BERT</h4>
+        <div class="shapes">Retrieval</div>
+      </div>
+      <p>Encode your document corpus into vectors with Sentence-BERT (or the newer E5/GTE models). Store in a vector database (Pinecone, Weaviate, pgvector). At query time, encode the query and retrieve top-K by cosine similarity. Sub-10ms latency over millions of documents. Powers RAG pipelines.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Document Classification for Compliance</h4>
+        <div class="shapes">Classification</div>
+      </div>
+      <p>Classify legal documents, SEC filings, insurance claims into categories. Fine-tune FinBERT or LegalBERT on domain-specific labels. For documents exceeding 512 tokens, use ModernBERT (8K context) or Longformer. Deterministic outputs are critical for audit trails &mdash; no sampling variance.</p>
+    </div>
+  </section>
+
+  <!-- ─── TRAJECTORY ─── -->
+  <section>
+    <h2>The Trajectory</h2>
+
+    <div class="callout">
+      <strong>Encoder-only isn't dead &mdash; it's specialized.</strong> The LLM wave shifted attention to decoders, but encoders remain the right tool for classification, retrieval, and embedding tasks. ModernBERT (2024) showed there's still room for improvement with modern techniques (RoPE, Flash Attention, longer context). Meanwhile, the embedding model space (E5, GTE, Nomic) continues to advance encoder architectures for retrieval.
+    </div>
+
+    <p>The practical reality: most production NLP systems use encoder-only models for understanding tasks and decoder-only models for generation. A fine-tuned DeBERTa for classification + a vector database with E5 embeddings for retrieval + an LLM for generation covers most enterprise use cases.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve Schmidt
+</footer>
+
+</body>
+</html>
