@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applied Transformers: Decoder-Only — Steve Schmidt</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0.75rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; }
+    .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #8b5cf6; }
+    .callout-purple strong { color: #7c3aed; }
+    .callout-rose { background: #fff1f2; border-left-color: #f43f5e; }
+    .callout-rose strong { color: #e11d48; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.decode { border-left-color: #8b5cf6; }
+    .layer-card.innov { border-left-color: #3b82f6; }
+    .layer-card.train { border-left-color: #f59e0b; }
+    .layer-card.warn { border-left-color: #f43f5e; }
+    .layer-card.use-case { border-left-color: #22c55e; }
+    .layer-card.scale { border-left-color: #6366f1; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+    .layer-card ul { font-size: 0.92rem; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .layer-card li { margin-bottom: 0.4rem; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .summary-table td:first-child { font-weight: 600; font-size: 0.82rem; }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.purple { background: #8b5cf6; }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.amber { background: #f59e0b; }
+    .step-num.green { background: #22c55e; }
+    .step-num.rose { background: #f43f5e; }
+    .paper-ref { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-size: 0.88rem; }
+    .paper-ref .paper-title { font-weight: 700; }
+    .paper-ref .paper-meta { color: var(--muted); font-size: 0.82rem; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="https://www.barflytrading.com">Trading</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; Walkthroughs</a> &middot; Applied Transformers</div>
+    <h1>Decoder-Only Transformers</h1>
+    <div class="subtitle">GPT, LLaMA &amp; Autoregressive Generation</div>
+    <p>Decoder-only transformers predict the next token given all previous tokens &mdash; causal, left-to-right attention. This simple objective, scaled to trillions of tokens, produces models that can generate text, code, reason through multi-step problems, follow complex instructions, and learn new tasks from a few examples in context. This is the architecture behind every modern LLM.</p>
+  </section>
+
+  <!-- ─── WHEN TO USE ─── -->
+  <section>
+    <h2>When to Use Decoder-Only</h2>
+
+    <div class="callout callout-purple">
+      <strong>The core insight:</strong> Next-token prediction is a universal learning objective. A model that can predict what comes next in any text sequence implicitly learns grammar, facts, reasoning, code syntax, math, and even tool use. Causal attention + massive scale = general-purpose intelligence.
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Text Generation</h4>
+      </div>
+      <p>Writing, summarization, translation, creative content. The autoregressive loop generates one token at a time, each conditioned on all previous tokens. Temperature and top-p sampling control creativity vs. determinism.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Code Generation &amp; Completion</h4>
+      </div>
+      <p>Copilot, Cursor, code assistants. Code is sequential and highly structured &mdash; perfect for autoregressive generation. Models trained on code (CodeLlama, StarCoder, DeepSeek-Coder) generate functions, debug errors, and write tests.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Conversational AI &amp; Instruction Following</h4>
+      </div>
+      <p>Chatbots, assistants, customer support. After SFT (supervised fine-tuning) and RLHF/DPO alignment, decoder models follow complex multi-turn instructions, maintain context, and refuse harmful requests.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Reasoning &amp; Chain-of-Thought</h4>
+      </div>
+      <p>Mathematical proofs, logical deduction, planning. Decoder models "think out loud" by generating intermediate reasoning steps before the final answer. This emergent capability appears at scale (&gt;60B parameters) and dramatically improves accuracy on complex tasks.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Few-Shot &amp; Zero-Shot Learning</h4>
+      </div>
+      <p>Solve new tasks from examples in the prompt (few-shot) or from instructions alone (zero-shot). No fine-tuning needed. GPT-3 demonstrated this: include 3&ndash;5 examples in the prompt and the model generalizes. This is <em>in-context learning</em> &mdash; a capability unique to large decoder models.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Structured Output &amp; Tool Use</h4>
+      </div>
+      <p>JSON generation, function calling, API orchestration. Modern LLMs generate structured outputs reliably with constrained decoding or fine-tuning. This enables agents that call tools, query databases, and execute code.</p>
+    </div>
+  </section>
+
+  <!-- ─── DATA GUIDANCE ─── -->
+  <section>
+    <h2>What to Look for in Your Data</h2>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Pretraining Data: Scale Is (Almost) Everything</h4>
+      </div>
+      <ul>
+        <li><strong>GPT-3 (2020):</strong> 300B tokens from Common Crawl, WebText2, Books, Wikipedia</li>
+        <li><strong>LLaMA 1 (2023):</strong> 1.4T tokens &mdash; 4.7&times; more, proving smaller models trained longer beat larger models trained less</li>
+        <li><strong>LLaMA 3 (2024):</strong> 15T tokens &mdash; 10&times; more again, with aggressive data quality filtering</li>
+        <li><strong>The pattern:</strong> Data quantity matters, but data quality matters more. LLaMA 3 spent more effort on deduplication, filtering, and mixing ratios than on architecture changes.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Fine-Tuning Data: Instructions &amp; Preferences</h4>
+      </div>
+      <ul>
+        <li><strong>SFT data</strong>: (instruction, response) pairs. FLAN (1.8M tasks), Alpaca (52K GPT-generated), ShareGPT (user conversations), OpenAssistant</li>
+        <li><strong>Preference data</strong>: (prompt, chosen_response, rejected_response) triples for RLHF/DPO alignment. Critical for safety and helpfulness.</li>
+        <li><strong>Quality over quantity</strong>: LIMA (2023) showed that just 1,000 carefully curated SFT examples can match models trained on 50K+ examples. Data curation matters enormously.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>In-Context Learning vs. Fine-Tuning</h4>
+      </div>
+      <ul>
+        <li><strong>Few-shot prompting</strong>: No training needed. Include 3&ndash;10 examples in the prompt. Works for classification, extraction, formatting. Limited by context window.</li>
+        <li><strong>Fine-tuning</strong>: When you have &gt;1K examples and need consistent, cost-efficient performance. LoRA/QLoRA make fine-tuning accessible on consumer GPUs.</li>
+        <li><strong>Rule of thumb</strong>: Start with prompting. If accuracy is &lt;90% or per-query cost is too high, fine-tune. A fine-tuned 7B model often beats a prompted 70B model on domain-specific tasks.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Task Framing: Everything as Generation</h4>
+      </div>
+      <p>Decoder models cast every task as "generate the next tokens":</p>
+      <ul>
+        <li><strong>Classification</strong>: "Classify this review as positive or negative: {text}\nLabel:" &rarr; generate "positive"</li>
+        <li><strong>NER</strong>: "Extract entities from: {text}\nEntities:" &rarr; generate JSON</li>
+        <li><strong>Translation</strong>: "Translate to French: {text}\n" &rarr; generate French text</li>
+        <li>This works surprisingly well but is less efficient than a fine-tuned encoder for pure classification (a 110M BERT is faster and cheaper than a 7B LLM for sentiment analysis).</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Context Length &amp; Token Efficiency</h4>
+      </div>
+      <ul>
+        <li><strong>Original GPT-2/3</strong>: 1K&ndash;2K token context with absolute positional embeddings</li>
+        <li><strong>LLaMA 2</strong>: 4K context with RoPE (extends to 32K+ with interpolation)</li>
+        <li><strong>LLaMA 3</strong>: 128K context natively</li>
+        <li><strong>Cost scales with context</strong>: Self-attention is O(n&sup2;). A 128K context query costs 1,000&times; more compute than a 4K query. Use only what you need.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── ARCHITECTURE ─── -->
+  <section>
+    <h2>Architecture</h2>
+
+    <div class="callout">
+      <strong>One key difference from encoders:</strong> The causal attention mask. Each token can only attend to tokens that came <em>before</em> it (and itself). This enables autoregressive generation &mdash; at each step, the model has never seen the future.
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="360" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1917">Decoder-Only Architecture (Modern LLM)</text>
+
+        <!-- Input tokens -->
+        <rect x="60" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="87" y="58" text-anchor="middle" font-size="9" fill="#57534e">The</text>
+        <rect x="125" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="152" y="58" text-anchor="middle" font-size="9" fill="#57534e">quick</text>
+        <rect x="190" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="217" y="58" text-anchor="middle" font-size="9" fill="#57534e">brown</text>
+        <rect x="255" y="40" width="55" height="28" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="282" y="58" text-anchor="middle" font-size="9" fill="#57534e">fox</text>
+        <rect x="320" y="40" width="55" height="28" rx="4" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="347" y="58" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">???</text>
+
+        <!-- Embedding -->
+        <rect x="50" y="90" width="390" height="40" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="245" y="108" text-anchor="middle" font-size="11" fill="#7c3aed">Token Embedding + RoPE Position Encoding</text>
+        <text x="245" y="122" text-anchor="middle" font-size="9" fill="#a78bfa">Rotary embeddings applied per attention head (no absolute position)</text>
+
+        <line x1="245" y1="130" x2="245" y2="148" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrD)"/>
+
+        <!-- RMSNorm -->
+        <rect x="120" y="148" width="250" height="26" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="245" y="165" text-anchor="middle" font-size="10" fill="#57534e">RMSNorm (pre-norm)</text>
+
+        <line x1="245" y1="174" x2="245" y2="190" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrD)"/>
+
+        <!-- Causal Self-Attention -->
+        <rect x="50" y="190" width="390" height="120" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+        <text x="245" y="212" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">Causal Multi-Head Self-Attention</text>
+
+        <!-- Causal mask visualization -->
+        <g transform="translate(100, 222)">
+          <!-- Row 1: token 1 sees only itself -->
+          <rect x="0" y="0" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="20" y="0" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <rect x="40" y="0" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <rect x="60" y="0" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <rect x="80" y="0" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <!-- Row 2 -->
+          <rect x="0" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="20" y="20" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="40" y="20" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <rect x="60" y="20" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <rect x="80" y="20" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <!-- Row 3 -->
+          <rect x="0" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="20" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="40" y="40" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="60" y="40" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <rect x="80" y="40" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+          <!-- Row 4 -->
+          <rect x="0" y="60" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="20" y="60" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="40" y="60" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="60" y="60" width="18" height="18" fill="#bfdbfe" stroke="#93c5fd" rx="2"/>
+          <rect x="80" y="60" width="18" height="18" fill="#f5f5f4" stroke="#e7e5e4" rx="2"/>
+
+          <!-- Labels -->
+          <text x="140" y="14" font-size="9" fill="#57534e">Causal mask: lower</text>
+          <text x="140" y="28" font-size="9" fill="#57534e">triangle only</text>
+          <text x="140" y="48" font-size="9" font-weight="600" fill="#2563eb">Blue = can attend</text>
+          <text x="140" y="62" font-size="9" fill="#78716c">Gray = masked (-&infin;)</text>
+          <text x="140" y="80" font-size="9" fill="#57534e">Token 4 sees tokens 1-4</text>
+        </g>
+
+        <!-- Arrow -->
+        <line x1="245" y1="310" x2="245" y2="328" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrD)"/>
+
+        <!-- SwiGLU FFN -->
+        <rect x="50" y="328" width="390" height="50" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="245" y="350" text-anchor="middle" font-size="11" font-weight="600" fill="#16a34a">SwiGLU Feed-Forward Network</text>
+        <text x="245" y="368" text-anchor="middle" font-size="9" fill="#4ade80">FFN(x) = (Swish(xW&#8321;) &odot; xW&#8323;)W&#8322; &mdash; gated activation, no bias terms</text>
+
+        <!-- Repeat bracket -->
+        <text x="480" y="270" font-size="10" fill="#57534e">&times; N layers</text>
+        <text x="480" y="284" font-size="9" fill="#78716c">(32 for 7B)</text>
+        <text x="480" y="298" font-size="9" fill="#78716c">(80 for 70B)</text>
+        <rect x="470" y="148" width="2" height="230" fill="#d6d3d1" rx="1"/>
+
+        <!-- RMSNorm final -->
+        <line x1="245" y1="378" x2="245" y2="396" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrD)"/>
+        <rect x="120" y="396" width="250" height="26" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="245" y="413" text-anchor="middle" font-size="10" fill="#57534e">RMSNorm (final)</text>
+
+        <!-- LM Head -->
+        <line x1="245" y1="422" x2="245" y2="440" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrD)"/>
+        <rect x="80" y="440" width="330" height="44" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="245" y="460" text-anchor="middle" font-size="12" font-weight="600" fill="#b45309">Linear &rarr; Softmax (Vocab Size)</text>
+        <text x="245" y="476" text-anchor="middle" font-size="9" fill="#d97706">P(next_token | previous_tokens) over 32K&ndash;128K vocabulary</text>
+
+        <!-- Output -->
+        <line x1="245" y1="484" x2="245" y2="505" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arrD)"/>
+        <rect x="180" y="505" width="130" height="30" rx="6" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="245" y="525" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">"jumps"</text>
+
+        <!-- Shapes annotation -->
+        <text x="600" y="460" text-anchor="middle" font-size="8" fill="#78716c">LLaMA 2 7B:</text>
+        <text x="600" y="472" text-anchor="middle" font-size="8" fill="#78716c">32 layers, 4096 hidden</text>
+        <text x="600" y="484" text-anchor="middle" font-size="8" fill="#78716c">32 heads, 11,008 FFN</text>
+
+        <defs>
+          <marker id="arrD" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a8a29e" stroke-width="1"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ─── KEY INNOVATIONS ─── -->
+  <section>
+    <h2>Key Architectural Innovations</h2>
+
+    <p>Modern decoder-only models (LLaMA, Mistral, Phi) share a common set of architectural upgrades over the original GPT. These are the building blocks worth understanding.</p>
+
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span> KV Cache</h4>
+        <div class="shapes">Inference optimization</div>
+      </div>
+      <p>During autoregressive generation, the model generates one token at a time. Without KV cache, generating token N requires recomputing attention over all N previous tokens &mdash; O(n&sup2;) total work. With KV cache, we store the Key and Value projections from previous tokens and only compute the new token's Q, K, V. Each new token is O(n) instead of O(n&sup2;).</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 580 120" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Cached KV -->
+          <rect x="20" y="10" width="240" height="40" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+          <text x="140" y="28" text-anchor="middle" font-size="10" fill="#2563eb">Cached K, V from tokens 1...N-1</text>
+          <text x="140" y="42" text-anchor="middle" font-size="8" fill="#60a5fa">Stored in GPU memory, reused each step</text>
+
+          <!-- New token -->
+          <rect x="280" y="10" width="120" height="40" rx="4" fill="#faf5ff" stroke="#8b5cf6"/>
+          <text x="340" y="28" text-anchor="middle" font-size="10" fill="#7c3aed">New token N</text>
+          <text x="340" y="42" text-anchor="middle" font-size="8" fill="#a78bfa">Compute Q, K, V</text>
+
+          <!-- Append -->
+          <text x="420" y="30" font-size="12" fill="#a8a29e">&rarr;</text>
+
+          <!-- Result -->
+          <rect x="440" y="10" width="120" height="40" rx="4" fill="#f0fdf4" stroke="#22c55e"/>
+          <text x="500" y="28" text-anchor="middle" font-size="10" fill="#16a34a">Attention output</text>
+          <text x="500" y="42" text-anchor="middle" font-size="8" fill="#4ade80">for token N only</text>
+
+          <!-- Complexity comparison -->
+          <text x="140" y="80" text-anchor="middle" font-size="10" font-weight="600" fill="#dc2626">Without cache: O(n&sup2;) per sequence</text>
+          <text x="140" y="95" text-anchor="middle" font-size="10" font-weight="600" fill="#16a34a">With cache: O(n) per new token</text>
+          <text x="420" y="80" font-size="9" fill="#78716c">Trade-off: memory for speed</text>
+          <text x="420" y="95" font-size="9" fill="#78716c">70B model: ~40GB KV cache at 128K</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4><span class="step-num blue">2</span> Grouped-Query Attention (GQA)</h4>
+        <div class="shapes">LLaMA 2/3, Mistral</div>
+      </div>
+      <p>Standard multi-head attention (MHA) has separate K, V projections per head. This means KV cache grows linearly with the number of heads. GQA shares K, V across groups of query heads, reducing KV cache size by 4&ndash;8&times; with minimal quality loss.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 580 100" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- MHA -->
+          <text x="90" y="15" text-anchor="middle" font-size="10" font-weight="600" fill="#57534e">MHA (original)</text>
+          <rect x="20" y="25" width="30" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <text x="35" y="53" text-anchor="middle" font-size="8" fill="#2563eb">Q</text>
+          <rect x="55" y="25" width="30" height="50" rx="3" fill="#fecaca" stroke="#ef4444"/>
+          <text x="70" y="53" text-anchor="middle" font-size="8" fill="#dc2626">K</text>
+          <rect x="90" y="25" width="30" height="50" rx="3" fill="#d9f99d" stroke="#84cc16"/>
+          <text x="105" y="53" text-anchor="middle" font-size="8" fill="#65a30d">V</text>
+          <text x="90" y="90" text-anchor="middle" font-size="8" fill="#78716c">1:1:1 ratio</text>
+
+          <!-- GQA -->
+          <text x="300" y="15" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">GQA (LLaMA 2+)</text>
+          <rect x="220" y="25" width="30" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <rect x="254" y="25" width="30" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <rect x="288" y="25" width="30" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <rect x="322" y="25" width="30" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <text x="235" y="53" text-anchor="middle" font-size="7" fill="#2563eb">Q</text>
+          <text x="269" y="53" text-anchor="middle" font-size="7" fill="#2563eb">Q</text>
+          <text x="303" y="53" text-anchor="middle" font-size="7" fill="#2563eb">Q</text>
+          <text x="337" y="53" text-anchor="middle" font-size="7" fill="#2563eb">Q</text>
+          <!-- Shared KV -->
+          <rect x="365" y="30" width="24" height="40" rx="3" fill="#fecaca" stroke="#ef4444"/>
+          <text x="377" y="53" text-anchor="middle" font-size="7" fill="#dc2626">K</text>
+          <rect x="393" y="30" width="24" height="40" rx="3" fill="#d9f99d" stroke="#84cc16"/>
+          <text x="405" y="53" text-anchor="middle" font-size="7" fill="#65a30d">V</text>
+          <text x="300" y="90" text-anchor="middle" font-size="8" fill="#78716c">4:1:1 &mdash; 4&times; less KV cache</text>
+
+          <!-- MQA -->
+          <text x="510" y="15" text-anchor="middle" font-size="10" font-weight="600" fill="#57534e">MQA (extreme)</text>
+          <rect x="460" y="25" width="18" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <rect x="480" y="25" width="18" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <rect x="500" y="25" width="18" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <rect x="520" y="25" width="18" height="50" rx="3" fill="#bfdbfe" stroke="#3b82f6"/>
+          <rect x="542" y="30" width="18" height="40" rx="3" fill="#fecaca" stroke="#ef4444"/>
+          <rect x="562" y="30" width="18" height="40" rx="3" fill="#d9f99d" stroke="#84cc16"/>
+          <text x="510" y="90" text-anchor="middle" font-size="8" fill="#78716c">N:1:1 &mdash; all Q share 1 KV</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4><span class="step-num blue">3</span> RoPE (Rotary Position Embeddings)</h4>
+        <div class="shapes">LLaMA, Mistral, Phi, most modern LLMs</div>
+      </div>
+      <p>Unlike absolute positional embeddings (GPT-2) or learned positions, RoPE encodes position by <em>rotating</em> the query and key vectors. The dot product between rotated Q and K depends only on their <em>relative</em> distance, not absolute position. This enables length generalization &mdash; train on 4K context, extend to 128K with interpolation (NTK-aware RoPE, YaRN).</p>
+      <ul>
+        <li><strong>How:</strong> Split each head dimension into pairs. Rotate each pair by an angle proportional to its position &times; a frequency. Different dimension pairs use different frequencies.</li>
+        <li><strong>Why it works:</strong> The attention score between positions i and j depends only on (i - j), making the model naturally translation-invariant.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4><span class="step-num blue">4</span> SwiGLU Activation</h4>
+        <div class="shapes">LLaMA, PaLM, Mistral</div>
+      </div>
+      <p>Replaces the standard ReLU or GELU FFN with a gated linear unit using Swish activation:</p>
+      <p><span class="tensor">FFN(x) = (Swish(xW&#8321;) &odot; xW&#8323;)W&#8322;</span></p>
+      <p>The gate (xW&#8323;) controls information flow element-wise. This adds one more weight matrix but consistently outperforms ReLU/GELU by 1&ndash;2% on benchmarks. The FFN hidden dimension is typically 8/3 &times; model dimension (e.g., 11,008 for LLaMA 7B's hidden dim of 4,096).</p>
+    </div>
+
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4><span class="step-num blue">5</span> Mixture of Experts (MoE)</h4>
+        <div class="shapes">Mixtral, Switch Transformer, DeepSeek</div>
+      </div>
+      <p>Replace the single FFN with N expert FFNs (typically 8). A router network selects the top-K experts (usually 2) for each token. Only the selected experts compute &mdash; total compute per token is 2/8 = 25% of the dense equivalent, but the model has 8&times; the parameters.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 580 110" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Input token -->
+          <rect x="20" y="40" width="80" height="30" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+          <text x="60" y="60" text-anchor="middle" font-size="10" fill="#57534e">Token</text>
+
+          <!-- Router -->
+          <rect x="130" y="35" width="70" height="40" rx="4" fill="#fffbeb" stroke="#f59e0b"/>
+          <text x="165" y="55" text-anchor="middle" font-size="9" fill="#b45309">Router</text>
+          <text x="165" y="67" text-anchor="middle" font-size="7" fill="#d97706">softmax</text>
+          <line x1="100" y1="55" x2="130" y2="55" stroke="#a8a29e" stroke-width="1" marker-end="url(#arrD)"/>
+
+          <!-- Experts -->
+          <rect x="230" y="5" width="70" height="24" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="265" y="21" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">Expert 1</text>
+          <rect x="230" y="33" width="70" height="24" rx="3" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="265" y="49" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">Expert 2</text>
+          <rect x="230" y="61" width="70" height="24" rx="3" fill="#f5f5f4" stroke="#d6d3d1" stroke-dasharray="3,3"/>
+          <text x="265" y="77" text-anchor="middle" font-size="8" fill="#a8a29e">Expert 3</text>
+          <rect x="230" y="89" width="70" height="24" rx="3" fill="#f5f5f4" stroke="#d6d3d1" stroke-dasharray="3,3"/>
+          <text x="265" y="105" text-anchor="middle" font-size="8" fill="#a8a29e">...</text>
+
+          <!-- Router to selected experts -->
+          <line x1="200" y1="48" x2="230" y2="17" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="200" y1="58" x2="230" y2="45" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="200" y1="55" x2="230" y2="73" stroke="#d6d3d1" stroke-width="1" stroke-dasharray="3,3"/>
+
+          <!-- Combine -->
+          <rect x="330" y="25" width="80" height="40" rx="4" fill="#f0fdf4" stroke="#22c55e"/>
+          <text x="370" y="43" text-anchor="middle" font-size="9" fill="#16a34a">Weighted</text>
+          <text x="370" y="55" text-anchor="middle" font-size="9" fill="#16a34a">Sum</text>
+          <line x1="300" y1="17" x2="330" y2="40" stroke="#3b82f6" stroke-width="1"/>
+          <line x1="300" y1="45" x2="330" y2="45" stroke="#3b82f6" stroke-width="1"/>
+
+          <!-- Output -->
+          <rect x="440" y="30" width="80" height="30" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+          <text x="480" y="50" text-anchor="middle" font-size="10" fill="#57534e">Output</text>
+          <line x1="410" y1="45" x2="440" y2="45" stroke="#a8a29e" stroke-width="1" marker-end="url(#arrD)"/>
+
+          <!-- Annotation -->
+          <text x="480" y="85" text-anchor="middle" font-size="8" fill="#78716c">Mixtral 8&times;7B: 47B total params</text>
+          <text x="480" y="97" text-anchor="middle" font-size="8" fill="#78716c">but only 13B active per token</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TRAINING PIPELINE ─── -->
+  <section>
+    <h2>Training Pipeline</h2>
+
+    <p>Modern LLMs follow a three-stage training process. Each stage uses different data, objectives, and compute budgets.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="350" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1917">Three-Stage LLM Training Pipeline</text>
+
+        <!-- Stage 1: Pretraining -->
+        <rect x="20" y="40" width="190" height="80" rx="8" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="115" y="60" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">Stage 1: Pretraining</text>
+        <text x="115" y="76" text-anchor="middle" font-size="9" fill="#a78bfa">Next-token prediction</text>
+        <text x="115" y="90" text-anchor="middle" font-size="9" fill="#a78bfa">1&ndash;15T tokens of web text</text>
+        <text x="115" y="104" text-anchor="middle" font-size="9" fill="#a78bfa">Thousands of GPUs, months</text>
+
+        <!-- Arrow -->
+        <line x1="210" y1="80" x2="240" y2="80" stroke="#a8a29e" stroke-width="2" marker-end="url(#arrD)"/>
+
+        <!-- Stage 2: SFT -->
+        <rect x="250" y="40" width="190" height="80" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="345" y="60" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">Stage 2: SFT</text>
+        <text x="345" y="76" text-anchor="middle" font-size="9" fill="#60a5fa">Supervised fine-tuning</text>
+        <text x="345" y="90" text-anchor="middle" font-size="9" fill="#60a5fa">1K&ndash;100K instruction pairs</text>
+        <text x="345" y="104" text-anchor="middle" font-size="9" fill="#60a5fa">Hours to days</text>
+
+        <!-- Arrow -->
+        <line x1="440" y1="80" x2="470" y2="80" stroke="#a8a29e" stroke-width="2" marker-end="url(#arrD)"/>
+
+        <!-- Stage 3: RLHF/DPO -->
+        <rect x="480" y="40" width="190" height="80" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="575" y="60" text-anchor="middle" font-size="11" font-weight="600" fill="#16a34a">Stage 3: RLHF / DPO</text>
+        <text x="575" y="76" text-anchor="middle" font-size="9" fill="#4ade80">Preference alignment</text>
+        <text x="575" y="90" text-anchor="middle" font-size="9" fill="#4ade80">Human feedback / preference pairs</text>
+        <text x="575" y="104" text-anchor="middle" font-size="9" fill="#4ade80">Safety + helpfulness tuning</text>
+
+        <!-- Labels below -->
+        <text x="115" y="140" text-anchor="middle" font-size="8" fill="#78716c">~99% of total compute</text>
+        <text x="345" y="140" text-anchor="middle" font-size="8" fill="#78716c">~0.5% of total compute</text>
+        <text x="575" y="140" text-anchor="middle" font-size="8" fill="#78716c">~0.5% of total compute</text>
+      </svg>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Stage 1: Pretraining</h4>
+        <div class="shapes">99% of compute</div>
+      </div>
+      <p>Pure next-token prediction on trillions of tokens from the web. The model learns language, facts, reasoning patterns, code syntax, and world knowledge. This is the most expensive stage &mdash; LLaMA 3 70B required ~6M GPU-hours on H100s. The key decisions are data mixture ratios (web, code, math, multilingual) and data quality filtering.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Stage 2: Supervised Fine-Tuning (SFT)</h4>
+        <div class="shapes">Hours to days</div>
+      </div>
+      <p>Train on (instruction, response) pairs to teach the model to follow instructions, answer questions, and format outputs. This transforms the base model from a text completer into an assistant. Key datasets: FLAN (1.8M multi-task), OpenAssistant, ShareGPT. LIMA showed 1K high-quality examples can suffice.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Stage 3: RLHF / DPO</h4>
+        <div class="shapes">Alignment</div>
+      </div>
+      <p>Align the model with human preferences. Two dominant approaches:</p>
+      <ul>
+        <li><strong>RLHF</strong>: Train a reward model on human preference data. Use PPO to optimize the LLM against the reward model. Complex but proven (ChatGPT, Claude).</li>
+        <li><strong>DPO</strong>: Direct Preference Optimization skips the reward model. Directly optimize the policy from preference pairs using a classification-like loss. Simpler, no RL infrastructure needed. Used by LLaMA 3, Zephyr.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── KEY MODELS ─── -->
+  <section>
+    <h2>Key Models</h2>
+
+    <div class="paper-ref">
+      <div class="paper-title">GPT-2: Language Models are Unsupervised Multitask Learners</div>
+      <div class="paper-meta">Radford et al., OpenAI 2019 &middot; 1.5B params &middot; Showed scaling works &middot; Zero-shot task transfer</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">GPT-3: Language Models are Few-Shot Learners</div>
+      <div class="paper-meta">Brown et al., OpenAI 2020 &middot; 175B params &middot; 300B tokens &middot; In-context learning emerges at scale</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">LLaMA: Open and Efficient Foundation Language Models</div>
+      <div class="paper-meta">Touvron et al., Meta 2023 &middot; 7B&ndash;65B &middot; RoPE + SwiGLU + RMSNorm &middot; Proved smaller models trained longer beat larger ones</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">LLaMA 2 &amp; 3: Open Foundation and Fine-Tuned Chat Models</div>
+      <div class="paper-meta">Meta 2023/2024 &middot; GQA + 128K context + 15T tokens &middot; RLHF alignment &middot; Competitive with GPT-3.5/4</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">Mistral 7B / Mixtral 8&times;7B</div>
+      <div class="paper-meta">Mistral AI 2023/2024 &middot; Sliding window attention + MoE &middot; 7B that beats LLaMA 2 13B &middot; 8&times;7B (47B total, 13B active)</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">Phi-3 / Phi-4: Small Language Models</div>
+      <div class="paper-meta">Microsoft 2024/2025 &middot; 3.8B&ndash;14B &middot; "Textbook-quality" synthetic data &middot; Small models punching above their weight</div>
+    </div>
+
+    <h3>Model Comparison</h3>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Params</th>
+          <th>Training Data</th>
+          <th>Context</th>
+          <th>Key Innovation</th>
+          <th>Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>GPT-3</td>
+          <td>175B</td>
+          <td>300B tokens</td>
+          <td>2K</td>
+          <td>In-context learning</td>
+          <td>Historical reference</td>
+        </tr>
+        <tr>
+          <td>LLaMA 2</td>
+          <td>7&ndash;70B</td>
+          <td>2T tokens</td>
+          <td>4K</td>
+          <td>GQA, open weights</td>
+          <td>Open-source baseline</td>
+        </tr>
+        <tr>
+          <td>LLaMA 3</td>
+          <td>8&ndash;405B</td>
+          <td>15T tokens</td>
+          <td>128K</td>
+          <td>Data scale + quality</td>
+          <td>Best open model</td>
+        </tr>
+        <tr>
+          <td>Mistral 7B</td>
+          <td>7B</td>
+          <td>Undisclosed</td>
+          <td>32K</td>
+          <td>Sliding window attn</td>
+          <td>Efficient inference</td>
+        </tr>
+        <tr>
+          <td>Mixtral 8&times;7B</td>
+          <td>47B (13B active)</td>
+          <td>Undisclosed</td>
+          <td>32K</td>
+          <td>Sparse MoE</td>
+          <td>Quality/cost ratio</td>
+        </tr>
+        <tr>
+          <td>Phi-3 Mini</td>
+          <td>3.8B</td>
+          <td>3.3T tokens</td>
+          <td>128K</td>
+          <td>Data curation</td>
+          <td>On-device / edge</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─── WHEN NOT TO USE ─── -->
+  <section>
+    <h2>When NOT to Use Decoder-Only</h2>
+
+    <div class="callout callout-rose">
+      <strong>Decoder-only is not always the answer.</strong> The LLM hype cycle makes it tempting to use a 7B model for everything, but smaller specialized models are often better, faster, and cheaper.
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>Pure Classification with Small Labeled Data</h4>
+      </div>
+      <p>If you have 5K labeled examples and need to classify text into 10 categories, a fine-tuned DeBERTa (400M params) will match or beat a prompted LLaMA 70B at 1/175th the compute. Encoders are purpose-built for this. Don't use a cannon to kill a mosquito.</p>
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>Retrieval &amp; Embedding Tasks</h4>
+      </div>
+      <p>Dense retrieval, semantic search, sentence similarity. Encoder-only models (Sentence-BERT, E5, GTE) produce better embeddings than decoder models because bidirectional attention captures meaning from both directions. A 110M encoder for embeddings + a vector database is the standard retrieval stack.</p>
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>Latency-Critical Understanding-Only Tasks</h4>
+      </div>
+      <p>If you only need to understand text (not generate it) and latency matters, encoder-only is faster. A single forward pass through BERT takes ~5ms. Generating 100 tokens from an LLM takes 500ms&ndash;2s. For real-time classification pipelines processing millions of items, this difference is decisive.</p>
+    </div>
+  </section>
+
+  <!-- ─── DECISION FRAMEWORK ─── -->
+  <section>
+    <h2>Decision Framework</h2>
+
+    <div class="callout callout-blue">
+      <strong>The practical test:</strong> If your output is <em>generated text</em> (any length), you need a decoder. If your output is a label, span, or embedding, an encoder is likely better. If you need both understanding and generation, a decoder can do both &mdash; but at higher cost.
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Choose Decoder-Only If...</h4>
+      </div>
+      <ul>
+        <li>Your task requires generating text, code, or structured output</li>
+        <li>You need conversational / multi-turn interaction</li>
+        <li>Complex reasoning or chain-of-thought is required</li>
+        <li>You want few-shot / zero-shot learning without fine-tuning</li>
+        <li>The task requires world knowledge or commonsense reasoning</li>
+        <li>You need flexibility across many task types (one model for everything)</li>
+        <li>You're building an agent that uses tools, calls APIs, or writes code</li>
+        <li>Your budget allows for the higher compute cost</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── USE CASES ─── -->
+  <section>
+    <h2>Use Cases in Practice</h2>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Code Completion &amp; Generation</h4>
+        <div class="shapes">Copilot, Cursor</div>
+      </div>
+      <p>Developer writes a function signature and docstring. The model autoregressively generates the implementation. CodeLlama, StarCoder, and DeepSeek-Coder are trained on hundreds of billions of code tokens. Fill-in-the-middle (FIM) training allows completion at any cursor position, not just the end.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Customer Support Chatbot</h4>
+        <div class="shapes">Conversational</div>
+      </div>
+      <p>Fine-tune a 7B&ndash;13B model on your company's support conversations. RAG retrieves relevant docs from a knowledge base. The model generates human-like responses grounded in your documentation. LoRA fine-tuning on 10K conversations takes hours on a single A100. Serve at ~50 tokens/sec per user.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Document Summarization</h4>
+        <div class="shapes">Generation</div>
+      </div>
+      <p>Input: long document (legal filing, research paper, earnings call transcript). Output: concise summary. With 128K context (LLaMA 3), most documents fit in a single prompt. For longer documents, hierarchical summarization: summarize chunks, then summarize summaries.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Structured Data Extraction via Prompting</h4>
+        <div class="shapes">JSON generation</div>
+      </div>
+      <p>Extract structured information from unstructured text without training a custom model. "Extract the following fields from this invoice: vendor_name, date, total, line_items. Output as JSON." With constrained decoding or tool calling, the output is guaranteed to be valid JSON. Replaces custom NER pipelines for many extraction tasks.</p>
+    </div>
+  </section>
+
+  <!-- ─── SCALING & EMERGENT ABILITIES ─── -->
+  <section>
+    <h2>Scaling &amp; Emergent Abilities</h2>
+
+    <div class="callout callout-green">
+      <strong>Capabilities emerge with scale.</strong> Many abilities appear suddenly as model size increases, rather than improving gradually. Understanding these thresholds helps you choose the right model size.
+    </div>
+
+    <div class="layer-card scale">
+      <div class="layer-header">
+        <h4>What Emerges at Each Scale</h4>
+      </div>
+      <ul>
+        <li><strong>1&ndash;3B params:</strong> Fluent text generation, basic instruction following, simple code completion. Good for on-device use. (Phi-3 Mini, LLaMA 3 3B)</li>
+        <li><strong>7&ndash;13B params:</strong> Reliable multi-turn conversation, moderate reasoning, consistent code generation, basic math. The sweet spot for fine-tuning. (LLaMA 2 13B, Mistral 7B)</li>
+        <li><strong>30&ndash;70B params:</strong> Complex reasoning, chain-of-thought, multi-step problem solving, strong code generation, nuanced instruction following. (LLaMA 3 70B)</li>
+        <li><strong>100B+ params:</strong> Advanced mathematical reasoning, sophisticated multi-step planning, reliable tool use, strong multilingual performance. (GPT-4, Claude, LLaMA 3 405B)</li>
+      </ul>
+    </div>
+
+    <div class="layer-card scale">
+      <div class="layer-header">
+        <h4>The Chinchilla Insight</h4>
+      </div>
+      <p>Hoffmann et al. (DeepMind 2022) showed that for a fixed compute budget, you should scale model size and data equally. A 70B model trained on 1.4T tokens outperforms a 175B model trained on 300B tokens. <strong>LLaMA's success was building on this insight</strong> &mdash; training smaller models on much more data than conventional wisdom suggested.</p>
+    </div>
+
+    <div class="layer-card scale">
+      <div class="layer-header">
+        <h4>The Data Wall</h4>
+      </div>
+      <p>The current frontier challenge: we may be running out of high-quality training data. LLaMA 3 used 15T tokens &mdash; approaching the total amount of quality text on the internet. The response: <strong>synthetic data</strong> (Phi-3 was trained on textbook-quality synthetic data), <strong>multimodal data</strong> (images, video, audio as additional training signal), and <strong>inference-time compute</strong> (spending more time thinking per query rather than pretraining longer).</p>
+    </div>
+  </section>
+
+  <!-- ─── TRAJECTORY ─── -->
+  <section>
+    <h2>The Trajectory</h2>
+
+    <div class="callout">
+      <strong>Decoder-only won.</strong> The original Transformer paper (2017) used an encoder-decoder architecture. GPT-1 (2018) showed decoder-only works for pretraining. GPT-3 (2020) showed it scales. LLaMA (2023) democratized it. Today, every frontier LLM is decoder-only. The simplicity of "just predict the next token" turned out to be the most scalable and general-purpose learning objective we've found.
+    </div>
+
+    <p>The open questions now are about efficiency (MoE, speculative decoding, quantization), alignment (how to make models reliably safe and helpful), and capability (test-time compute, reasoning, tool use, agents). The architecture itself has largely stabilized &mdash; the innovations are in data, training, and inference.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve Schmidt
+</footer>
+
+</body>
+</html>
