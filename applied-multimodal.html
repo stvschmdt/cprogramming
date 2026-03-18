@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applied Transformers: Multimodal — Steve Schmidt</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0.75rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; }
+    .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #8b5cf6; }
+    .callout-purple strong { color: #7c3aed; }
+    .callout-rose { background: #fff1f2; border-left-color: #f43f5e; }
+    .callout-rose strong { color: #e11d48; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.vision { border-left-color: #8b5cf6; }
+    .layer-card.text { border-left-color: #3b82f6; }
+    .layer-card.fusion { border-left-color: #f59e0b; }
+    .layer-card.unified { border-left-color: #22c55e; }
+    .layer-card.contrast { border-left-color: #f43f5e; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+    .layer-card ul { font-size: 0.92rem; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .layer-card li { margin-bottom: 0.4rem; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .approach-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin: 1.5rem 0; }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.purple { background: #8b5cf6; }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.amber { background: #f59e0b; }
+    .step-num.green { background: #22c55e; }
+    .step-num.rose { background: #f43f5e; }
+    .paper-ref { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-size: 0.88rem; }
+    .paper-ref .paper-title { font-weight: 700; }
+    .paper-ref .paper-meta { color: var(--muted); font-size: 0.82rem; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .vs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+    .vs-table th, .vs-table td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+    .vs-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); text-align: center; }
+    .vs-table td:first-child { font-weight: 600; font-size: 0.82rem; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="https://www.barflytrading.com">Trading</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; Walkthroughs</a> &middot; Applied Transformers</div>
+    <h1>Multimodal Transformers</h1>
+    <div class="subtitle">Cross-Attention, Unified Embeddings &amp; Contrastive Learning</div>
+    <p>Multimodal transformers fuse information across modalities &mdash; vision, language, audio, actions &mdash; into shared representations. This walkthrough covers the three dominant architectural paradigms: <strong>contrastive two-tower</strong> (CLIP), <strong>cross-attention fusion</strong> (Flamingo, LLaVA), and <strong>unified embedding</strong> (Gemini, GPT-4V) &mdash; when to use each, what to look for in your data, and how they compare.</p>
+  </section>
+
+  <!-- ─── WHEN TO REACH FOR MULTIMODAL ─── -->
+  <section>
+    <h2>When Do You Need a Multimodal Transformer?</h2>
+
+    <div class="callout">
+      <strong>The core question:</strong> Does your task require <em>joint reasoning</em> across modalities &mdash; not just processing each input independently? If yes, you need multimodal. If each modality can be handled in isolation and combined by simple rules, you probably don't.
+    </div>
+
+    <h3>Problem Signals</h3>
+    <p>Reach for multimodal when your task exhibits one or more of these patterns:</p>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>Cross-Modal Grounding</h4>
+      </div>
+      <p>The answer depends on connecting a concept in one modality to a region/span in another. "Where is the dog?" requires grounding language to image pixels. Visual question answering, referring expression comprehension, image captioning.</p>
+    </div>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>Multi-Modal Generation</h4>
+      </div>
+      <p>The output modality differs from the input, or you generate in multiple modalities jointly. Text-to-image (Stable Diffusion/DALL-E), image-conditioned text generation, vision-language-action models for robotics.</p>
+    </div>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>Retrieval Across Modalities</h4>
+      </div>
+      <p>Given a query in modality A (text), find matches in modality B (images/video/audio). Zero-shot image search, video retrieval from natural language queries, audio-visual correspondence.</p>
+    </div>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>Complementary Evidence Fusion</h4>
+      </div>
+      <p>Each modality provides partial evidence that must be integrated &mdash; like a medical AI combining radiology images with clinical notes, or a robot combining camera feeds with language instructions.</p>
+    </div>
+  </section>
+
+  <!-- ─── DATA & PROBLEM SPACE ─── -->
+  <section>
+    <h2>What to Look for in Your Data</h2>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Paired vs. Unpaired Data</h4>
+      </div>
+      <ul>
+        <li><strong>Paired data</strong> (image-caption pairs, video-transcript): Enables contrastive learning (CLIP) and supervised fusion. The quality of pairing matters enormously &mdash; noisy web-scraped alt-text vs. human-written captions produce very different models.</li>
+        <li><strong>Unpaired data</strong> (images without captions, text without images): Can still be used for pretraining individual encoders. Multimodal alignment then requires a bridge &mdash; typically a projection layer or adapter trained on a smaller paired set.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Data Scale &amp; Modality Balance</h4>
+      </div>
+      <ul>
+        <li><strong>Contrastive models</strong> (CLIP, SigLIP) need hundreds of millions of image-text pairs. CLIP trained on 400M, SigLIP on billions.</li>
+        <li><strong>Fusion models</strong> (LLaVA, Flamingo) can work with much less paired data because they leverage frozen pretrained backbones &mdash; LLaVA-1.5 used only 665K instruction pairs for fine-tuning.</li>
+        <li><strong>Modality imbalance</strong>: If you have 10&times; more text than images, a two-tower contrastive approach won't utilize the extra text. A fusion model with a frozen LLM backbone can leverage it.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Alignment Granularity</h4>
+      </div>
+      <ul>
+        <li><strong>Global alignment</strong>: "This image shows a dog" &mdash; whole-image to whole-sentence. Good for retrieval. CLIP excels here.</li>
+        <li><strong>Region-level</strong>: "The <em>red car</em> on the <em>left</em>" &mdash; requires spatial grounding. Needs cross-attention or region features.</li>
+        <li><strong>Token-level</strong>: Pixel-by-pixel or frame-by-frame correspondence. Needs dense fusion (unified embedding or heavy cross-attention).</li>
+      </ul>
+    </div>
+
+    <div class="layer-card">
+      <div class="layer-header">
+        <h4>Latency &amp; Deployment Constraints</h4>
+      </div>
+      <ul>
+        <li><strong>Two-tower</strong>: Encode each modality once, compare with dot product. Sub-millisecond retrieval over millions of items. Best for serving at scale.</li>
+        <li><strong>Cross-attention fusion</strong>: Requires running both modalities through shared layers. More compute per query, but richer understanding.</li>
+        <li><strong>Unified embedding</strong>: Most expensive at inference, but most capable. Appropriate when quality matters more than latency.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── PARADIGM 1: CONTRASTIVE TWO-TOWER ─── -->
+  <section>
+    <h2><span class="step-num rose">1</span> Contrastive Two-Tower (CLIP / SigLIP)</h2>
+
+    <div class="callout callout-rose">
+      <strong>Key idea:</strong> Train two separate encoders (one per modality) to embed matching pairs close together and non-matching pairs far apart in a shared vector space. At inference, compare any image to any text via cosine similarity &mdash; no fusion needed.
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Image tower -->
+        <rect x="40" y="20" width="140" height="40" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="110" y="45" text-anchor="middle" font-size="12" fill="#7c3aed">Image Encoder</text>
+        <text x="110" y="58" text-anchor="middle" font-size="9" fill="#a78bfa">(ViT-L/14)</text>
+
+        <!-- Text tower -->
+        <rect x="520" y="20" width="140" height="40" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="590" y="45" text-anchor="middle" font-size="12" fill="#2563eb">Text Encoder</text>
+        <text x="590" y="58" text-anchor="middle" font-size="9" fill="#60a5fa">(Transformer)</text>
+
+        <!-- Image input -->
+        <rect x="60" y="100" width="100" height="30" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="110" y="120" text-anchor="middle" font-size="10" fill="#57534e">224&times;224 image</text>
+        <line x1="110" y1="60" x2="110" y2="100" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Text input -->
+        <rect x="540" y="100" width="100" height="30" rx="4" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="590" y="120" text-anchor="middle" font-size="10" fill="#57534e">"a photo of..."</text>
+        <line x1="590" y1="60" x2="590" y2="100" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Embeddings -->
+        <rect x="60" y="160" width="100" height="30" rx="4" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="110" y="180" text-anchor="middle" font-size="10" fill="#7c3aed">v &isin; R&#x1D48;</text>
+        <line x1="110" y1="130" x2="110" y2="160" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <rect x="540" y="160" width="100" height="30" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="590" y="180" text-anchor="middle" font-size="10" fill="#2563eb">t &isin; R&#x1D48;</text>
+        <line x1="590" y1="130" x2="590" y2="160" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <!-- Cosine similarity -->
+        <rect x="260" y="210" width="180" height="40" rx="20" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5"/>
+        <text x="350" y="235" text-anchor="middle" font-size="12" fill="#e11d48">cos(v, t) &rarr; similarity</text>
+        <line x1="160" y1="180" x2="260" y2="230" stroke="#a8a29e" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="540" y1="180" x2="440" y2="230" stroke="#a8a29e" stroke-width="1" stroke-dasharray="3,3"/>
+
+        <!-- Contrastive loss -->
+        <rect x="260" y="280" width="180" height="36" rx="6" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="350" y="303" text-anchor="middle" font-size="11" fill="#57534e">InfoNCE / Sigmoid Loss</text>
+        <line x1="350" y1="250" x2="350" y2="280" stroke="#a8a29e" stroke-width="1" marker-end="url(#arr)"/>
+
+        <!-- Label -->
+        <text x="350" y="15" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1917">Two-Tower Contrastive Architecture</text>
+
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a8a29e" stroke-width="1"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card contrast">
+      <div class="layer-header">
+        <h4>How It Works</h4>
+      </div>
+      <p>Given a batch of N image-text pairs, CLIP computes N image embeddings and N text embeddings. The training objective maximizes cosine similarity for the N true pairs while minimizing it for the N&sup2;&minus;N false pairs. This is InfoNCE loss &mdash; a softmax over similarities that treats the problem as N-way classification.</p>
+      <p><strong>SigLIP improvement:</strong> Replaces the softmax-based InfoNCE with a pairwise sigmoid loss. Each (image, text) pair is independently classified as matching or not, removing the need for synchronized batch statistics across GPUs. This allows larger effective batch sizes and better scaling.</p>
+    </div>
+
+    <div class="layer-card contrast">
+      <div class="layer-header">
+        <h4>When to Use Two-Tower</h4>
+      </div>
+      <ul>
+        <li><strong>Zero-shot classification</strong>: Compare an image against many class-name prompts. No training needed for new categories.</li>
+        <li><strong>Cross-modal retrieval</strong>: Pre-compute embeddings offline, retrieve in sub-millisecond with approximate nearest neighbors.</li>
+        <li><strong>Building a multimodal backbone</strong>: CLIP/SigLIP vision encoders are used as the "eyes" for downstream models (LLaVA, Flamingo, PaliGemma).</li>
+      </ul>
+    </div>
+
+    <div class="layer-card contrast">
+      <div class="layer-header">
+        <h4>Limitations</h4>
+      </div>
+      <ul>
+        <li><strong>No fine-grained interaction</strong>: A single global vector per modality can't represent spatial relationships, counting, or compositional reasoning ("the cat is to the left of the dog").</li>
+        <li><strong>No generation</strong>: Two-tower models produce embeddings, not text or images. You can retrieve, not generate.</li>
+        <li><strong>Bag-of-concepts bias</strong>: CLIP often behaves like a bag of words &mdash; "a dog biting a man" and "a man biting a dog" get similar scores.</li>
+      </ul>
+    </div>
+
+    <h3>Key Papers &amp; Models</h3>
+    <div class="paper-ref">
+      <div class="paper-title">CLIP: Learning Transferable Visual Models From Natural Language Supervision</div>
+      <div class="paper-meta">Radford et al., OpenAI 2021 &middot; 400M image-text pairs &middot; ViT-L/14 + Transformer text encoder</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">SigLIP: Sigmoid Loss for Language Image Pre-Training</div>
+      <div class="paper-meta">Zhai et al., Google 2023 &middot; Pairwise sigmoid loss &middot; Scales to larger batches without cross-GPU sync</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">ALIGN: Scaling Up Visual and Vision-Language Representation Learning With Noisy Text Supervision</div>
+      <div class="paper-meta">Jia et al., Google 2021 &middot; 1.8B noisy image-text pairs &middot; EfficientNet + BERT</div>
+    </div>
+  </section>
+
+  <!-- ─── PARADIGM 2: CROSS-ATTENTION FUSION ─── -->
+  <section>
+    <h2><span class="step-num amber">2</span> Cross-Attention Fusion (Flamingo / LLaVA)</h2>
+
+    <div class="callout">
+      <strong>Key idea:</strong> Keep pretrained unimodal encoders frozen (or lightly tuned), and add cross-attention layers that let one modality attend to the other. The language model "looks at" visual features through learned attention gates, enabling rich interaction without training from scratch.
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="350" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1917">Cross-Attention Fusion Architecture</text>
+
+        <!-- Image encoder (frozen) -->
+        <rect x="40" y="40" width="160" height="50" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="120" y="62" text-anchor="middle" font-size="11" fill="#7c3aed">Vision Encoder</text>
+        <text x="120" y="78" text-anchor="middle" font-size="9" fill="#a78bfa">(ViT, frozen)</text>
+
+        <!-- Image tokens -->
+        <rect x="60" y="110" width="120" height="30" rx="4" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="120" y="130" text-anchor="middle" font-size="10" fill="#7c3aed">Visual tokens</text>
+        <line x1="120" y1="90" x2="120" y2="110" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+        <!-- Projection / Perceiver -->
+        <rect x="50" y="160" width="140" height="40" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="120" y="178" text-anchor="middle" font-size="10" fill="#16a34a">Projection / Perceiver</text>
+        <text x="120" y="192" text-anchor="middle" font-size="9" fill="#4ade80">compress to K tokens</text>
+        <line x1="120" y1="140" x2="120" y2="160" stroke="#8b5cf6" stroke-width="1" marker-end="url(#arr2)"/>
+
+        <!-- LLM layers -->
+        <rect x="320" y="40" width="200" height="50" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="420" y="62" text-anchor="middle" font-size="11" fill="#2563eb">Language Model</text>
+        <text x="420" y="78" text-anchor="middle" font-size="9" fill="#60a5fa">(LLaMA, Vicuna, etc.)</text>
+
+        <!-- Self-attention layer -->
+        <rect x="340" y="120" width="160" height="34" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="420" y="142" text-anchor="middle" font-size="10" fill="#2563eb">Self-Attention (text)</text>
+
+        <!-- Cross-attention layer -->
+        <rect x="260" y="180" width="240" height="40" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+        <text x="380" y="198" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309">Cross-Attention</text>
+        <text x="380" y="212" text-anchor="middle" font-size="9" fill="#d97706">Q=text, K,V=visual tokens</text>
+
+        <!-- Connection from visual to cross-attn -->
+        <line x1="190" y1="180" x2="260" y2="200" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="420" y1="154" x2="420" y2="180" stroke="#3b82f6" stroke-width="1" marker-end="url(#arr2)"/>
+
+        <!-- FFN -->
+        <rect x="340" y="240" width="160" height="34" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="420" y="262" text-anchor="middle" font-size="10" fill="#2563eb">Feed-Forward (FFN)</text>
+        <line x1="420" y1="220" x2="420" y2="240" stroke="#3b82f6" stroke-width="1" marker-end="url(#arr2)"/>
+
+        <!-- Repeat bracket -->
+        <text x="540" y="190" font-size="10" fill="#57534e">&times; L layers</text>
+        <rect x="530" y="110" width="2" height="170" fill="#d6d3d1" rx="1"/>
+
+        <!-- Output -->
+        <rect x="340" y="310" width="160" height="36" rx="6" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <text x="420" y="333" text-anchor="middle" font-size="11" fill="#57534e">Generated text output</text>
+        <line x1="420" y1="274" x2="420" y2="310" stroke="#a8a29e" stroke-width="1" marker-end="url(#arr2)"/>
+
+        <!-- Variants -->
+        <rect x="40" y="260" width="190" height="90" rx="6" fill="#f5f5f4" stroke="#d6d3d1" stroke-dasharray="4,3"/>
+        <text x="135" y="280" text-anchor="middle" font-size="10" font-weight="600" fill="#57534e">Projection Variants</text>
+        <text x="135" y="298" text-anchor="middle" font-size="9" fill="#78716c">Flamingo: Perceiver resampler</text>
+        <text x="135" y="312" text-anchor="middle" font-size="9" fill="#78716c">LLaVA: Linear / MLP projection</text>
+        <text x="135" y="326" text-anchor="middle" font-size="9" fill="#78716c">Qwen-VL: Cross-attn compressor</text>
+        <text x="135" y="340" text-anchor="middle" font-size="9" fill="#78716c">PaliGemma: SigLIP + linear</text>
+
+        <defs>
+          <marker id="arr2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a8a29e" stroke-width="1"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>How It Works</h4>
+      </div>
+      <p>The vision encoder (typically CLIP/SigLIP ViT) processes the image into a grid of visual tokens. A projection module (MLP, Perceiver, or Q-Former) maps these into the language model's embedding space. The LLM then processes interleaved text and visual tokens.</p>
+      <p>The critical design choice is <strong>how visual tokens interact with text</strong>:</p>
+      <ul>
+        <li><strong>Flamingo:</strong> Inserts gated cross-attention layers between frozen LLM layers. Text tokens attend to visual tokens through dedicated cross-attention. Gates are initialized to zero so the model starts as a pure LLM.</li>
+        <li><strong>LLaVA:</strong> Simpler &mdash; projects visual tokens into the text token space and concatenates them with text tokens. The LLM's existing self-attention handles the interaction. No architectural changes to the LLM.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>When to Use Cross-Attention Fusion</h4>
+      </div>
+      <ul>
+        <li><strong>Visual question answering &amp; reasoning</strong>: "What color is the car in front of the house?" requires grounding and spatial understanding.</li>
+        <li><strong>Image/video captioning &amp; description</strong>: Generate detailed, contextual text about visual content.</li>
+        <li><strong>Document understanding</strong>: Process charts, diagrams, screenshots with text questions.</li>
+        <li><strong>Leveraging existing LLMs</strong>: You have a strong pretrained LLM and want to add vision without retraining from scratch.</li>
+        <li><strong>Limited paired data</strong>: Freeze both encoders, only train the projection layer and adapters &mdash; LLaVA-1.5 fine-tuned on 665K examples.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>Flamingo vs. LLaVA: The Architecture Decision</h4>
+      </div>
+      <table class="vs-table">
+        <thead>
+          <tr><th></th><th>Flamingo-style</th><th>LLaVA-style</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Fusion mechanism</td><td>Dedicated cross-attention layers</td><td>Concatenate in token space</td></tr>
+          <tr><td>LLM modification</td><td>Inserts new layers (gated)</td><td>None &mdash; LLM unchanged</td></tr>
+          <tr><td>Visual token count</td><td>Fixed (64 via Perceiver)</td><td>Variable (196+ for ViT-L/14)</td></tr>
+          <tr><td>Multi-image</td><td>Natural (interleaved)</td><td>Requires context management</td></tr>
+          <tr><td>Training cost</td><td>Higher (new cross-attn params)</td><td>Lower (just projection layer)</td></tr>
+          <tr><td>Inference cost</td><td>Lower (fewer visual tokens)</td><td>Higher (many visual tokens in context)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Key Papers &amp; Models</h3>
+    <div class="paper-ref">
+      <div class="paper-title">Flamingo: a Visual Language Model for Few-Shot Learning</div>
+      <div class="paper-meta">Alayrac et al., DeepMind 2022 &middot; Perceiver resampler + gated cross-attention &middot; 80B params</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">LLaVA: Visual Instruction Tuning</div>
+      <div class="paper-meta">Liu et al., 2023 &middot; CLIP ViT-L + Vicuna &middot; MLP projection &middot; 665K instruction pairs</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">PaliGemma: A versatile 3B VLM for transfer</div>
+      <div class="paper-meta">Google 2024 &middot; SigLIP-So400m + Gemma 2B &middot; Linear projection &middot; Strong at fine-grained tasks</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">Qwen-VL: A Versatile Vision-Language Model</div>
+      <div class="paper-meta">Alibaba 2023 &middot; Cross-attention compressor (256 queries) &middot; Grounding &amp; multi-image support</div>
+    </div>
+  </section>
+
+  <!-- ─── PARADIGM 3: UNIFIED EMBEDDING ─── -->
+  <section>
+    <h2><span class="step-num green">3</span> Unified Embedding (Gemini / GPT-4V)</h2>
+
+    <div class="callout callout-green">
+      <strong>Key idea:</strong> All modalities are tokenized into a single sequence and processed by one transformer. No separate encoders at inference &mdash; vision tokens, text tokens, and (optionally) audio/action tokens are all first-class citizens in the same attention mechanism. The model is trained end-to-end on interleaved multimodal data.
+    </div>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <text x="350" y="18" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1917">Unified Embedding Architecture</text>
+
+        <!-- Input tokenizers -->
+        <rect x="40" y="40" width="100" height="40" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="90" y="58" text-anchor="middle" font-size="10" fill="#7c3aed">Vision</text>
+        <text x="90" y="72" text-anchor="middle" font-size="8" fill="#a78bfa">Tokenizer</text>
+
+        <rect x="170" y="40" width="100" height="40" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="220" y="58" text-anchor="middle" font-size="10" fill="#2563eb">Text</text>
+        <text x="220" y="72" text-anchor="middle" font-size="8" fill="#60a5fa">Tokenizer</text>
+
+        <rect x="300" y="40" width="100" height="40" rx="6" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="350" y="58" text-anchor="middle" font-size="10" fill="#dc2626">Audio</text>
+        <text x="350" y="72" text-anchor="middle" font-size="8" fill="#f87171">Tokenizer</text>
+
+        <rect x="430" y="40" width="100" height="40" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="480" y="58" text-anchor="middle" font-size="10" fill="#16a34a">Action</text>
+        <text x="480" y="72" text-anchor="middle" font-size="8" fill="#4ade80">Tokenizer</text>
+
+        <!-- Unified sequence -->
+        <rect x="40" y="110" width="550" height="36" rx="6" fill="#f5f5f4" stroke="#d6d3d1"/>
+        <!-- Token cells -->
+        <rect x="48" y="116" width="52" height="24" rx="3" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="74" y="132" text-anchor="middle" font-size="8" fill="#7c3aed">img_1</text>
+        <rect x="104" y="116" width="52" height="24" rx="3" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="130" y="132" text-anchor="middle" font-size="8" fill="#7c3aed">img_2</text>
+        <rect x="160" y="116" width="22" height="24" rx="3" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="171" y="132" text-anchor="middle" font-size="8" fill="#7c3aed">...</text>
+        <rect x="190" y="116" width="52" height="24" rx="3" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="216" y="132" text-anchor="middle" font-size="8" fill="#2563eb">text_1</text>
+        <rect x="246" y="116" width="52" height="24" rx="3" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="272" y="132" text-anchor="middle" font-size="8" fill="#2563eb">text_2</text>
+        <rect x="302" y="116" width="22" height="24" rx="3" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="313" y="132" text-anchor="middle" font-size="8" fill="#2563eb">...</text>
+        <rect x="332" y="116" width="52" height="24" rx="3" fill="#fef2f2" stroke="#ef4444"/>
+        <text x="358" y="132" text-anchor="middle" font-size="8" fill="#dc2626">aud_1</text>
+        <rect x="388" y="116" width="22" height="24" rx="3" fill="#fef2f2" stroke="#ef4444"/>
+        <text x="399" y="132" text-anchor="middle" font-size="8" fill="#dc2626">...</text>
+        <rect x="418" y="116" width="52" height="24" rx="3" fill="#f0fdf4" stroke="#22c55e"/>
+        <text x="444" y="132" text-anchor="middle" font-size="8" fill="#16a34a">act_1</text>
+        <rect x="474" y="116" width="22" height="24" rx="3" fill="#f0fdf4" stroke="#22c55e"/>
+        <text x="485" y="132" text-anchor="middle" font-size="8" fill="#16a34a">...</text>
+
+        <!-- Arrows down from tokenizers -->
+        <line x1="90" y1="80" x2="90" y2="110" stroke="#8b5cf6" stroke-width="1" marker-end="url(#arr3)"/>
+        <line x1="220" y1="80" x2="220" y2="110" stroke="#3b82f6" stroke-width="1" marker-end="url(#arr3)"/>
+        <line x1="350" y1="80" x2="358" y2="110" stroke="#ef4444" stroke-width="1" marker-end="url(#arr3)"/>
+        <line x1="480" y1="80" x2="460" y2="110" stroke="#22c55e" stroke-width="1" marker-end="url(#arr3)"/>
+
+        <!-- Unified transformer -->
+        <rect x="100" y="170" width="430" height="60" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+        <text x="315" y="196" text-anchor="middle" font-size="13" font-weight="600" fill="#16a34a">Unified Transformer</text>
+        <text x="315" y="216" text-anchor="middle" font-size="9" fill="#4ade80">Full self-attention across ALL modality tokens</text>
+        <line x1="315" y1="146" x2="315" y2="170" stroke="#a8a29e" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+        <!-- Repeat -->
+        <text x="560" y="200" font-size="10" fill="#57534e">&times; N layers</text>
+
+        <!-- Outputs -->
+        <rect x="100" y="260" width="130" height="36" rx="6" fill="#faf5ff" stroke="#8b5cf6"/>
+        <text x="165" y="283" text-anchor="middle" font-size="10" fill="#7c3aed">Image output</text>
+
+        <rect x="250" y="260" width="130" height="36" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="315" y="283" text-anchor="middle" font-size="10" fill="#2563eb">Text output</text>
+
+        <rect x="400" y="260" width="130" height="36" rx="6" fill="#f0fdf4" stroke="#22c55e"/>
+        <text x="465" y="283" text-anchor="middle" font-size="10" fill="#16a34a">Action output</text>
+
+        <line x1="200" y1="230" x2="165" y2="260" stroke="#a8a29e" stroke-width="1" marker-end="url(#arr3)"/>
+        <line x1="315" y1="230" x2="315" y2="260" stroke="#a8a29e" stroke-width="1" marker-end="url(#arr3)"/>
+        <line x1="430" y1="230" x2="465" y2="260" stroke="#a8a29e" stroke-width="1" marker-end="url(#arr3)"/>
+
+        <!-- Label -->
+        <rect x="140" y="320" width="350" height="40" rx="6" fill="#fffbeb" stroke="#d97706" stroke-dasharray="4,3"/>
+        <text x="315" y="338" text-anchor="middle" font-size="10" fill="#b45309">Any-to-any: image&rarr;text, text&rarr;image, image+text&rarr;action</text>
+        <text x="315" y="352" text-anchor="middle" font-size="9" fill="#d97706">Natively multimodal &mdash; no modality is privileged</text>
+
+        <defs>
+          <marker id="arr3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="none" stroke="#a8a29e" stroke-width="1"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card unified">
+      <div class="layer-header">
+        <h4>How It Works</h4>
+      </div>
+      <p>Each modality has a tokenizer that converts raw input into discrete or continuous tokens. All tokens are projected into a shared embedding space and concatenated into a single sequence. A standard transformer with full self-attention processes the entire sequence &mdash; every token can attend to every other token regardless of modality.</p>
+      <p><strong>Tokenization strategies vary:</strong></p>
+      <ul>
+        <li><strong>Gemini:</strong> Uses a visual encoder (likely SigLIP-derived) to produce visual tokens that are interleaved with SentencePiece text tokens. Audio uses USM-derived features. Trained end-to-end on massive multimodal mixtures.</li>
+        <li><strong>Chameleon (Meta):</strong> Discretizes images into VQ-VAE tokens that share the same vocabulary as text. True token-level unification &mdash; the model generates image and text tokens with the same softmax head.</li>
+        <li><strong>Gemini Robotics:</strong> Extends to action tokens for robot control &mdash; the model "speaks" in motor commands the same way it speaks in text.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card unified">
+      <div class="layer-header">
+        <h4>When to Use Unified Embedding</h4>
+      </div>
+      <ul>
+        <li><strong>Any-to-any generation</strong>: Tasks that require generating in multiple modalities (text &rarr; image, image &rarr; text, interleaved).</li>
+        <li><strong>Complex multi-modal reasoning</strong>: Math problems with diagrams, multi-step visual reasoning, science questions with charts.</li>
+        <li><strong>Embodied AI / robotics</strong>: Vision + language understanding + action generation in a single model (Gemini Robotics, RT-2).</li>
+        <li><strong>You have massive compute and data</strong>: These models require training at unprecedented scale. Gemini Ultra used thousands of TPUs.</li>
+      </ul>
+    </div>
+
+    <div class="layer-card unified">
+      <div class="layer-header">
+        <h4>Limitations</h4>
+      </div>
+      <ul>
+        <li><strong>Compute cost</strong>: Full self-attention over all modality tokens is O(n&sup2;) where n includes visual tokens (often 256&ndash;4096+). Much more expensive than two-tower.</li>
+        <li><strong>Training complexity</strong>: Balancing loss across modalities is hard. Image generation and text generation compete for capacity. Modality-specific data ratios matter enormously.</li>
+        <li><strong>Not open-source</strong>: The most capable unified models (Gemini, GPT-4V) are proprietary. Open alternatives (Chameleon) exist but lag in capability.</li>
+      </ul>
+    </div>
+
+    <h3>Key Papers &amp; Models</h3>
+    <div class="paper-ref">
+      <div class="paper-title">Gemini: A Family of Highly Capable Multimodal Models</div>
+      <div class="paper-meta">Google DeepMind 2023 &middot; Natively multimodal &middot; Text, image, audio, video, code</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">GPT-4V(ision) System Card</div>
+      <div class="paper-meta">OpenAI 2023 &middot; Unified multimodal reasoning &middot; Image understanding + text generation</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">Chameleon: Mixed-Modal Early-Fusion Foundation Models</div>
+      <div class="paper-meta">Meta 2024 &middot; VQ-VAE image tokenization &middot; Shared vocabulary for image &amp; text generation</div>
+    </div>
+    <div class="paper-ref">
+      <div class="paper-title">RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control</div>
+      <div class="paper-meta">Google DeepMind 2023 &middot; PaLM-E/PaLI backbone &middot; Actions as text tokens</div>
+    </div>
+  </section>
+
+  <!-- ─── COMPARISON TABLE ─── -->
+  <section>
+    <h2>Paradigm Comparison</h2>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Two-Tower (CLIP)</th>
+          <th>Cross-Attention (LLaVA)</th>
+          <th>Unified (Gemini)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Interaction depth</strong></td>
+          <td>None &mdash; dot product only</td>
+          <td>Medium &mdash; cross-attn layers</td>
+          <td>Deep &mdash; full self-attention</td>
+        </tr>
+        <tr>
+          <td><strong>Training data needed</strong></td>
+          <td>400M+ pairs</td>
+          <td>600K&ndash;2M (fine-tune)</td>
+          <td>Billions (end-to-end)</td>
+        </tr>
+        <tr>
+          <td><strong>Retrieval speed</strong></td>
+          <td>Sub-ms (precomputed)</td>
+          <td>Not applicable</td>
+          <td>Not applicable</td>
+        </tr>
+        <tr>
+          <td><strong>Generation quality</strong></td>
+          <td>No generation</td>
+          <td>Good text generation</td>
+          <td>Best &mdash; any-to-any</td>
+        </tr>
+        <tr>
+          <td><strong>Spatial reasoning</strong></td>
+          <td>Weak</td>
+          <td>Good</td>
+          <td>Best</td>
+        </tr>
+        <tr>
+          <td><strong>Compositionality</strong></td>
+          <td>Weak (bag of concepts)</td>
+          <td>Good</td>
+          <td>Best</td>
+        </tr>
+        <tr>
+          <td><strong>Training cost</strong></td>
+          <td>Moderate</td>
+          <td>Low (frozen backbone)</td>
+          <td>Extreme</td>
+        </tr>
+        <tr>
+          <td><strong>Open models</strong></td>
+          <td>CLIP, SigLIP, OpenCLIP</td>
+          <td>LLaVA, PaliGemma, Qwen-VL</td>
+          <td>Chameleon (limited)</td>
+        </tr>
+        <tr>
+          <td><strong>Best for</strong></td>
+          <td>Retrieval, zero-shot, backbones</td>
+          <td>VQA, captioning, document AI</td>
+          <td>General-purpose reasoning</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─── DECISION FRAMEWORK ─── -->
+  <section>
+    <h2>Decision Framework</h2>
+
+    <div class="callout callout-blue">
+      <strong>Start with the task, not the architecture.</strong> The right multimodal approach follows from what your system needs to do and what data you have.
+    </div>
+
+    <div class="layer-card contrast">
+      <div class="layer-header">
+        <h4>Choose Two-Tower (CLIP/SigLIP) if...</h4>
+      </div>
+      <ul>
+        <li>You need fast retrieval across millions of items</li>
+        <li>Zero-shot classification without training is sufficient</li>
+        <li>You need a vision backbone for a downstream model</li>
+        <li>You have hundreds of millions of image-text pairs</li>
+        <li>Latency constraints are strict (&lt;10ms per query)</li>
+      </ul>
+    </div>
+
+    <div class="layer-card fusion">
+      <div class="layer-header">
+        <h4>Choose Cross-Attention Fusion (LLaVA/Flamingo) if...</h4>
+      </div>
+      <ul>
+        <li>You need to generate text conditioned on images (VQA, captioning)</li>
+        <li>You want to add vision to an existing LLM without retraining it</li>
+        <li>You have limited paired data (&lt;1M examples)</li>
+        <li>You need a good balance of quality and training cost</li>
+        <li>Fine-grained spatial understanding matters</li>
+      </ul>
+    </div>
+
+    <div class="layer-card unified">
+      <div class="layer-header">
+        <h4>Choose Unified Embedding (Gemini) if...</h4>
+      </div>
+      <ul>
+        <li>You need any-to-any generation (text, image, action)</li>
+        <li>Complex multi-step reasoning across modalities is required</li>
+        <li>You're building an embodied agent (robot, game AI)</li>
+        <li>You have massive compute budget and diverse multimodal data</li>
+        <li>Maximum capability matters more than efficiency</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── PRACTICAL EXAMPLES ─── -->
+  <section>
+    <h2>Use Cases in Practice</h2>
+
+    <div class="layer-card vision">
+      <div class="layer-header">
+        <h4>E-Commerce Product Search</h4>
+        <div class="shapes">Two-Tower</div>
+      </div>
+      <p>User types "blue running shoes" or uploads a photo. CLIP/SigLIP encodes the query and catalog images independently. Retrieve top-K by cosine similarity in &lt;5ms over millions of products. Pre-compute all product embeddings offline. This is the approach Nike and similar retailers use.</p>
+    </div>
+
+    <div class="layer-card vision">
+      <div class="layer-header">
+        <h4>Medical Image Report Generation</h4>
+        <div class="shapes">Cross-Attention</div>
+      </div>
+      <p>Radiologist uploads a chest X-ray. A frozen CheXNet or BiomedCLIP encodes the image. A medical LLM generates structured findings via cross-attention to the visual features. Training data: ~200K image-report pairs from hospital archives.</p>
+    </div>
+
+    <div class="layer-card vision">
+      <div class="layer-header">
+        <h4>Robot Manipulation from Language Instructions</h4>
+        <div class="shapes">Unified</div>
+      </div>
+      <p>"Pick up the red block and place it on the blue plate." Camera feeds + language instruction are tokenized into a single sequence. The unified model reasons about spatial relationships and outputs action tokens for the robot arm. This is the RT-2 / Gemini Robotics / &pi;&#8320; approach.</p>
+    </div>
+  </section>
+
+  <!-- ─── EVOLUTION ─── -->
+  <section>
+    <h2>The Trajectory</h2>
+
+    <div class="callout">
+      <strong>The field is converging toward unified models.</strong> CLIP (2021) proved contrastive pretraining works. Flamingo (2022) showed you can graft vision onto LLMs. LLaVA (2023) made it accessible. Gemini (2023) and GPT-4V showed end-to-end multimodal training at scale produces the best results. The open-source ecosystem is following: LLaVA &rarr; LLaVA-NeXT &rarr; models with video, audio, and action support.
+    </div>
+
+    <p>But two-tower models aren't going away. They remain the backbone: SigLIP powers PaliGemma, CLIP powers LLaVA, DINOv2 powers many vision pipelines. The practical pattern is: <strong>contrastive pretraining &rarr; cross-attention fine-tuning &rarr; (optionally) unified end-to-end training</strong>. Each paradigm builds on the last.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve Schmidt
+</footer>
+
+</body>
+</html>
