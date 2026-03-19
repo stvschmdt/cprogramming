@@ -447,6 +447,55 @@
       <p>A model distills knowledge into itself across training stages. The model at epoch N becomes the teacher for epoch N+1. Born-Again Networks showed this improves accuracy even without compression. In LLMs, self-distillation appears in iterative refinement: the model generates, evaluates, and retrains on its own improved outputs. Variants include deeper layers teaching shallower layers within the same forward pass.</p>
     </div>
 
+    <!-- Mean Teacher / EMA Distillation -->
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4>Mean Teacher / EMA Parameter Updates</h4>
+        <span class="shapes">Momentum-Based Self-Distillation</span>
+      </div>
+      <p>Instead of training a separate teacher, the teacher <em>is</em> the student &mdash; but a slow-moving exponential moving average (EMA) of its parameters. After each gradient step on the student, the teacher weights are updated as: <strong>&theta;<sub>T</sub> &larr; m &middot; &theta;<sub>T</sub> + (1 &minus; m) &middot; &theta;<sub>S</sub></strong>, where m is a momentum coefficient (typically 0.996&ndash;0.999). This gives the teacher a smoother, more stable representation than any single training snapshot. Introduced as Mean Teacher (Tarvainen &amp; Valpola, 2017) for semi-supervised learning, this pattern became foundational in self-supervised methods like BYOL and DINO, where the momentum teacher provides stable targets that prevent representation collapse without requiring negative pairs.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 200" width="600" height="200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Student box -->
+          <rect x="20" y="20" width="180" height="75" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="110" y="45" text-anchor="middle" font-size="11" font-weight="700" fill="#2563eb">Student &theta;S</text>
+          <text x="110" y="63" text-anchor="middle" font-size="9" fill="#57534e">Updated by gradients</text>
+          <text x="110" y="78" text-anchor="middle" font-size="9" fill="#57534e">(SGD / Adam)</text>
+
+          <!-- EMA arrow curving from student to teacher -->
+          <path d="M 200 57 C 270 57, 270 57, 340 57" stroke="#d97706" stroke-width="2" fill="none" marker-end="url(#arrowA)"/>
+          <text x="270" y="48" text-anchor="middle" font-size="10" font-weight="700" fill="#d97706">EMA Update</text>
+          <text x="270" y="72" text-anchor="middle" font-size="9" fill="#b45309">m&#183;&theta;T + (1&minus;m)&#183;&theta;S</text>
+
+          <!-- Teacher box -->
+          <rect x="345" y="20" width="180" height="75" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="435" y="45" text-anchor="middle" font-size="11" font-weight="700" fill="#7c3aed">Teacher &theta;T</text>
+          <text x="435" y="63" text-anchor="middle" font-size="9" fill="#57534e">No gradients &mdash; only</text>
+          <text x="435" y="78" text-anchor="middle" font-size="9" fill="#57534e">EMA of student</text>
+
+          <!-- Teacher produces targets -->
+          <line x1="435" y1="95" x2="435" y2="125" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowP)"/>
+          <rect x="355" y="128" width="160" height="30" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1"/>
+          <text x="435" y="148" text-anchor="middle" font-size="10" fill="#7c3aed">Stable Pseudo-Targets</text>
+
+          <!-- Targets feed back to student loss -->
+          <path d="M 355 158 C 270 185, 180 185, 110 100" stroke="#f43f5e" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrowR)"/>
+          <text x="220" y="185" text-anchor="middle" font-size="9" fill="#e11d48" font-weight="600">Loss: match teacher targets</text>
+
+          <!-- Momentum schedule note -->
+          <rect x="15" y="120" width="165" height="55" rx="5" fill="#fff7ed" stroke="#d97706" stroke-width="1"/>
+          <text x="97" y="139" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Momentum Schedule</text>
+          <text x="97" y="154" text-anchor="middle" font-size="8" fill="#57534e">cosine: 0.996 &#8594; 1.0</text>
+          <text x="97" y="167" text-anchor="middle" font-size="8" fill="#57534e">over training duration</text>
+        </svg>
+      </div>
+      <ul>
+        <li><strong>DINO / DINOv2:</strong> Vision Transformer self-distillation using a momentum teacher (m=0.996&rarr;1.0 cosine schedule), centering, and multi-crop augmentation &mdash; no labels required</li>
+        <li><strong>BYOL:</strong> Bootstrap Your Own Latent uses an EMA teacher to provide regression targets, proving negative pairs are unnecessary for contrastive learning</li>
+        <li><strong>Practical benefit:</strong> The EMA teacher is smoother than any checkpoint &mdash; it averages over the noisy optimization trajectory, acting as a form of ensemble without extra cost</li>
+      </ul>
+    </div>
+
     <!-- On-Policy Distillation -->
     <div class="layer-card innov">
       <div class="layer-header">
