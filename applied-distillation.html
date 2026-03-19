@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Applied ML: Knowledge Distillation — Steve Schmidt</title>
+  <title>Applied Transformers: Distillation — Steve Schmidt</title>
   <style>
     :root {
       --bg: #fafaf9;
@@ -17,10 +17,900 @@
       --code-bg: #f5f5f4;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: "Georgia", "Times New Roman", serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
     a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
     a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0.75rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+    .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; }
+    .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; }
+    .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #8b5cf6; }
+    .callout-purple strong { color: #7c3aed; }
+    .callout-rose { background: #fff1f2; border-left-color: #f43f5e; }
+    .callout-rose strong { color: #e11d48; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.decode { border-left-color: #8b5cf6; }
+    .layer-card.innov { border-left-color: #3b82f6; }
+    .layer-card.train { border-left-color: #f59e0b; }
+    .layer-card.warn { border-left-color: #f43f5e; }
+    .layer-card.use-case { border-left-color: #22c55e; }
+    .layer-card.scale { border-left-color: #6366f1; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; }
+    .layer-card p:last-child { margin-bottom: 0; }
+    .layer-card ul { font-size: 0.92rem; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .layer-card li { margin-bottom: 0.4rem; }
+    .layer-diagram { margin: 1rem 0 0.75rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .layer-diagram svg { display: block; margin: 0 auto; max-width: 100%; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .summary-table td:first-child { font-weight: 600; font-size: 0.82rem; }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.purple { background: #8b5cf6; }
+    .step-num.blue { background: #3b82f6; }
+    .step-num.amber { background: #f59e0b; }
+    .step-num.green { background: #22c55e; }
+    .step-num.rose { background: #f43f5e; }
+    .paper-ref { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-size: 0.88rem; }
+    .paper-ref .paper-title { font-weight: 700; }
+    .paper-ref .paper-meta { color: var(--muted); font-size: 0.82rem; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
   </style>
 </head>
-<body>test</body>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="https://www.barflytrading.com">Trading</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+</nav>
+
+<main>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">&larr; Walkthroughs</a> &middot; Applied Transformers</div>
+    <h1>Transformer Distillation</h1>
+    <div class="subtitle">Student-Teacher Methods for Compressing Large Language Models</div>
+    <p>Knowledge distillation transfers the learned behavior of a large "teacher" model into a smaller "student" model. In the transformer era, this means compressing 70B+ parameter LLMs into models that are 5&ndash;50x smaller while retaining most of their capability. Distillation has become the primary method for creating efficient, deployable language models &mdash; from DistilBERT to Orca to the Phi series.</p>
+  </section>
+
+  <!-- ─── WHEN TO USE DISTILLATION ─── -->
+  <section>
+    <h2>When to Use Distillation</h2>
+
+    <div class="callout callout-purple">
+      <strong>The core insight:</strong> A large teacher model encodes rich knowledge in its output distribution &mdash; the relative probabilities across all tokens contain far more information than the hard label alone. A student trained on these soft targets learns faster and generalizes better than one trained only on ground-truth data.
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Deploying LLMs at Lower Cost</h4>
+        <span class="shapes">Compute &amp; Memory</span>
+      </div>
+      <p>A 70B model requires multiple GPUs and costs $2&ndash;5 per million tokens to serve. A distilled 7B student can run on a single GPU at 10&ndash;20x lower cost while retaining 85&ndash;95% of the teacher's quality on targeted tasks.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Latency-Critical Serving</h4>
+        <span class="shapes">Real-Time Inference</span>
+      </div>
+      <p>Chat applications, autocomplete, code suggestions, search ranking &mdash; anywhere users expect sub-200ms responses. Smaller students generate tokens faster due to fewer parameters, fewer attention heads, and shorter forward passes.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Edge &amp; Mobile Inference</h4>
+        <span class="shapes">On-Device</span>
+      </div>
+      <p>Running LLMs on phones, laptops, or embedded devices. Models like Phi-3-mini (3.8B) and Gemma-2B are designed for on-device deployment, built using distillation and careful data curation to maximize capability per parameter.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Specializing for a Domain</h4>
+        <span class="shapes">Task Focus</span>
+      </div>
+      <p>A general-purpose 70B model knows everything but is expensive. Distill its knowledge for medical Q&amp;A, legal analysis, or code review into a 7B specialist that outperforms the teacher on that narrow domain while being deployable on modest hardware.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>Reducing API Dependency</h4>
+        <span class="shapes">Open Models</span>
+      </div>
+      <p>Distill a proprietary model's outputs (GPT-4, Claude) into an open-weight student you control. Eliminates vendor lock-in, recurring API costs, and latency from network calls. The Alpaca and Vicuna projects demonstrated this pattern: GPT-3.5/4 outputs used to fine-tune LLaMA.</p>
+    </div>
+
+    <div class="layer-card decode">
+      <div class="layer-header">
+        <h4>On-Device Privacy</h4>
+        <span class="shapes">Data Sovereignty</span>
+      </div>
+      <p>Sensitive data (medical records, legal documents, financial data) cannot leave the device or network. A distilled on-device model processes everything locally &mdash; no data sent to external APIs, full compliance with data residency requirements.</p>
+    </div>
+  </section>
+
+  <!-- ─── DATA ─── -->
+  <section>
+    <h2>What to Look for in Your Data</h2>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Teacher-Generated Synthetic Data</h4>
+        <span class="shapes">Primary Signal</span>
+      </div>
+      <p>The teacher generates responses to a diverse set of prompts. These outputs &mdash; including the full probability distributions (logits) over the vocabulary &mdash; become the student's training data. The soft targets contain "dark knowledge": which alternative tokens the teacher considered plausible.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Prompt Diversity</h4>
+        <span class="shapes">Coverage</span>
+      </div>
+      <p>The student can only learn what it sees. Diverse prompts across topics, difficulty levels, formats, and languages ensure broad coverage. Orca used 5M diverse prompts from FLAN; Phi used synthetically generated "textbook" exercises spanning math, code, and reasoning.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Chain-of-Thought Traces</h4>
+        <span class="shapes">Reasoning Signal</span>
+      </div>
+      <p>When the teacher explains its reasoning step-by-step, the student learns <em>how</em> to think, not just <em>what</em> to answer. Orca showed that training on CoT explanations from GPT-4 dramatically improved a 13B model's reasoning. The traces serve as an implicit curriculum.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Instruction-Response Pairs</h4>
+        <span class="shapes">Behavioral Alignment</span>
+      </div>
+      <p>Structured pairs of (instruction, response) teach the student to follow instructions. Alpaca used 52K instruction-response pairs generated by GPT-3.5. The format matters: system prompts, multi-turn conversations, and varied instruction styles all contribute to robust instruction-following.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Quality vs. Quantity Tradeoffs</h4>
+        <span class="shapes">Data Curation</span>
+      </div>
+      <p>More data is not always better. Phi-1 demonstrated that 1.3B parameters trained on 6B tokens of "textbook quality" synthetic data outperformed models trained on 100x more web data. Careful filtering, deduplication, and curation matter more than raw volume.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4>Filtering &amp; Curation Strategies</h4>
+        <span class="shapes">Phi Approach</span>
+      </div>
+      <p>Microsoft's Phi series pioneered aggressive data curation: use a strong model to classify and filter web data by educational value, then generate synthetic "textbook" data to fill gaps. The key insight: a small model trained on excellent data beats a larger model trained on mediocre data.</p>
+    </div>
+
+    <div class="callout callout-green">
+      <strong>Rule of thumb:</strong> Start with 50K&ndash;500K high-quality teacher-generated examples for a domain-specific distillation. For general-purpose student models, 1M&ndash;5M diverse examples are typical. Always validate on held-out data from the target distribution.
+    </div>
+  </section>
+
+  <!-- ─── ARCHITECTURE DIAGRAM ─── -->
+  <section>
+    <h2>Architecture</h2>
+
+    <p>The core distillation setup: a large teacher transformer generates soft logits and optionally chain-of-thought traces. The student transformer processes the same input and is trained to match the teacher's output distribution via KL divergence, with optional hidden-state alignment between corresponding layers.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 520" width="720" height="520" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Arrow markers -->
+        <defs>
+          <marker id="arrowP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b5cf6"/></marker>
+          <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6"/></marker>
+          <marker id="arrowA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/></marker>
+          <marker id="arrowR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f43f5e"/></marker>
+          <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/></marker>
+        </defs>
+
+        <!-- Teacher side -->
+        <rect x="20" y="10" width="310" height="30" rx="4" fill="#8b5cf6" opacity="0.15" stroke="#8b5cf6" stroke-width="1"/>
+        <text x="175" y="30" text-anchor="middle" font-size="12" font-weight="700" fill="#7c3aed">TEACHER (e.g. 70B LLM)</text>
+
+        <!-- Teacher input -->
+        <rect x="60" y="60" width="230" height="32" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="175" y="81" text-anchor="middle" font-size="11" fill="#1c1917">Input Tokens: x1, x2, ..., xn</text>
+
+        <!-- Teacher Attention block -->
+        <rect x="80" y="112" width="190" height="40" rx="6" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="175" y="137" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">Multi-Head Attention (64h)</text>
+        <line x1="175" y1="92" x2="175" y2="112" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowP)"/>
+
+        <!-- Teacher FFN -->
+        <rect x="80" y="168" width="190" height="36" rx="6" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="175" y="191" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">FFN Block (Large d_ff)</text>
+        <line x1="175" y1="152" x2="175" y2="168" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowP)"/>
+
+        <!-- Teacher x N layers -->
+        <text x="175" y="222" text-anchor="middle" font-size="10" fill="#7c3aed" font-style="italic">x N layers (e.g. 80)</text>
+
+        <!-- Teacher hidden state -->
+        <rect x="70" y="238" width="210" height="32" rx="6" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <text x="175" y="259" text-anchor="middle" font-size="10" fill="#7c3aed">Hidden States hT</text>
+        <line x1="175" y1="204" x2="175" y2="238" stroke="#8b5cf6" stroke-width="1.2" marker-end="url(#arrowP)"/>
+
+        <!-- Teacher softmax / logits -->
+        <rect x="60" y="288" width="230" height="36" rx="6" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="175" y="311" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">Softmax(zT / T) &#8594; Soft Targets</text>
+        <line x1="175" y1="270" x2="175" y2="288" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowP)"/>
+
+        <!-- CoT output -->
+        <rect x="60" y="340" width="230" height="30" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="175" y="360" text-anchor="middle" font-size="10" fill="#7c3aed">Chain-of-Thought Traces (optional)</text>
+        <line x1="175" y1="324" x2="175" y2="340" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- Student side -->
+        <rect x="390" y="10" width="310" height="30" rx="4" fill="#3b82f6" opacity="0.15" stroke="#3b82f6" stroke-width="1"/>
+        <text x="545" y="30" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">STUDENT (e.g. 7B LLM)</text>
+
+        <!-- Student input -->
+        <rect x="430" y="60" width="230" height="32" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="545" y="81" text-anchor="middle" font-size="11" fill="#1c1917">Input Tokens: x1, x2, ..., xn</text>
+
+        <!-- Student Attention -->
+        <rect x="450" y="112" width="190" height="40" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="545" y="137" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">Multi-Head Attention (32h)</text>
+        <line x1="545" y1="92" x2="545" y2="112" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+        <!-- Student FFN -->
+        <rect x="450" y="168" width="190" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="545" y="191" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">FFN Block (Smaller d_ff)</text>
+        <line x1="545" y1="152" x2="545" y2="168" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+        <!-- Student x M layers -->
+        <text x="545" y="222" text-anchor="middle" font-size="10" fill="#2563eb" font-style="italic">x M layers (e.g. 32)</text>
+
+        <!-- Student hidden state -->
+        <rect x="440" y="238" width="210" height="32" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <text x="545" y="259" text-anchor="middle" font-size="10" fill="#2563eb">Hidden States hS</text>
+        <line x1="545" y1="204" x2="545" y2="238" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#arrowB)"/>
+
+        <!-- Student softmax / logits -->
+        <rect x="430" y="288" width="230" height="36" rx="6" fill="#3b82f6" opacity="0.2" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="545" y="311" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">Softmax(zS / T) &#8594; Student Dist.</text>
+        <line x1="545" y1="270" x2="545" y2="288" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+        <!-- Hidden state alignment arrow -->
+        <line x1="280" y1="254" x2="440" y2="254" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowA)"/>
+        <text x="360" y="248" text-anchor="middle" font-size="9" fill="#d97706" font-weight="600">Hidden-State</text>
+        <text x="360" y="260" text-anchor="middle" font-size="9" fill="#d97706" font-weight="600">Alignment (MSE)</text>
+
+        <!-- KL Divergence arrow -->
+        <line x1="290" y1="306" x2="430" y2="306" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrowR)"/>
+        <text x="360" y="298" text-anchor="middle" font-size="10" fill="#e11d48" font-weight="700">KL Divergence</text>
+
+        <!-- Loss combination box -->
+        <rect x="210" y="400" width="300" height="80" rx="8" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+        <text x="360" y="425" text-anchor="middle" font-size="12" font-weight="700" fill="#b45309">Combined Loss</text>
+        <text x="360" y="445" text-anchor="middle" font-size="11" fill="#1c1917">L = &#945; &#183; T&#178; &#183; KL(pT || pS)</text>
+        <text x="360" y="462" text-anchor="middle" font-size="11" fill="#1c1917">+ (1 &#8722; &#945;) &#183; CE(y, pS)</text>
+        <text x="360" y="478" text-anchor="middle" font-size="9" fill="#57534e">T = temperature, &#945; = distillation weight</text>
+
+        <!-- Arrows to loss box -->
+        <line x1="175" y1="370" x2="280" y2="400" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowP)"/>
+        <line x1="545" y1="324" x2="440" y2="400" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowB)"/>
+      </svg>
+    </div>
+
+    <div class="callout">
+      <strong>Temperature scaling:</strong> Higher T (2&ndash;20) softens the teacher's output distribution, exposing more of the "dark knowledge" &mdash; which tokens the teacher considered plausible alternatives. At T=1, the distribution is peaked; at T=10, it reveals subtle relationships between tokens that help the student generalize.
+    </div>
+  </section>
+
+  <!-- ─── KEY DISTILLATION METHODS ─── -->
+  <section>
+    <h2>Key Distillation Methods</h2>
+
+    <!-- Logit Distillation -->
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4>Logit Distillation for Transformers</h4>
+        <span class="shapes">Soft Target Matching</span>
+      </div>
+      <p>The foundational method: the student is trained to match the teacher's softened output distribution. The teacher's logits are divided by temperature T before softmax, producing a smoother distribution that reveals inter-token relationships. The student minimizes KL divergence against this soft distribution, weighted by T&#178; to maintain gradient magnitude.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 180" width="600" height="180" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- T=1 distribution -->
+          <text x="130" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#7c3aed">T = 1 (Hard)</text>
+          <rect x="60" y="25" width="20" height="120" rx="2" fill="#8b5cf6" opacity="0.9"/>
+          <rect x="85" y="130" width="20" height="15" rx="2" fill="#8b5cf6" opacity="0.3"/>
+          <rect x="110" y="125" width="20" height="20" rx="2" fill="#8b5cf6" opacity="0.3"/>
+          <rect x="135" y="135" width="20" height="10" rx="2" fill="#8b5cf6" opacity="0.2"/>
+          <rect x="160" y="138" width="20" height="7" rx="2" fill="#8b5cf6" opacity="0.15"/>
+          <rect x="185" y="140" width="20" height="5" rx="2" fill="#8b5cf6" opacity="0.1"/>
+          <text x="130" y="163" text-anchor="middle" font-size="9" fill="#57534e">Peaked: one dominant token</text>
+
+          <!-- Arrow between -->
+          <line x1="220" y1="90" x2="305" y2="90" stroke="#d97706" stroke-width="2" marker-end="url(#arrowA)"/>
+          <text x="262" y="84" text-anchor="middle" font-size="10" fill="#d97706" font-weight="600">&#247; T</text>
+
+          <!-- T=5 distribution -->
+          <text x="390" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#3b82f6">T = 5 (Soft)</text>
+          <rect x="320" y="55" width="20" height="90" rx="2" fill="#3b82f6" opacity="0.7"/>
+          <rect x="345" y="75" width="20" height="70" rx="2" fill="#3b82f6" opacity="0.6"/>
+          <rect x="370" y="85" width="20" height="60" rx="2" fill="#3b82f6" opacity="0.5"/>
+          <rect x="395" y="95" width="20" height="50" rx="2" fill="#3b82f6" opacity="0.45"/>
+          <rect x="420" y="105" width="20" height="40" rx="2" fill="#3b82f6" opacity="0.35"/>
+          <rect x="445" y="115" width="20" height="30" rx="2" fill="#3b82f6" opacity="0.25"/>
+          <text x="390" y="163" text-anchor="middle" font-size="9" fill="#57534e">Smooth: reveals dark knowledge</text>
+        </svg>
+      </div>
+      <p>For LLMs with vocabularies of 32K&ndash;128K tokens, the soft distribution over the full vocabulary provides a massively richer training signal than a single ground-truth token label.</p>
+    </div>
+
+    <!-- Chain-of-Thought Distillation -->
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4>Chain-of-Thought Distillation</h4>
+        <span class="shapes">Orca / WizardLM Pattern</span>
+      </div>
+      <p>The teacher generates step-by-step reasoning traces, and the student is trained to reproduce both the reasoning process and the final answer. Microsoft's Orca showed that a 13B model trained on GPT-4's chain-of-thought explanations matched GPT-3.5's performance on reasoning benchmarks. The key: prompt the teacher with "explain your reasoning step by step" to extract detailed traces.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 160" width="600" height="160" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <!-- Teacher CoT -->
+          <rect x="20" y="15" width="170" height="130" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="105" y="35" text-anchor="middle" font-size="11" font-weight="700" fill="#7c3aed">Teacher (70B)</text>
+          <text x="105" y="55" text-anchor="middle" font-size="9" fill="#57534e">Q: What is 47 x 23?</text>
+          <text x="105" y="73" text-anchor="middle" font-size="9" fill="#1c1917">Step 1: 47 x 20 = 940</text>
+          <text x="105" y="88" text-anchor="middle" font-size="9" fill="#1c1917">Step 2: 47 x 3 = 141</text>
+          <text x="105" y="103" text-anchor="middle" font-size="9" fill="#1c1917">Step 3: 940 + 141 = 1081</text>
+          <text x="105" y="120" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Answer: 1081</text>
+
+          <!-- Arrow -->
+          <line x1="200" y1="80" x2="260" y2="80" stroke="#d97706" stroke-width="2" marker-end="url(#arrowA)"/>
+          <text x="230" y="72" text-anchor="middle" font-size="9" fill="#d97706" font-weight="600">Train on</text>
+          <text x="230" y="93" text-anchor="middle" font-size="9" fill="#d97706" font-weight="600">full trace</text>
+
+          <!-- Student learns -->
+          <rect x="270" y="15" width="170" height="130" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="355" y="35" text-anchor="middle" font-size="11" font-weight="700" fill="#2563eb">Student (7B)</text>
+          <text x="355" y="55" text-anchor="middle" font-size="9" fill="#57534e">Learns to reason:</text>
+          <text x="355" y="73" text-anchor="middle" font-size="9" fill="#1c1917">Break into parts</text>
+          <text x="355" y="88" text-anchor="middle" font-size="9" fill="#1c1917">Compute sub-products</text>
+          <text x="355" y="103" text-anchor="middle" font-size="9" fill="#1c1917">Combine results</text>
+          <text x="355" y="120" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">Produces CoT!</text>
+
+          <!-- Result -->
+          <rect x="460" y="40" width="130" height="80" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="525" y="65" text-anchor="middle" font-size="10" font-weight="700" fill="#16a34a">Result</text>
+          <text x="525" y="82" text-anchor="middle" font-size="9" fill="#1c1917">Small model that</text>
+          <text x="525" y="96" text-anchor="middle" font-size="9" fill="#1c1917">reasons step-by-step</text>
+          <text x="525" y="110" text-anchor="middle" font-size="9" fill="#1c1917">like the teacher</text>
+          <line x1="440" y1="80" x2="458" y2="80" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrowG)"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Instruction Tuning as Distillation -->
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4>Instruction Tuning as Distillation</h4>
+        <span class="shapes">Alpaca / Vicuna Pattern</span>
+      </div>
+      <p>Use a large model to generate (instruction, response) pairs, then fine-tune a smaller model on those pairs. Stanford's Alpaca: 52K instructions generated by GPT-3.5, used to fine-tune LLaMA-7B. Vicuna: 70K ShareGPT conversations used to fine-tune LLaMA-13B to ~90% of ChatGPT quality. This is "black-box" distillation &mdash; you only need the teacher's text outputs, not its logits.</p>
+      <ul>
+        <li><strong>Self-Instruct pipeline:</strong> Seed with a few examples, generate diverse instructions, filter for quality, generate responses</li>
+        <li><strong>Key limitation:</strong> Without access to the teacher's logits, you lose the dark knowledge in the soft distribution</li>
+        <li><strong>Practical advantage:</strong> Works with any teacher, including proprietary APIs where logits are unavailable</li>
+      </ul>
+    </div>
+
+    <!-- Progressive/Layer-wise Distillation -->
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4>Progressive / Layer-wise Distillation</h4>
+        <span class="shapes">Gradual Knowledge Transfer</span>
+      </div>
+      <p>Rather than distilling all at once, transfer knowledge layer by layer or in stages. TinyBERT aligns each student layer to a corresponding teacher layer (attention maps + hidden states). Orca 2 uses progressive learning: start with simple tasks, increase complexity. This curriculum approach prevents the student from being overwhelmed by the teacher's full complexity.</p>
+      <ul>
+        <li><strong>Layer mapping:</strong> Student layer i maps to teacher layer f(i) &mdash; typically evenly spaced (e.g., student layer 3 maps to teacher layer 12 in a 6-to-24 mapping)</li>
+        <li><strong>Attention transfer:</strong> Minimize MSE between student and teacher attention matrices at mapped layers</li>
+        <li><strong>Embedding alignment:</strong> Linear projection to align different hidden dimensions between student and teacher</li>
+      </ul>
+    </div>
+
+    <!-- Self-Distillation -->
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4>Self-Distillation in Transformers</h4>
+        <span class="shapes">Model as Its Own Teacher</span>
+      </div>
+      <p>A model distills knowledge into itself across training stages. The model at epoch N becomes the teacher for epoch N+1. Born-Again Networks showed this improves accuracy even without compression. In LLMs, self-distillation appears in iterative refinement: the model generates, evaluates, and retrains on its own improved outputs. Variants include deeper layers teaching shallower layers within the same forward pass.</p>
+    </div>
+
+    <!-- On-Policy Distillation -->
+    <div class="layer-card innov">
+      <div class="layer-header">
+        <h4>On-Policy Distillation (GKD)</h4>
+        <span class="shapes">Student Generates, Teacher Scores</span>
+      </div>
+      <p>Standard distillation is "off-policy": the student learns from the teacher's outputs. In on-policy / Generalized Knowledge Distillation, the <em>student</em> generates outputs, and the teacher provides feedback on those specific outputs. This avoids the train-test distribution mismatch that occurs when the student only ever sees the teacher's generations during training.</p>
+      <div class="layer-diagram">
+        <svg viewBox="0 0 600 120" width="600" height="120" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+          <rect x="20" y="30" width="130" height="60" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="85" y="55" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">Student</text>
+          <text x="85" y="72" text-anchor="middle" font-size="9" fill="#57534e">Generates output</text>
+
+          <line x1="150" y1="50" x2="240" y2="50" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowB)"/>
+          <text x="195" y="43" text-anchor="middle" font-size="9" fill="#2563eb">student output</text>
+
+          <rect x="245" y="20" width="130" height="80" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="310" y="45" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">Teacher</text>
+          <text x="310" y="62" text-anchor="middle" font-size="9" fill="#57534e">Scores/corrects</text>
+          <text x="310" y="78" text-anchor="middle" font-size="9" fill="#57534e">student output</text>
+
+          <line x1="375" y1="60" x2="440" y2="60" stroke="#f43f5e" stroke-width="1.5" marker-end="url(#arrowR)"/>
+          <text x="407" y="52" text-anchor="middle" font-size="9" fill="#e11d48">feedback</text>
+
+          <rect x="445" y="30" width="140" height="60" rx="6" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+          <text x="515" y="55" text-anchor="middle" font-size="11" font-weight="600" fill="#b45309">Update Student</text>
+          <text x="515" y="72" text-anchor="middle" font-size="9" fill="#57534e">On own distribution</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TRAINING PIPELINE ─── -->
+  <section>
+    <h2>Training Pipeline</h2>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 700 130" width="700" height="130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Step 1 -->
+        <rect x="5" y="20" width="120" height="70" rx="6" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/>
+        <circle cx="25" cy="38" r="10" fill="#8b5cf6"/><text x="25" y="42" text-anchor="middle" font-size="10" fill="white" font-weight="700">1</text>
+        <text x="75" y="42" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">Choose</text>
+        <text x="75" y="55" text-anchor="middle" font-size="9" fill="#57534e">Teacher Model</text>
+        <text x="75" y="68" text-anchor="middle" font-size="8" fill="#57534e">(API or local)</text>
+
+        <line x1="128" y1="55" x2="145" y2="55" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowP)"/>
+
+        <!-- Step 2 -->
+        <rect x="148" y="20" width="120" height="70" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <circle cx="168" cy="38" r="10" fill="#3b82f6"/><text x="168" y="42" text-anchor="middle" font-size="10" fill="white" font-weight="700">2</text>
+        <text x="218" y="42" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">Generate</text>
+        <text x="218" y="55" text-anchor="middle" font-size="9" fill="#57534e">Synthetic Data</text>
+        <text x="218" y="68" text-anchor="middle" font-size="8" fill="#57534e">(diverse prompts)</text>
+
+        <line x1="271" y1="55" x2="288" y2="55" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+        <!-- Step 3 -->
+        <rect x="291" y="20" width="120" height="70" rx="6" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+        <circle cx="311" cy="38" r="10" fill="#f59e0b"/><text x="311" y="42" text-anchor="middle" font-size="10" fill="white" font-weight="700">3</text>
+        <text x="361" y="42" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Design</text>
+        <text x="361" y="55" text-anchor="middle" font-size="9" fill="#57534e">Student Arch.</text>
+        <text x="361" y="68" text-anchor="middle" font-size="8" fill="#57534e">(layers, heads, dim)</text>
+
+        <line x1="414" y1="55" x2="431" y2="55" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrowA)"/>
+
+        <!-- Step 4 -->
+        <rect x="434" y="20" width="120" height="70" rx="6" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <circle cx="454" cy="38" r="10" fill="#22c55e"/><text x="454" y="42" text-anchor="middle" font-size="10" fill="white" font-weight="700">4</text>
+        <text x="504" y="42" text-anchor="middle" font-size="9" font-weight="600" fill="#16a34a">Train with</text>
+        <text x="504" y="55" text-anchor="middle" font-size="9" fill="#57534e">Distillation Loss</text>
+        <text x="504" y="68" text-anchor="middle" font-size="8" fill="#57534e">(KL + CE)</text>
+
+        <line x1="557" y1="55" x2="574" y2="55" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrowG)"/>
+
+        <!-- Step 5 -->
+        <rect x="577" y="20" width="120" height="70" rx="6" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.5"/>
+        <circle cx="597" cy="38" r="10" fill="#f43f5e"/><text x="597" y="42" text-anchor="middle" font-size="10" fill="white" font-weight="700">5</text>
+        <text x="647" y="42" text-anchor="middle" font-size="9" font-weight="600" fill="#e11d48">Fine-Tune</text>
+        <text x="647" y="55" text-anchor="middle" font-size="9" fill="#57534e">Task-Specific</text>
+        <text x="647" y="68" text-anchor="middle" font-size="8" fill="#57534e">(optional SFT)</text>
+      </svg>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4><span class="step-num purple">1</span> Choose or Access Teacher Model</h4>
+      </div>
+      <p>Select a high-quality teacher: GPT-4, Claude, LLaMA-70B, Mixtral-8x22B. If you have API-only access (no logits), you'll use black-box distillation (instruction tuning on teacher outputs). If you have full model weights, white-box distillation with logit matching is more effective.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4><span class="step-num blue">2</span> Generate Synthetic Dataset</h4>
+      </div>
+      <p>Design diverse prompts spanning your target use cases. Run the teacher to generate high-quality responses. For reasoning tasks, request chain-of-thought. For factual tasks, request citations. Volume: 50K&ndash;5M examples depending on domain breadth. Filter for quality, remove duplicates, balance topic distribution.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4><span class="step-num amber">3</span> Design Student Architecture</h4>
+      </div>
+      <p>Typical compression: reduce layers from 80 to 32, heads from 64 to 32, hidden dim from 8192 to 4096. Common ratios: 10:1 to 50:1 parameter reduction. Initialize from a pretrained base (e.g., LLaMA-7B) rather than from scratch &mdash; the student needs a foundation of language understanding to absorb the teacher's knowledge effectively.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4><span class="step-num green">4</span> Train with Distillation Loss</h4>
+      </div>
+      <p>Combine KL divergence on soft targets with cross-entropy on hard labels. Start with high alpha (0.7&ndash;0.9) to emphasize the teacher signal, then optionally anneal toward hard labels. Monitor the student's performance on held-out examples from the target distribution, not just the training loss.</p>
+    </div>
+
+    <div class="layer-card train">
+      <div class="layer-header">
+        <h4><span class="step-num rose">5</span> Fine-Tune on Task-Specific Data</h4>
+      </div>
+      <p>After general distillation, fine-tune on your specific downstream task with real (non-synthetic) data. This "sharpens" the student for your use case. Use a lower learning rate (1/10th of distillation LR) to avoid catastrophic forgetting. Evaluate on real-world benchmarks relevant to your deployment.</p>
+    </div>
+  </section>
+
+  <!-- ─── KEY MODELS & PAPERS ─── -->
+  <section>
+    <h2>Key Models &amp; Papers</h2>
+
+    <div class="paper-ref">
+      <span class="paper-title">DistilBERT: A distilled version of BERT</span><br>
+      <span class="paper-meta">Sanh et al. (HuggingFace), 2019 &mdash; The first major transformer distillation. 6-layer student from 12-layer BERT teacher. 40% smaller, 60% faster, retains 97% of BERT's performance. Used triple loss: masked LM, distillation, cosine embedding.</span>
+    </div>
+
+    <div class="paper-ref">
+      <span class="paper-title">TinyBERT: Distilling BERT for Natural Language Understanding</span><br>
+      <span class="paper-meta">Jiao et al., 2020 &mdash; Went beyond logit matching to align attention matrices and hidden states between teacher and student at every layer. 4-layer TinyBERT matched BERT-base while being 7.5x smaller and 9.4x faster.</span>
+    </div>
+
+    <div class="paper-ref">
+      <span class="paper-title">Alpaca: A Strong, Replicable Instruction-Following Model</span><br>
+      <span class="paper-meta">Stanford, 2023 &mdash; Demonstrated that 52K GPT-3.5-generated instruction-response pairs could fine-tune LLaMA-7B into a surprisingly capable instruction follower. Cost: under $600. Opened the floodgates for LLM distillation research.</span>
+    </div>
+
+    <div class="paper-ref">
+      <span class="paper-title">Orca / Orca 2: Progressive Learning from Complex Explanation Traces</span><br>
+      <span class="paper-meta">Microsoft Research, 2023 &mdash; Chain-of-thought distillation from GPT-4. Orca-13B matched GPT-3.5 on reasoning benchmarks. Orca 2 introduced "cautious reasoning" &mdash; the student learns when to use different reasoning strategies (step-by-step, recall-then-generate, etc.).</span>
+    </div>
+
+    <div class="paper-ref">
+      <span class="paper-title">Phi-1 / Phi-2 / Phi-3 / Phi-4 (Microsoft Research)</span><br>
+      <span class="paper-meta">2023&ndash;2024 &mdash; Proved that data quality trumps model size. Phi-1 (1.3B) outperformed models 10x larger on code benchmarks using "textbook quality" synthetic data. Phi-3-mini (3.8B) matched Mixtral-8x7B. The Phi series combines aggressive data curation with distillation from larger models.</span>
+    </div>
+
+    <div class="paper-ref">
+      <span class="paper-title">Gemma (Google) / Minitron (NVIDIA)</span><br>
+      <span class="paper-meta">2024 &mdash; Gemma models use distillation from larger Gemini models plus careful data curation. NVIDIA's Minitron combines structured pruning with knowledge distillation: start with a large model, prune width/depth, then distill to recover accuracy. Minitron-8B from Nemotron-15B retained 95% of performance.</span>
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Teacher</th>
+          <th>Student Size</th>
+          <th>Method</th>
+          <th>Key Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>DistilBERT</td>
+          <td>BERT-base (110M)</td>
+          <td>66M</td>
+          <td>Logit + embedding</td>
+          <td>97% of BERT, 60% faster</td>
+        </tr>
+        <tr>
+          <td>TinyBERT</td>
+          <td>BERT-base (110M)</td>
+          <td>14.5M</td>
+          <td>Attention + hidden state</td>
+          <td>96% of BERT, 9.4x faster</td>
+        </tr>
+        <tr>
+          <td>Alpaca</td>
+          <td>GPT-3.5 (API)</td>
+          <td>7B (LLaMA)</td>
+          <td>Instruction tuning</td>
+          <td>~80% of ChatGPT quality</td>
+        </tr>
+        <tr>
+          <td>Orca</td>
+          <td>GPT-4 (API)</td>
+          <td>13B (LLaMA)</td>
+          <td>CoT distillation</td>
+          <td>Matched GPT-3.5 on reasoning</td>
+        </tr>
+        <tr>
+          <td>Phi-3-mini</td>
+          <td>Larger Phi + synthetic</td>
+          <td>3.8B</td>
+          <td>Data curation + distillation</td>
+          <td>Matched Mixtral-8x7B</td>
+        </tr>
+        <tr>
+          <td>Minitron-8B</td>
+          <td>Nemotron-15B</td>
+          <td>8B</td>
+          <td>Pruning + distillation</td>
+          <td>95% of teacher accuracy</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─── WHEN NOT TO USE ─── -->
+  <section>
+    <h2>When NOT to Use Distillation</h2>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>When the Teacher Isn't Good Enough</h4>
+      </div>
+      <p>Distillation transfers the teacher's behavior &mdash; including its errors and biases. If the teacher hallucinates on medical questions, the student will too. For safety-critical domains, distillation must be paired with careful evaluation and alignment. You cannot distill capabilities the teacher doesn't have.</p>
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>When You Need Frontier-Level Performance</h4>
+      </div>
+      <p>Distillation inherently involves a quality loss. If your application requires the absolute best possible quality (competitive coding, advanced math, nuanced legal reasoning), the distilled student will always trail the teacher. For these cases, serve the large model directly and optimize with quantization instead.</p>
+    </div>
+
+    <div class="layer-card warn">
+      <div class="layer-header">
+        <h4>When Quantization or Pruning Suffices</h4>
+      </div>
+      <p>If you only need 2&ndash;4x compression, quantization (INT8, INT4, GPTQ, AWQ) is simpler, faster, and requires no training data or teacher access. Distillation shines at 10x+ compression ratios where quantization alone cannot maintain quality.</p>
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Compression</th>
+          <th>Quality Loss</th>
+          <th>Training Needed</th>
+          <th>Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Distillation</td>
+          <td>10&ndash;50x</td>
+          <td>Moderate (5&ndash;20%)</td>
+          <td>Extensive (days&ndash;weeks)</td>
+          <td>Massive compression, domain specialization</td>
+        </tr>
+        <tr>
+          <td>Quantization</td>
+          <td>2&ndash;4x</td>
+          <td>Minimal (1&ndash;5%)</td>
+          <td>None or minimal</td>
+          <td>Quick deployment, same architecture</td>
+        </tr>
+        <tr>
+          <td>Pruning</td>
+          <td>2&ndash;10x</td>
+          <td>Low-Moderate</td>
+          <td>Moderate (fine-tuning)</td>
+          <td>Structured removal of redundancy</td>
+        </tr>
+        <tr>
+          <td>Train from Scratch</td>
+          <td>N/A</td>
+          <td>Depends on data/scale</td>
+          <td>Massive (weeks&ndash;months)</td>
+          <td>When you have abundant data and compute</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-rose">
+      <strong>Distillation + Quantization is powerful.</strong> Distill a 70B teacher into a 7B student (10x), then quantize the student to INT4 (4x). Net result: ~40x compression. This combination is how most production LLM deployments work in practice.
+    </div>
+  </section>
+
+  <!-- ─── DECISION FRAMEWORK ─── -->
+  <section>
+    <h2>Decision Framework</h2>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Choose Distillation If You Need 10x+ Compression</h4>
+      </div>
+      <p>When quantization alone cannot give you the speedup or memory savings you need. If you must go from 70B to 7B or from 13B to 1.3B, distillation is the right tool. The student model is a fundamentally different (smaller) architecture.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Choose Distillation If You Have a Clear Target Domain</h4>
+      </div>
+      <p>A general-purpose 7B model trained from scratch is mediocre at everything. A 7B model distilled from a 70B teacher <em>specifically for your domain</em> can be excellent at that domain. The teacher's knowledge is focused through the lens of your domain-specific training data.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Choose Distillation If You Have Teacher Access</h4>
+      </div>
+      <p>You need either (a) API access to a strong model to generate training data (black-box), or (b) full model weights to extract logits (white-box). Without teacher access, you're training from scratch. White-box distillation is strictly better but requires open-weight teachers.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Choose Distillation If Latency Matters More Than Peak Quality</h4>
+      </div>
+      <p>If you'd rather have 90% quality at 10ms than 100% quality at 200ms, distillation is for you. This is the right tradeoff for production systems serving millions of requests: search ranking, content filtering, chat, autocomplete.</p>
+    </div>
+
+    <div class="layer-card use-case">
+      <div class="layer-header">
+        <h4>Choose Distillation If You Want to Own Your Model</h4>
+      </div>
+      <p>API dependency means variable costs, rate limits, potential discontinuation, and no control over model updates. Distilling into your own model gives you a fixed asset you control: predictable costs, offline capability, version stability, and the ability to further fine-tune.</p>
+    </div>
+  </section>
+
+  <!-- ─── PRACTICAL RECIPES ─── -->
+  <section>
+    <h2>Practical Recipes</h2>
+
+    <div class="layer-card scale">
+      <div class="layer-header">
+        <h4>Recipe 1: Domain-Specific GPT-4-Level 7B Model</h4>
+        <span class="shapes">Most Common Use Case</span>
+      </div>
+      <p><strong>Goal:</strong> Compress GPT-4-class performance on a narrow domain (e.g., customer support, medical triage) into a deployable 7B model.</p>
+      <ul>
+        <li>Collect 10K domain-specific questions/scenarios</li>
+        <li>Generate GPT-4 responses with chain-of-thought for each</li>
+        <li>Start with a pretrained 7B base (LLaMA-3, Mistral, Qwen)</li>
+        <li>Fine-tune with standard cross-entropy on teacher outputs</li>
+        <li>Evaluate on held-out domain data; iterate on prompt diversity</li>
+        <li>Expected: 85&ndash;95% of GPT-4 quality on your domain at 1/50th the cost</li>
+      </ul>
+    </div>
+
+    <div class="layer-card scale">
+      <div class="layer-header">
+        <h4>Recipe 2: Fast Inference from Large Ensemble</h4>
+        <span class="shapes">Multi-Teacher</span>
+      </div>
+      <p><strong>Goal:</strong> Combine knowledge from multiple large models into a single fast student.</p>
+      <ul>
+        <li>Run 3&ndash;5 teacher models on the same prompts</li>
+        <li>Average their logit distributions (or take majority vote for hard labels)</li>
+        <li>Train student on the ensembled soft targets</li>
+        <li>The student often outperforms any individual teacher because the ensemble smooths out individual model errors</li>
+      </ul>
+    </div>
+
+    <div class="layer-card scale">
+      <div class="layer-header">
+        <h4>Recipe 3: Task-Specific Small Model</h4>
+        <span class="shapes">Focused Compression</span>
+      </div>
+      <p><strong>Goal:</strong> Create a tiny (1&ndash;3B) model that does one thing exceptionally well (e.g., sentiment analysis, entity extraction, SQL generation).</p>
+      <ul>
+        <li>Generate 100K&ndash;500K task-specific examples from a large teacher</li>
+        <li>Use a very small student architecture (1&ndash;3B, 12&ndash;24 layers)</li>
+        <li>Heavy data augmentation: paraphrases, edge cases, adversarial examples</li>
+        <li>Distilled small models often beat general-purpose models 10x their size on the target task</li>
+      </ul>
+    </div>
+
+    <div class="layer-card scale">
+      <div class="layer-header">
+        <h4>Recipe 4: Progressive Distillation for Generation Speedup</h4>
+        <span class="shapes">Diffusion / Iterative Models</span>
+      </div>
+      <p><strong>Goal:</strong> Reduce the number of sampling steps in diffusion or iterative generation models.</p>
+      <ul>
+        <li>Teacher: original model running N steps (e.g., 128 diffusion steps)</li>
+        <li>Student: same architecture but trained to produce equivalent output in N/2 steps</li>
+        <li>Repeat: distill N/2 into N/4, then N/4 into N/8</li>
+        <li>Result: 8&ndash;16x generation speedup with minimal quality loss</li>
+        <li>Applied successfully in Stable Diffusion distillation and speculative decoding for LLMs</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── HYPERPARAMETER GUIDE ─── -->
+  <section>
+    <h2>Hyperparameter Guide</h2>
+
+    <div class="callout callout-blue">
+      <strong>Temperature intuition:</strong> Temperature T controls how much "dark knowledge" flows from teacher to student. At T=1, the teacher says "the answer is definitely 'cat'." At T=10, the teacher says "it's probably 'cat', but 'kitten', 'feline', and 'pet' are reasonable too." The student learns richer representations from the softer distribution.
+    </div>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Hyperparameter</th>
+          <th>Typical Range</th>
+          <th>Guidance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Temperature (T)</td>
+          <td>2&ndash;20</td>
+          <td>Start at T=4. Higher T for diverse tasks, lower T for factual/classification tasks. T=1 reduces to standard training.</td>
+        </tr>
+        <tr>
+          <td>Alpha (&#945;)</td>
+          <td>0.5&ndash;0.9</td>
+          <td>Weight of distillation loss vs. hard-label loss. Start at 0.7. Higher alpha = more teacher reliance. Reduce alpha late in training.</td>
+        </tr>
+        <tr>
+          <td>Student Architecture</td>
+          <td>1/4 to 1/10 of teacher</td>
+          <td>Common: halve layers and hidden dim. 70B &#8594; 7B, 13B &#8594; 1.3B. Use teacher's tokenizer for vocab compatibility.</td>
+        </tr>
+        <tr>
+          <td>Learning Rate</td>
+          <td>1e-5 to 5e-4</td>
+          <td>Lower than pretraining LR. Use cosine schedule with warmup. Typical: 2e-5 for fine-tuning, 1e-4 for full distillation.</td>
+        </tr>
+        <tr>
+          <td>Batch Size</td>
+          <td>64&ndash;512</td>
+          <td>Larger batches stabilize KL divergence optimization. Scale with gradient accumulation if GPU-limited.</td>
+        </tr>
+        <tr>
+          <td>Loss Type</td>
+          <td>Logit-only vs. hidden-state</td>
+          <td>Start logit-only (simpler, fewer hyperparams). Add hidden-state alignment only if logit-only plateaus. Requires layer mapping.</td>
+        </tr>
+        <tr>
+          <td>Data Volume</td>
+          <td>50K&ndash;5M examples</td>
+          <td>Domain-specific: 50K&ndash;500K. General-purpose: 1M&ndash;5M. Quality > quantity. Filter aggressively.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ─── THE TRAJECTORY ─── -->
+  <section>
+    <h2>The Trajectory</h2>
+
+    <div class="callout">
+      <strong>Distillation is becoming the default way to deploy LLMs.</strong> The frontier labs train one massive model, then distill it into a family of smaller models for different deployment targets. GPT-4 &#8594; GPT-4o-mini, Gemini Ultra &#8594; Gemini Flash, Claude 3.5 Sonnet &#8594; Claude 3.5 Haiku. The "train big, deploy small" paradigm is now standard.
+    </div>
+
+    <p><strong>Synthetic data scaling:</strong> As teacher models improve, the quality of synthetic training data improves. This creates a virtuous cycle: better teachers produce better synthetic data, which trains better students, which in turn can become teachers for the next generation. The Phi series demonstrated this can work across multiple generations.</p>
+
+    <p><strong>Distillation-aware pretraining:</strong> Future models may be pretrained with distillation in mind &mdash; explicitly designed to be good teachers by producing informative output distributions. This means training objectives that encourage richer soft targets and more transferable hidden representations.</p>
+
+    <p><strong>Open-weight ecosystem:</strong> The availability of strong open-weight models (LLaMA, Mistral, Qwen, Gemma) as both teachers and student bases has democratized distillation. Any organization can now create competitive domain-specific models without training from scratch.</p>
+
+    <p><strong>The smaller-is-better trend:</strong> Phi-3-mini (3.8B) matching Mixtral-8x7B (46.7B) showed that the floor for "useful" model size keeps dropping. With better distillation techniques and data curation, we may see 1&ndash;3B models that match today's 7&ndash;13B models within a year. The practical implication: on-device LLMs are becoming viable for an expanding range of tasks.</p>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve Schmidt
+</footer>
+
+</body>
 </html>
