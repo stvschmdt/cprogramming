@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEPA Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; } section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; } .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; } .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; } .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #a855f7; } .callout-purple strong { color: #7c3aed; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.encoder { border-left-color: #3b82f6; } .layer-card.projection { border-left-color: #22c55e; } .layer-card.decoder { border-left-color: #8b5cf6; } .layer-card.training { border-left-color: #f59e0b; } .layer-card.mobile { border-left-color: #ef4444; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; } .layer-card p:last-child { margin-bottom: 0; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.blue { background: #3b82f6; } .step-num.green { background: #22c55e; } .step-num.purple { background: #8b5cf6; } .step-num.amber { background: #f59e0b; } .step-num.red { background: #ef4444; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="https://www.barflytrading.com">Trading</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / JEPA</div>
+    <h1>JEPA: Joint-Embedding Predictive Architectures</h1>
+    <div class="subtitle">2023&ndash;2024 &mdash; Meta AI (FAIR) &mdash; I-JEPA, V-JEPA, MC-JEPA</div>
+    <div class="meta-tags">
+      <span>Self-Supervised Learning</span>
+      <span>Vision Transformer</span>
+      <span>Predictive Architecture</span>
+      <span>Video Understanding</span>
+      <span>Optical Flow</span>
+      <span>Meta AI</span>
+    </div>
+    <div class="paper-link">
+      I-JEPA: <a href="https://arxiv.org/abs/2301.08243">arXiv:2301.08243</a> &nbsp;|&nbsp;
+      V-JEPA: <a href="https://arxiv.org/abs/2404.08471">arXiv:2404.08471</a> &nbsp;|&nbsp;
+      MC-JEPA: <a href="https://arxiv.org/abs/2307.12698">arXiv:2307.12698</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1: Problem -->
+  <section>
+    <h2>1 &mdash; The Problem</h2>
+
+    <p>Self-supervised vision models generally fall into two camps: <strong>invariance-based</strong> methods (DINO, SimCLR, MoCo) that pull different views of the same image together in embedding space, and <strong>generative</strong> methods (MAE, BEiT) that reconstruct missing pixels. Each has a characteristic flaw. Invariance methods require carefully hand-crafted augmentations and can learn features too invariant for dense prediction. Generative methods waste capacity modeling high-frequency pixel noise that carries no semantic content.</p>
+
+    <p>Yann LeCun's <strong>Joint-Embedding Predictive Architecture</strong> proposes a third path: predict the representation of one part of the signal from the representation of another part, inside a learned embedding space. The network is never asked to generate pixels, only to fill in features. This sidesteps both hand-crafted augmentations and pixel-level reconstruction.</p>
+
+    <div class="callout">
+      <strong>The JEPA insight:</strong> Prediction in representation space is both easier and more useful than prediction in pixel space. The encoder can discard unpredictable low-level detail (textures, exact pixel values) and focus capacity on semantic content &mdash; the part of the signal that <em>is</em> predictable from context.
+    </div>
+
+    <h3>Three Instances of the Same Idea</h3>
+    <p>The JEPA family applies this recipe across three data regimes:</p>
+    <ul style="padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.92rem;">
+      <li><strong>I-JEPA (2023)</strong> &mdash; predicts masked image blocks in embedding space; no augmentations</li>
+      <li><strong>V-JEPA (2024)</strong> &mdash; extends the block-prediction recipe to spatio-temporal video tubes</li>
+      <li><strong>MC-JEPA (2023)</strong> &mdash; jointly learns content (JEPA) and motion (self-supervised optical flow) in one shared encoder</li>
+    </ul>
+  </section>
+
+  <!-- SECTION 2: I-JEPA -->
+  <section>
+    <h2>2 &mdash; I-JEPA: Image JEPA</h2>
+
+    <p>I-JEPA (Assran et&nbsp;al., CVPR 2023) is the canonical JEPA instantiation. Given a single image, it masks out several target blocks and asks a small predictor network to reconstruct their <em>encoded representations</em> from the representations of a separately sampled context block. No pixels are ever decoded; no color-jitter or crop augmentations are used.</p>
+
+    <!-- SVG: I-JEPA Architecture -->
+    <div class="arch-diagram">
+      <svg viewBox="0 0 740 420" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Input image with masks -->
+        <g>
+          <rect x="20" y="150" width="110" height="110" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="75" y="142" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">Input Image</text>
+          <!-- grid -->
+          <g stroke="#d97706" stroke-width="0.4" opacity="0.4">
+            <line x1="20" y1="177" x2="130" y2="177"/>
+            <line x1="20" y1="205" x2="130" y2="205"/>
+            <line x1="20" y1="232" x2="130" y2="232"/>
+            <line x1="47" y1="150" x2="47" y2="260"/>
+            <line x1="75" y1="150" x2="75" y2="260"/>
+            <line x1="102" y1="150" x2="102" y2="260"/>
+          </g>
+          <!-- context block (green) -->
+          <rect x="24" y="154" width="80" height="55" fill="#86efac" opacity="0.65" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="64" y="184" text-anchor="middle" font-size="9" font-weight="700" fill="#14532d">ctx</text>
+          <!-- target blocks (red) -->
+          <rect x="56" y="214" width="42" height="42" fill="#fca5a5" opacity="0.75" stroke="#dc2626" stroke-width="1.3"/>
+          <text x="77" y="239" text-anchor="middle" font-size="8" font-weight="700" fill="#7f1d1d">tgt</text>
+          <rect x="104" y="160" width="22" height="38" fill="#fca5a5" opacity="0.75" stroke="#dc2626" stroke-width="1.3"/>
+          <text x="115" y="181" text-anchor="middle" font-size="7" font-weight="700" fill="#7f1d1d">tgt</text>
+          <rect x="22" y="216" width="30" height="40" fill="#fca5a5" opacity="0.75" stroke="#dc2626" stroke-width="1.3"/>
+          <text x="37" y="239" text-anchor="middle" font-size="7" font-weight="700" fill="#7f1d1d">tgt</text>
+        </g>
+
+        <!-- Context path (top) -->
+        <line x1="130" y1="175" x2="180" y2="120" stroke="#16a34a" stroke-width="1.3" marker-end="url(#ja-green)"/>
+        <rect x="180" y="90" width="130" height="60" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="245" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#14532d">Context Encoder</text>
+        <text x="245" y="136" text-anchor="middle" font-size="9" fill="#16a34a">ViT &mdash; trained</text>
+
+        <!-- Target path (bottom) -->
+        <line x1="130" y1="230" x2="180" y2="300" stroke="#dc2626" stroke-width="1.3" marker-end="url(#ja-red)"/>
+        <rect x="180" y="290" width="130" height="60" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="245" y="318" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">Target Encoder</text>
+        <text x="245" y="336" text-anchor="middle" font-size="9" fill="#dc2626">EMA of context</text>
+
+        <!-- EMA dashed curve -->
+        <path d="M 200,290 C 150,220 150,220 200,150" fill="none" stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#ja-amber)"/>
+        <text x="135" y="218" text-anchor="middle" font-size="9" font-weight="600" fill="#d97706">EMA</text>
+        <text x="135" y="230" text-anchor="middle" font-size="8" fill="#d97706">stop-grad</text>
+
+        <!-- Predictor -->
+        <line x1="310" y1="120" x2="360" y2="170" stroke="#16a34a" stroke-width="1.3" marker-end="url(#ja-green)"/>
+        <rect x="360" y="150" width="140" height="70" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="430" y="180" text-anchor="middle" font-size="12" font-weight="700" fill="#3730a3">Predictor</text>
+        <text x="430" y="198" text-anchor="middle" font-size="9" fill="#6366f1">narrow ViT</text>
+        <text x="430" y="212" text-anchor="middle" font-size="8" fill="#6366f1">+ target mask tokens</text>
+
+        <!-- Predicted reps -->
+        <line x1="500" y1="185" x2="555" y2="185" stroke="#6366f1" stroke-width="1.3" marker-end="url(#ja-purple)"/>
+        <rect x="555" y="155" width="110" height="30" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1"/>
+        <text x="610" y="175" text-anchor="middle" font-size="10" font-weight="600" fill="#3730a3">ŷ (predicted)</text>
+
+        <!-- Target reps -->
+        <line x1="310" y1="320" x2="555" y2="245" stroke="#dc2626" stroke-width="1.3" marker-end="url(#ja-red)"/>
+        <rect x="555" y="220" width="110" height="30" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+        <text x="610" y="240" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">y (target)</text>
+
+        <!-- Loss -->
+        <rect x="555" y="280" width="110" height="50" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="610" y="305" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">L2 / smooth-L1</text>
+        <text x="610" y="320" text-anchor="middle" font-size="9" fill="#dc2626">(in feature space)</text>
+        <line x1="610" y1="185" x2="610" y2="280" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="3,2"/>
+        <line x1="610" y1="250" x2="610" y2="280" stroke="#ef4444" stroke-width="1.2"/>
+
+        <!-- Gradient arrow -->
+        <path d="M 555,305 L 100,305 L 100,150" fill="none" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#ja-red)"/>
+        <text x="345" y="395" text-anchor="middle" font-size="9" font-weight="600" fill="#dc2626">gradient &rarr; context encoder + predictor only</text>
+
+        <defs>
+          <marker id="ja-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#16a34a"/></marker>
+          <marker id="ja-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#dc2626"/></marker>
+          <marker id="ja-amber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d97706"/></marker>
+          <marker id="ja-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#6366f1"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span>Multi-Block Masking</h4>
+        <div class="shapes">1 context + 4 target blocks per image</div>
+      </div>
+      <p>The image is split into <span class="tensor">14&times;14</span> patches (for a 224&times;224 input with patch size 16). Four <strong>target blocks</strong> are sampled with scale 0.15&ndash;0.20 of the image and aspect ratios in <span class="tensor">[0.75, 1.5]</span>. A single large <strong>context block</strong> is sampled with scale 0.85&ndash;1.0; any patches overlapping a target are <em>removed</em> from the context to prevent information leakage. This asymmetry &mdash; small scattered targets vs. one large context &mdash; forces genuinely semantic prediction rather than local copy-paste.</p>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">2</span>Context Encoder (ViT)</h4>
+        <div class="shapes"><span class="tensor">[B, N_ctx, D]</span> &mdash; ViT-B/14, L/14, or H/14</div>
+      </div>
+      <p>The context patches (typically ~50&ndash;100 tokens depending on sampling) pass through a standard Vision Transformer. I-JEPA uses ViT-B (86M), ViT-L (307M), and ViT-H (632M) variants with patch size 14 or 16. The encoder output is a sequence of patch embeddings used both as a source of prediction signal and, after training, as the general-purpose feature extractor for downstream tasks.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4><span class="step-num purple">3</span>Predictor</h4>
+        <div class="shapes">Narrow ViT &mdash; <span class="tensor">384 dims</span>, 6 layers</div>
+      </div>
+      <p>The predictor is a <em>small</em> Vision Transformer (much narrower than the encoder) that takes (a) the context encoder output and (b) learnable <strong>mask tokens</strong> &mdash; one per patch position inside each target block, augmented with positional embeddings. It outputs predicted feature vectors <span class="tensor">ŷ</span> for every masked position. Crucially, the predictor conditions on the target <em>position</em>, so the model must learn a conditional distribution over features, not just a constant mean.</p>
+    </div>
+
+    <div class="layer-card mobile">
+      <div class="layer-header">
+        <h4><span class="step-num red">4</span>Target Encoder (EMA)</h4>
+        <div class="shapes">EMA of context encoder &mdash; <em>no</em> gradient</div>
+      </div>
+      <p>The target encoder is an exponential moving average of the context encoder's weights, updated after every step with momentum typically 0.996 &rarr; 1.0 on a cosine schedule. It encodes the <em>full</em> image (not just the context) and provides the target vectors <span class="tensor">y</span> for the masked positions. Its output is stop-gradient: gradients flow only through the context encoder and predictor. This asymmetry plus feature-space prediction is what prevents collapse &mdash; no centering, sharpening, or negative pairs required.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">5</span>Loss</h4>
+        <div class="shapes">Average L2 over masked patch positions</div>
+      </div>
+      <p>The loss is the mean squared error (or smooth-L1) between predicted and target patch embeddings, averaged over all masked positions across all four target blocks:</p>
+      <p style="font-family: 'SF Mono', monospace; font-size: 0.88rem; text-align: center; background: var(--code-bg); padding: 0.6rem; border-radius: 4px;">L = (1/M) &Sigma;<sub>i&isin;targets</sub> ||ŷ<sub>i</sub> &minus; sg(y<sub>i</sub>)||<sub>2</sub><sup>2</sup></p>
+      <p>where <span class="tensor">sg(&middot;)</span> denotes stop-gradient. No contrastive term, no reconstruction term, no pixel loss.</p>
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>Why no collapse?</strong> With an EMA target and feature-space prediction, the trivial solution "output a constant vector" <em>is</em> achievable &mdash; but the predictor is conditioned on position and must produce <em>different</em> features for different target locations. The optimization landscape favors informative features that let the predictor succeed, not collapsed ones. Empirically, I-JEPA trains stably without centering, sharpening, or any auxiliary anti-collapse term.
+    </div>
+  </section>
+
+  <!-- SECTION 3: V-JEPA -->
+  <section>
+    <h2>3 &mdash; V-JEPA: Video JEPA</h2>
+
+    <p>V-JEPA (Bardes et&nbsp;al., 2024) carries the I-JEPA recipe into the temporal domain. Instead of 2D patches of a single image, the input is a short video clip tokenized into 3D spatio-temporal tubes, and the masking is done on tubes rather than 2D blocks.</p>
+
+    <!-- SVG: V-JEPA tube masking -->
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Frame stack -->
+        <g>
+          <rect x="40" y="90" width="80" height="80" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+          <rect x="50" y="80" width="80" height="80" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+          <rect x="60" y="70" width="80" height="80" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+          <rect x="70" y="60" width="80" height="80" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+          <rect x="80" y="50" width="80" height="80" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+
+          <!-- context tokens (green) spread across frames -->
+          <rect x="44" y="94" width="18" height="18" fill="#86efac" opacity="0.8" stroke="#16a34a" stroke-width="0.8"/>
+          <rect x="84" y="54" width="18" height="18" fill="#86efac" opacity="0.8" stroke="#16a34a" stroke-width="0.8"/>
+          <rect x="124" y="94" width="18" height="18" fill="#86efac" opacity="0.8" stroke="#16a34a" stroke-width="0.8"/>
+          <rect x="104" y="74" width="18" height="18" fill="#86efac" opacity="0.8" stroke="#16a34a" stroke-width="0.8"/>
+
+          <!-- masked tube (red) -->
+          <rect x="66" y="116" width="32" height="32" fill="#fca5a5" opacity="0.85" stroke="#dc2626" stroke-width="1.2"/>
+          <rect x="76" y="106" width="32" height="32" fill="#fca5a5" opacity="0.85" stroke="#dc2626" stroke-width="1.2"/>
+          <rect x="86" y="96" width="32" height="32" fill="#fca5a5" opacity="0.85" stroke="#dc2626" stroke-width="1.2"/>
+          <rect x="96" y="86" width="32" height="32" fill="#fca5a5" opacity="0.85" stroke="#dc2626" stroke-width="1.2"/>
+          <rect x="106" y="76" width="32" height="32" fill="#fca5a5" opacity="0.85" stroke="#dc2626" stroke-width="1.2"/>
+
+          <text x="108" y="195" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">video clip (16 frames)</text>
+          <text x="108" y="210" text-anchor="middle" font-size="9" fill="#78716c">+ spatio-temporal tube mask</text>
+          <!-- time arrow -->
+          <line x1="40" y1="230" x2="170" y2="230" stroke="#57534e" stroke-width="1" marker-end="url(#vj-gray)"/>
+          <text x="105" y="245" text-anchor="middle" font-size="9" fill="#57534e">time</text>
+        </g>
+
+        <!-- Context encoder -->
+        <line x1="170" y1="110" x2="215" y2="110" stroke="#16a34a" stroke-width="1.3" marker-end="url(#vj-green)"/>
+        <rect x="215" y="80" width="130" height="60" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="280" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#14532d">Context Encoder</text>
+        <text x="280" y="124" text-anchor="middle" font-size="9" fill="#16a34a">3D ViT-L or ViT-H</text>
+
+        <!-- Target encoder -->
+        <line x1="170" y1="140" x2="215" y2="200" stroke="#dc2626" stroke-width="1.3" marker-end="url(#vj-red)"/>
+        <rect x="215" y="190" width="130" height="60" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="280" y="218" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">Target Encoder</text>
+        <text x="280" y="234" text-anchor="middle" font-size="9" fill="#dc2626">EMA (full clip)</text>
+
+        <!-- Predictor -->
+        <line x1="345" y1="110" x2="395" y2="150" stroke="#16a34a" stroke-width="1.3" marker-end="url(#vj-green)"/>
+        <rect x="395" y="130" width="130" height="60" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="460" y="158" text-anchor="middle" font-size="12" font-weight="700" fill="#3730a3">Predictor</text>
+        <text x="460" y="174" text-anchor="middle" font-size="9" fill="#6366f1">narrow ViT + mask tokens</text>
+
+        <!-- Loss -->
+        <line x1="525" y1="160" x2="570" y2="160" stroke="#6366f1" stroke-width="1.3" marker-end="url(#vj-purple)"/>
+        <line x1="345" y1="220" x2="570" y2="180" stroke="#dc2626" stroke-width="1.3" marker-end="url(#vj-red)"/>
+        <rect x="570" y="140" width="130" height="50" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="635" y="163" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">Feature L1</text>
+        <text x="635" y="178" text-anchor="middle" font-size="9" fill="#dc2626">over masked tubes</text>
+
+        <defs>
+          <marker id="vj-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#16a34a"/></marker>
+          <marker id="vj-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#dc2626"/></marker>
+          <marker id="vj-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#6366f1"/></marker>
+          <marker id="vj-gray" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><path d="M0,0 L7,2.5 L0,5Z" fill="#57534e"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span>Spatio-Temporal Tokenization</h4>
+        <div class="shapes">Clip: <span class="tensor">16 &times; 224 &times; 224</span> &rarr; <span class="tensor">8 &times; 16 &times; 16</span> tubes</div>
+      </div>
+      <p>A video clip is a stack of RGB frames. V-JEPA tokenizes it into 3D patches of size <span class="tensor">2&times;16&times;16</span> (2 frames &times; 16&times;16 pixels), giving 8 temporal steps &times; 14&times;14 spatial positions = 1,568 tube tokens per clip. Each tube is linearly embedded into the transformer dimension along with a 3D positional encoding.</p>
+    </div>
+
+    <div class="layer-card mobile">
+      <div class="layer-header">
+        <h4><span class="step-num red">2</span>Tube Masking Strategy</h4>
+        <div class="shapes">Short-range + long-range masks &mdash; ~90% of tubes</div>
+      </div>
+      <p>V-JEPA samples two kinds of masks per clip: <strong>short-range</strong> masks (a rectangular region held fixed across all frames &mdash; tests if the model understands temporal extension of a spatial region) and <strong>long-range</strong> masks (a larger rectangular region also held across time). Roughly 90% of tubes are masked, forcing the model to predict broad regions from a sparse context &mdash; far more aggressive than I-JEPA's ~50% mask rate.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4><span class="step-num purple">3</span>Feature Prediction, Not Pixel Prediction</h4>
+        <div class="shapes">Loss: L1 between predictor output and EMA-target features</div>
+      </div>
+      <p>Exactly as in I-JEPA: the context encoder sees the unmasked tubes, the predictor ingests the encoder output plus learnable mask tokens at the missing positions, and the loss is an L1 distance between the predictor's output and the EMA target encoder's full-clip output at the masked positions. V-JEPA explicitly ablates against a pixel-reconstruction variant (MVP-style) and shows that feature-space prediction produces markedly better motion and action features.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">4</span>VideoMix2M Pre-training</h4>
+        <div class="shapes">2M videos &mdash; Kinetics-710, SSv2, HowTo100M</div>
+      </div>
+      <p>V-JEPA is pre-trained on a mixture of ~2 million unlabeled videos pooled from Kinetics-710, Something-Something-v2, and HowTo100M. The paper trains ViT-L/16 and ViT-H/16 3D-ViT variants. Training runs for ~90K iterations on H100/A100 GPU clusters with mixed precision.</p>
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>Frozen-feature evaluation:</strong> V-JEPA features are evaluated by freezing the backbone and training only a small attentive pooler + linear head. Under this protocol, V-JEPA ViT-H/16 matches or beats pixel-prediction methods (VideoMAE, OmniMAE) on action classification (Kinetics-400, SSv2) and appearance-based tasks (ImageNet linear probe), demonstrating that feature-space video prediction produces more transferable representations than pixel-space reconstruction.
+    </div>
+  </section>
+
+  <!-- SECTION 4: MC-JEPA -->
+  <section>
+    <h2>4 &mdash; MC-JEPA: Motion &amp; Content</h2>
+
+    <p>MC-JEPA (Bardes et&nbsp;al., 2023) is a different axis of extension. Rather than scale to video clips, it asks whether a <em>single shared encoder</em> can learn both <em>content</em> representations (semantic, object-level) and <em>motion</em> representations (pixel-level optical flow) at the same time &mdash; two objectives that are usually served by separate networks.</p>
+
+    <!-- SVG: MC-JEPA shared encoder + two heads -->
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Frame t -->
+        <rect x="20" y="60" width="70" height="70" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+        <text x="55" y="50" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">frame t</text>
+        <!-- Frame t+1 -->
+        <rect x="20" y="190" width="70" height="70" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+        <text x="55" y="280" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">frame t+1</text>
+
+        <!-- Shared ConvNeXt encoder -->
+        <line x1="90" y1="95" x2="150" y2="120" stroke="#57534e" stroke-width="1.3" marker-end="url(#mc-gray)"/>
+        <line x1="90" y1="225" x2="150" y2="200" stroke="#57534e" stroke-width="1.3" marker-end="url(#mc-gray)"/>
+        <rect x="150" y="130" width="160" height="70" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+        <text x="230" y="160" text-anchor="middle" font-size="12" font-weight="700" fill="#78350f">Shared Encoder</text>
+        <text x="230" y="178" text-anchor="middle" font-size="9" fill="#b45309">ConvNeXt / ViT-like</text>
+        <text x="230" y="192" text-anchor="middle" font-size="9" font-style="italic" fill="#b45309">one set of weights</text>
+
+        <!-- Content head: JEPA -->
+        <line x1="310" y1="150" x2="360" y2="100" stroke="#16a34a" stroke-width="1.3" marker-end="url(#mc-green)"/>
+        <rect x="360" y="60" width="180" height="80" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="450" y="88" text-anchor="middle" font-size="12" font-weight="700" fill="#14532d">Content: Dense JEPA</text>
+        <text x="450" y="105" text-anchor="middle" font-size="9" fill="#16a34a">VICReg-style variance/covariance</text>
+        <text x="450" y="120" text-anchor="middle" font-size="9" fill="#16a34a">predictive loss on features</text>
+
+        <!-- Motion head: flow -->
+        <line x1="310" y1="180" x2="360" y2="230" stroke="#6366f1" stroke-width="1.3" marker-end="url(#mc-purple)"/>
+        <rect x="360" y="220" width="180" height="80" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="450" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#3730a3">Motion: Self-Sup Flow</text>
+        <text x="450" y="265" text-anchor="middle" font-size="9" fill="#6366f1">photometric + smoothness loss</text>
+        <text x="450" y="280" text-anchor="middle" font-size="9" fill="#6366f1">predicts dense optical flow</text>
+
+        <!-- Combined loss -->
+        <line x1="540" y1="100" x2="590" y2="160" stroke="#16a34a" stroke-width="1.3" marker-end="url(#mc-green)"/>
+        <line x1="540" y1="260" x2="590" y2="200" stroke="#6366f1" stroke-width="1.3" marker-end="url(#mc-purple)"/>
+        <rect x="590" y="145" width="110" height="70" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="645" y="175" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">L = L_content</text>
+        <text x="645" y="192" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">+ &lambda; &middot; L_flow</text>
+
+        <defs>
+          <marker id="mc-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#57534e"/></marker>
+          <marker id="mc-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#16a34a"/></marker>
+          <marker id="mc-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#6366f1"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span>Shared Encoder, Two Heads</h4>
+        <div class="shapes">Single backbone &rarr; content JEPA head + optical-flow head</div>
+      </div>
+      <p>A single ConvNeXt-style multi-scale encoder produces features for both frames <span class="tensor">t</span> and <span class="tensor">t+1</span>. Those features are fed into two task heads that share no parameters beyond the backbone. The content head applies a dense, patch-level JEPA objective; the motion head regresses dense optical flow between the two frames using a classical self-supervised flow objective (photometric reconstruction + smoothness).</p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4><span class="step-num green">2</span>Content Branch: Dense JEPA (VICReg-style)</h4>
+        <div class="shapes">Per-patch prediction with variance/covariance regularization</div>
+      </div>
+      <p>The content head applies JEPA not at the image level but <em>per spatial patch</em>: predict the feature of a masked patch from its neighbors. Collapse is prevented by a <strong>VICReg-style regularization</strong> &mdash; explicit variance and covariance terms on the feature embeddings force each dimension to be active and decorrelated. This replaces the EMA target trick of I-JEPA and is cheaper since both frames go through the online encoder.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4><span class="step-num purple">3</span>Motion Branch: Self-Supervised Optical Flow</h4>
+        <div class="shapes">Photometric + smoothness loss &mdash; no flow labels</div>
+      </div>
+      <p>A correlation volume is built between the shared-encoder features of frames <span class="tensor">t</span> and <span class="tensor">t+1</span>. A small flow head (iterative refinement, RAFT-style) produces a dense per-pixel flow field. Training uses the classical self-supervised flow recipe: warp frame <span class="tensor">t+1</span> back to <span class="tensor">t</span> using the predicted flow, minimize a photometric (census / SSIM) reconstruction loss on the warped result, and add an edge-aware smoothness prior. No ground-truth flow is used anywhere.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">4</span>Joint Optimization</h4>
+        <div class="shapes">L = L_content + &lambda; &middot; L_flow</div>
+      </div>
+      <p>The two losses are summed with a scalar weight &lambda;. The crucial empirical finding: the <em>shared</em> encoder trained on both tasks produces better content features <em>and</em> better flow than encoders trained on either task alone. Content training regularizes flow against degenerate solutions; flow training forces content features to respect temporal geometry. The model beats VICReg (content-only) on ImageNet linear probe and competes with supervised RAFT on flow benchmarks (Sintel, KITTI) despite never seeing flow labels.</p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>Why multi-task works here:</strong> The two objectives are <em>complementary</em>, not redundant. Optical flow is a low-level geometric task that demands fine-grained, localized features; JEPA is a high-level semantic task that demands invariant, object-level features. Asking a single encoder to serve both ends of that spectrum forces it to produce features that are simultaneously fine-grained <em>and</em> semantically organized &mdash; which is exactly what downstream vision tasks want.
+    </div>
+  </section>
+
+  <!-- SECTION 5: Evolution -->
+  <section>
+    <h2>5 &mdash; Comparison: I-JEPA / V-JEPA / MC-JEPA</h2>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- I-JEPA box -->
+        <rect x="20" y="40" width="200" height="240" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+        <text x="120" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="#1e40af">I-JEPA</text>
+        <text x="120" y="88" text-anchor="middle" font-size="10" fill="#3b82f6">2023 &mdash; images</text>
+        <line x1="40" y1="98" x2="200" y2="98" stroke="#93c5fd" stroke-width="1"/>
+        <text x="40" y="118" font-size="10" fill="#1e3a5f">Context + target blocks</text>
+        <text x="40" y="135" font-size="10" fill="#1e3a5f">EMA target encoder</text>
+        <text x="40" y="152" font-size="10" fill="#1e3a5f">Predictor = narrow ViT</text>
+        <text x="40" y="169" font-size="10" fill="#1e3a5f">No augmentations</text>
+        <text x="40" y="186" font-size="10" fill="#1e3a5f">ViT-B / L / H</text>
+        <text x="40" y="203" font-size="10" fill="#1e3a5f">ImageNet / IN-22K</text>
+        <text x="40" y="225" font-size="10" font-weight="600" fill="#1e40af">77.5% LP (ViT-H/16)</text>
+        <text x="40" y="242" font-size="10" font-weight="600" fill="#1e40af">Strong few-shot</text>
+        <text x="40" y="259" font-size="10" font-weight="600" fill="#1e40af">Fast pre-training</text>
+
+        <!-- V-JEPA box -->
+        <rect x="240" y="40" width="200" height="240" rx="10" fill="#faf5ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="340" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="#581c87">V-JEPA</text>
+        <text x="340" y="88" text-anchor="middle" font-size="10" fill="#a855f7">2024 &mdash; video</text>
+        <line x1="260" y1="98" x2="420" y2="98" stroke="#d8b4fe" stroke-width="1"/>
+        <text x="260" y="118" font-size="10" fill="#3b0764">Spatio-temporal tubes</text>
+        <text x="260" y="135" font-size="10" fill="#3b0764">EMA target + tube mask</text>
+        <text x="260" y="152" font-size="10" fill="#3b0764">Feature-space L1</text>
+        <text x="260" y="169" font-size="10" fill="#3b0764">~90% mask rate</text>
+        <text x="260" y="186" font-size="10" fill="#3b0764">3D ViT-L / ViT-H</text>
+        <text x="260" y="203" font-size="10" fill="#3b0764">VideoMix2M</text>
+        <text x="260" y="225" font-size="10" font-weight="600" fill="#581c87">Strong motion features</text>
+        <text x="260" y="242" font-size="10" font-weight="600" fill="#581c87">Beats pixel-MAE</text>
+        <text x="260" y="259" font-size="10" font-weight="600" fill="#581c87">SOTA frozen K400</text>
+
+        <!-- MC-JEPA box -->
+        <rect x="460" y="40" width="200" height="240" rx="10" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+        <text x="560" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="#166534">MC-JEPA</text>
+        <text x="560" y="88" text-anchor="middle" font-size="10" fill="#22c55e">2023 &mdash; multi-task</text>
+        <line x1="480" y1="98" x2="640" y2="98" stroke="#86efac" stroke-width="1"/>
+        <text x="480" y="118" font-size="10" fill="#14532d">Shared encoder</text>
+        <text x="480" y="135" font-size="10" fill="#14532d">Dense JEPA + SSL flow</text>
+        <text x="480" y="152" font-size="10" fill="#14532d">VICReg anti-collapse</text>
+        <text x="480" y="169" font-size="10" fill="#14532d">No EMA needed</text>
+        <text x="480" y="186" font-size="10" fill="#14532d">ConvNeXt backbone</text>
+        <text x="480" y="203" font-size="10" fill="#14532d">Frame pairs (t, t+1)</text>
+        <text x="480" y="225" font-size="10" font-weight="600" fill="#166534">Content + motion</text>
+        <text x="480" y="242" font-size="10" font-weight="600" fill="#166534">Competitive flow</text>
+        <text x="480" y="259" font-size="10" font-weight="600" fill="#166534">One model, two tasks</text>
+
+        <!-- arrows from I-JEPA to V-JEPA -->
+        <line x1="220" y1="155" x2="240" y2="155" stroke="#78716c" stroke-width="1.5" marker-end="url(#cmp-gray)"/>
+        <text x="230" y="148" text-anchor="middle" font-size="7" fill="#78716c">+time</text>
+        <line x1="440" y1="155" x2="460" y2="155" stroke="#78716c" stroke-width="1.5" marker-end="url(#cmp-gray)"/>
+        <text x="450" y="148" text-anchor="middle" font-size="7" fill="#78716c">+flow</text>
+
+        <defs>
+          <marker id="cmp-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#78716c"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <table class="summary-table">
+      <tr>
+        <th>Attribute</th>
+        <th>I-JEPA (2023)</th>
+        <th>V-JEPA (2024)</th>
+        <th>MC-JEPA (2023)</th>
+      </tr>
+      <tr>
+        <td><strong>Input</strong></td>
+        <td>Single image</td>
+        <td>Video clip (16 frames)</td>
+        <td>Frame pair (t, t+1)</td>
+      </tr>
+      <tr>
+        <td><strong>Tokenization</strong></td>
+        <td>2D patches (14 or 16)</td>
+        <td>3D tubes (2&times;16&times;16)</td>
+        <td>ConvNeXt multi-scale</td>
+      </tr>
+      <tr>
+        <td><strong>Masking</strong></td>
+        <td>1 context + 4 target blocks</td>
+        <td>Short/long-range tubes (~90%)</td>
+        <td>Patch-level dense</td>
+      </tr>
+      <tr>
+        <td><strong>Prediction space</strong></td>
+        <td>Patch features</td>
+        <td>Tube features</td>
+        <td>Patch features + flow</td>
+      </tr>
+      <tr>
+        <td><strong>Anti-collapse</strong></td>
+        <td>EMA target encoder</td>
+        <td>EMA target encoder</td>
+        <td>VICReg variance/covariance</td>
+      </tr>
+      <tr>
+        <td><strong>Augmentations</strong></td>
+        <td>None</td>
+        <td>None</td>
+        <td>Minimal</td>
+      </tr>
+      <tr>
+        <td><strong>Backbone</strong></td>
+        <td>ViT-B/L/H</td>
+        <td>3D ViT-L/H</td>
+        <td>ConvNeXt</td>
+      </tr>
+      <tr>
+        <td><strong>Key extension</strong></td>
+        <td>Canonical JEPA</td>
+        <td>Temporal dimension</td>
+        <td>Joint content + motion</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- SECTION 6: Training -->
+  <section>
+    <h2>6 &mdash; Training Details</h2>
+
+    <h3>I-JEPA Training</h3>
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Optimization</h4>
+        <div class="shapes">16&ndash;64 A100 GPUs &mdash; 300 epochs on ImageNet / IN-22K</div>
+      </div>
+      <p><strong>Optimizer:</strong> AdamW, weight decay 0.04 &rarr; 0.4 cosine. <strong>LR:</strong> warm-up 15 epochs, base 1e-3, cosine decay. <strong>Batch size:</strong> 2048. <strong>EMA:</strong> momentum 0.996 &rarr; 1.0 on cosine. <strong>Masking:</strong> 4 target blocks per image, scale 0.15&ndash;0.20, aspect 0.75&ndash;1.5; context block scale 0.85&ndash;1.0 with overlapping patches removed. <strong>Predictor:</strong> 6 layers, 384 embed dim, 12 heads. No color-jitter, no horizontal flip, no crop &mdash; only standard resize.</p>
+    </div>
+
+    <h3>V-JEPA Training</h3>
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Video Pre-training</h4>
+        <div class="shapes">~2M clips &mdash; multi-node H100 cluster</div>
+      </div>
+      <p><strong>Clip length:</strong> 16 frames at 224&times;224, sampled with random temporal stride. <strong>Tube size:</strong> 2&times;16&times;16. <strong>Mask ratio:</strong> ~90% of tubes (short- and long-range masks combined). <strong>Optimizer:</strong> AdamW with bf16 mixed precision. <strong>Iterations:</strong> 90K with cosine LR schedule and 12K warm-up. <strong>Loss:</strong> smooth-L1 over masked tubes, no reconstruction loss. <strong>Evaluation:</strong> frozen backbone + attentive probe on Kinetics, SSv2, ImageNet.</p>
+    </div>
+
+    <h3>MC-JEPA Training</h3>
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Joint Content + Flow</h4>
+        <div class="shapes">Adjacent frame pairs from KITTI / YouTube-VOS</div>
+      </div>
+      <p><strong>Input:</strong> two adjacent frames at ~384&times;832. <strong>Backbone:</strong> ConvNeXt-style encoder shared between both branches. <strong>Content loss:</strong> dense JEPA + VICReg (&lambda;<sub>var</sub>, &lambda;<sub>cov</sub>) to enforce non-collapse. <strong>Flow loss:</strong> census-transform photometric + edge-aware smoothness + occlusion-aware masking. <strong>Combined:</strong> L = L<sub>content</sub> + &lambda; &middot; L<sub>flow</sub>, with &lambda; tuned on validation. <strong>Optimizer:</strong> Adam, LR 1e-4 cosine.</p>
+    </div>
+
+    <div class="callout">
+      <strong>What's conspicuously missing:</strong> there are no color augmentations, no contrastive losses, no reconstruction pixel losses, no clustering assignments, and &mdash; for I-JEPA and V-JEPA &mdash; no hand-engineered anti-collapse tricks beyond the EMA target. The recipe is deliberately minimal: mask, encode, predict in feature space, stop-gradient the target.
+    </div>
+  </section>
+
+  <!-- SECTION 7: Results -->
+  <section>
+    <h2>7 &mdash; Results</h2>
+
+    <h3>I-JEPA &mdash; ImageNet Linear Probe</h3>
+    <table class="summary-table">
+      <tr>
+        <th>Model</th>
+        <th>Params</th>
+        <th>Pre-training</th>
+        <th>IN-1K Linear</th>
+        <th>IN-1K 1% Few-shot</th>
+      </tr>
+      <tr>
+        <td>MAE ViT-H/14</td>
+        <td>632M</td>
+        <td>IN-1K, 800 ep</td>
+        <td>76.6%</td>
+        <td>&mdash;</td>
+      </tr>
+      <tr>
+        <td>I-JEPA ViT-H/14</td>
+        <td>632M</td>
+        <td>IN-1K, 300 ep</td>
+        <td style="font-weight:600;">77.3%</td>
+        <td style="font-weight:600; color:#16a34a;">65.2%</td>
+      </tr>
+      <tr>
+        <td>I-JEPA ViT-H/16</td>
+        <td>632M</td>
+        <td>IN-22K, 300 ep</td>
+        <td style="font-weight:600;">77.5%</td>
+        <td>&mdash;</td>
+      </tr>
+    </table>
+    <p style="font-size:0.88rem; color:var(--muted);">I-JEPA matches or beats pixel-reconstruction methods (MAE, data2vec) at comparable scale while using fewer pre-training epochs and no augmentations.</p>
+
+    <h3>V-JEPA &mdash; Frozen Evaluation</h3>
+    <table class="summary-table">
+      <tr>
+        <th>Task</th>
+        <th>Dataset</th>
+        <th>Metric</th>
+        <th>V-JEPA ViT-H/16</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>Action classification</td>
+        <td>Kinetics-400</td>
+        <td>Top-1 (frozen)</td>
+        <td style="font-weight:600;">81.9%</td>
+        <td>Attentive probe, frozen backbone</td>
+      </tr>
+      <tr>
+        <td>Action classification</td>
+        <td>Something-Something-v2</td>
+        <td>Top-1 (frozen)</td>
+        <td style="font-weight:600;">72.2%</td>
+        <td>Motion-heavy benchmark</td>
+      </tr>
+      <tr>
+        <td>Image classification</td>
+        <td>ImageNet-1K</td>
+        <td>Top-1 (frozen)</td>
+        <td style="font-weight:600;">77.4%</td>
+        <td>Appearance transfer from video</td>
+      </tr>
+    </table>
+
+    <h3>MC-JEPA &mdash; Content &amp; Flow</h3>
+    <table class="summary-table">
+      <tr>
+        <th>Task</th>
+        <th>Benchmark</th>
+        <th>Metric</th>
+        <th>Score</th>
+      </tr>
+      <tr>
+        <td>Image classification (frozen)</td>
+        <td>ImageNet-1K</td>
+        <td>Linear top-1</td>
+        <td style="font-weight:600;">Competitive w/ VICReg / BYOL</td>
+      </tr>
+      <tr>
+        <td>Optical flow (zero-shot)</td>
+        <td>Sintel clean</td>
+        <td>EPE (lower = better)</td>
+        <td style="font-weight:600;">On par with self-sup SOTA</td>
+      </tr>
+      <tr>
+        <td>Optical flow (zero-shot)</td>
+        <td>KITTI 2015</td>
+        <td>EPE</td>
+        <td style="font-weight:600;">Strong self-sup flow</td>
+      </tr>
+    </table>
+
+    <div class="callout-green callout">
+      <strong>The common thread:</strong> across all three variants, prediction in feature space produces representations that transfer as frozen features. No fine-tuning of the backbone is required for competitive results &mdash; which is exactly the promise of a foundation model.
+    </div>
+  </section>
+
+  <!-- SECTION 8: Takeaways -->
+  <section>
+    <h2>8 &mdash; Key Takeaways</h2>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>Predict in Feature Space, Not Pixel Space</h4>
+      </div>
+      <p>The unifying thesis of the JEPA family is that self-supervised learning should predict <em>abstract features</em> rather than raw pixels. Pixel-level reconstruction wastes model capacity on unpredictable high-frequency detail (noise, exact textures, lighting). Feature-space prediction lets the encoder discard that entropy and focus on the structured, predictable part of the signal &mdash; which turns out to be the semantic part.</p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>No Augmentations Needed</h4>
+      </div>
+      <p>Unlike SimCLR, MoCo, and DINO, I-JEPA and V-JEPA use no color-jitter, no random-resized-crops, and no horizontal flips. Prediction between different spatial regions of the same image <em>is</em> the augmentation. This removes a significant inductive-bias knob &mdash; one that had been quietly doing a lot of the work in invariance-based SSL &mdash; and makes results more portable across domains where the standard augmentations don't make sense (e.g., medical imaging, remote sensing).</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>EMA + Stop-Gradient Prevents Collapse</h4>
+      </div>
+      <p>I-JEPA and V-JEPA train stably without centering, sharpening, negative pairs, or variance regularization. The combination of (a) a stop-gradient EMA target, (b) a position-conditioned predictor, and (c) diverse mask locations is enough. MC-JEPA demonstrates a complementary recipe &mdash; VICReg-style variance/covariance regularization &mdash; that also works, removing the need for an EMA copy.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>The Same Recipe Crosses Modalities</h4>
+      </div>
+      <p>The JEPA recipe &mdash; encode context, predict masked target features, EMA stop-gradient target &mdash; ports cleanly from 2D images (I-JEPA) to 3D video tubes (V-JEPA) with only surface-level changes to tokenization and masking. MC-JEPA shows it also composes with other self-supervised tasks (optical flow) under a shared encoder. This generality is what makes JEPA a candidate <em>recipe</em> rather than just a single model.</p>
+    </div>
+
+    <div class="layer-card mobile">
+      <div class="layer-header">
+        <h4>JEPA as a Path Toward World Models</h4>
+      </div>
+      <p>LeCun has argued that JEPA-style predictive architectures are a necessary ingredient for AI systems that build <em>world models</em> &mdash; learning to predict future states of the world in an abstract feature space where planning is tractable. V-JEPA is the first step in that direction: a video model that predicts how the world looks next, in features rather than pixels. Whether that path delivers on the larger ambition remains open, but I-JEPA, V-JEPA, and MC-JEPA together establish that feature-space prediction is a robust and general recipe.</p>
+    </div>
+
+    <div class="callout">
+      <strong>Context in the field:</strong> JEPA sits alongside DINO (self-distillation), MAE (pixel reconstruction), and data2vec (target from teacher at multiple layers) as one of a handful of dominant self-supervised recipes. Each has strengths; JEPA's are data efficiency, no hand-crafted augmentations, and clean generalization across modalities.
+    </div>
+  </section>
+
+  <!-- SECTION 9: References -->
+  <section>
+    <h2>9 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2301.08243">Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture (I-JEPA)</a> &mdash; Assran, Duval, Misra, Bojanowski, Vincent, Rabbat, LeCun, Ballas &mdash; CVPR 2023</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2404.08471">Revisiting Feature Prediction for Learning Visual Representations from Video (V-JEPA)</a> &mdash; Bardes, Garrido, Ponce, Chen, Rabbat, LeCun, Assran, Ballas &mdash; 2024</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2307.12698">MC-JEPA: A Joint-Embedding Predictive Architecture for Self-Supervised Learning of Motion and Content Features</a> &mdash; Bardes, Ponce, LeCun &mdash; 2023</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://openreview.net/forum?id=BZ5a1r-kVsf">A Path Towards Autonomous Machine Intelligence</a> &mdash; Yann LeCun position paper &mdash; 2022</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/facebookresearch/ijepa">Official I-JEPA GitHub Repository</a> &mdash; facebookresearch/ijepa</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://github.com/facebookresearch/jepa">Official V-JEPA GitHub Repository</a> &mdash; facebookresearch/jepa</li>
+      <li style="margin-bottom: 0.5rem;"><a href="dino.html">Our DINO Walkthrough</a> &mdash; companion self-supervised vision model (self-distillation rather than predictive)</li>
+      <li style="margin-bottom: 0.5rem;"><a href="vit.html">Our ViT Walkthrough</a> &mdash; background on Vision Transformer architecture</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve Schmidt
+</footer>
+
+</body>
+</html>
