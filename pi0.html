@@ -380,18 +380,18 @@
 
     <div class="layer-card backbone">
       <div class="layer-header">
-        <h4>SigLIP Vision Encoder</h4>
-        <span class="shapes">[224, 224, 3] &rarr; image tokens</span>
+        <h4>SigLIP Vision Encoder (per camera)</h4>
+        <span class="shapes"><span class="tensor">[B, 3, 224, 224]</span> &rarr; <span class="tensor">[B, 256, 1152]</span></span>
       </div>
-      <p>Each camera image is encoded by a frozen SigLIP vision transformer into a sequence of visual tokens. For n cameras, this produces n &times; (number of patches) tokens. These tokens contain rich semantic information: object identities, spatial relationships, textures, and physical state of the scene.</p>
+      <p>Each 224&times;224 image is split into 14&times;14 = 256 patches and encoded by the frozen SigLIP-So400m ViT. For <em>n</em> cameras the outputs are concatenated into a <span class="tensor">[B, n&middot;256, 1152]</span> token sequence (typically 512&ndash;768 tokens total). A learned projection maps these to the 2048-dim width of the VLM backbone: <span class="tensor">[B, n&middot;256, 2048]</span>.</p>
     </div>
 
     <div class="layer-card backbone">
       <div class="layer-header">
         <h4>Gemma Language Model</h4>
-        <span class="shapes">tokens &rarr; contextualized embeddings</span>
+        <span class="shapes"><span class="tensor">[B, L, 2048]</span> &rarr; <span class="tensor">[B, L, 2048]</span></span>
       </div>
-      <p>PaliGemma's language backbone processes both the visual tokens and language tokens together. The key insight: by starting from a pre-trained VLM, &pi;<sub>0</sub> inherits an understanding of objects, spatial concepts, and task semantics that would be impossible to learn from robot data alone.</p>
+      <p>PaliGemma's 2B Gemma backbone (width = 2048, MLP dim = 8192, 18 layers) jointly processes the projected image tokens and text tokens. Sequence length <span class="tensor">L</span> is typically ~600&ndash;800 (n&middot;256 image tokens + language tokens). Attention is bidirectional within this block (see &sect;5). By starting from a pre-trained VLM, &pi;<sub>0</sub> inherits web-scale object and spatial knowledge before seeing a single robot trajectory.</p>
     </div>
 
     <div class="callout-blue callout">
@@ -408,8 +408,24 @@
     <div class="layer-card action">
       <div class="layer-header">
         <h4>Why a Separate Expert?</h4>
+        <span class="shapes">300M params, width = 1024, 50 action tokens</span>
       </div>
-      <p>Previous VLA models like RT-2 and OpenVLA discretized actions into text tokens (e.g., "move left 0.3"). This is lossy and slow &mdash; you're forcing a language model to output numbers as words. &pi;<sub>0</sub>'s Action Expert operates in continuous space via flow matching, producing precise floating-point joint commands at much higher bandwidth.</p>
+      <p>Previous VLA models like RT-2 and OpenVLA discretized actions into text tokens (e.g., "move left 0.3"). This is lossy and slow &mdash; you're forcing a language model to output numbers as words. &pi;<sub>0</sub>'s Action Expert operates in continuous space via flow matching, producing precise floating-point joint commands at much higher bandwidth. It reads the same 2048-dim residual stream as the VLM but its own weights project through a narrower 1024-dim width, giving it dedicated capacity for motor control without bloating the whole model.</p>
+    </div>
+
+    <div class="layer-card action">
+      <div class="layer-header">
+        <h4>Token Shapes Inside the Transformer</h4>
+        <span class="shapes">image + language + state + action tokens</span>
+      </div>
+      <p>The fused token stream at each transformer layer has roughly this structure:</p>
+      <ul style="padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.92rem;">
+        <li>Image tokens: <span class="tensor">[B, n&middot;256, 2048]</span> &mdash; from SigLIP, ~512&ndash;768 total</li>
+        <li>Language tokens: <span class="tensor">[B, L_lang, 2048]</span> &mdash; up to ~100 tokens</li>
+        <li>State token: <span class="tensor">[B, 1, 1024]</span> &mdash; one token encoding q<sub>t</sub> (18 dims projected up)</li>
+        <li>Action tokens: <span class="tensor">[B, 50, 1024]</span> &mdash; one per future step in the chunk, plus sinusoidal flow-time embedding &phi;(&tau;)</li>
+      </ul>
+      <p>State and action tokens live in the 1024-dim Action Expert subspace; image/language tokens live in the 2048-dim VLM subspace. The blockwise causal mask (below) controls which tokens see which.</p>
     </div>
 
     <h3>Blockwise Causal Attention</h3>
@@ -475,6 +491,8 @@
         <tr><td>Parameters</td><td>3B</td><td>300M</td></tr>
         <tr><td>Hidden width</td><td>2048</td><td>1024</td></tr>
         <tr><td>MLP dim</td><td>8192</td><td>4096</td></tr>
+        <tr><td>Tokens handled</td><td>image + language (~600&ndash;800)</td><td>1 state + 50 action (51)</td></tr>
+        <tr><td>Token shape</td><td><span class="tensor">[B, L_vlm, 2048]</span></td><td><span class="tensor">[B, 51, 1024]</span></td></tr>
         <tr><td>Processes</td><td>Images + language</td><td>State + noisy actions</td></tr>
         <tr><td>Initialized from</td><td>PaliGemma (internet)</td><td>Random</td></tr>
       </tbody>
@@ -552,9 +570,10 @@
     <div class="layer-card loss">
       <div class="layer-header">
         <h4>Training Loss: Conditional Flow Matching</h4>
+        <span class="shapes">tensors: A<sub>t</sub>, A<sub>t</sub><sup>&tau;</sup>, v, u all <span class="tensor">[B, 50, 18]</span></span>
       </div>
       <p><strong>L(&theta;) = E[ || v<sub>&theta;</sub>(A<sub>t</sub><sup>&tau;</sup>, o<sub>t</sub>) &minus; u(A<sub>t</sub><sup>&tau;</sup> | A<sub>t</sub>) ||&sup2; ]</strong></p>
-      <p>During training, we know the ground-truth clean actions A<sub>t</sub> from demonstrations. We add noise to get A<sub>t</sub><sup>&tau;</sup> = &tau;A<sub>t</sub> + (1&minus;&tau;)&epsilon;, and train the model to predict the "direction" back toward clean data: u = &epsilon; &minus; A<sub>t</sub>.</p>
+      <p>During training, we know the ground-truth clean actions <span class="tensor">A<sub>t</sub> &isin; [B, 50, 18]</span> from demonstrations. We sample flow time <span class="tensor">&tau; &sim; U(0, 1)</span> and Gaussian noise <span class="tensor">&epsilon; &isin; [B, 50, 18]</span>, then form the noisy input <span class="tensor">A<sub>t</sub><sup>&tau;</sup> = &tau; A<sub>t</sub> + (1&minus;&tau;) &epsilon;</span>. The model predicts the velocity field <span class="tensor">v<sub>&theta;</sub> &isin; [B, 50, 18]</span>, and the MSE loss matches it against the target direction <span class="tensor">u = &epsilon; &minus; A<sub>t</sub></span> &mdash; both have the same shape, so the loss is a plain elementwise squared error.</p>
     </div>
 
     <div class="callout-green callout">

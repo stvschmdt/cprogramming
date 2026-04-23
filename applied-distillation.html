@@ -334,9 +334,11 @@
     <div class="layer-card innov">
       <div class="layer-header">
         <h4>Logit Distillation for Transformers</h4>
-        <span class="shapes">Soft Target Matching</span>
+        <span class="shapes">logits: <span class="tensor">[B, L, V]</span> &middot; V = 32K&ndash;128K</span>
       </div>
-      <p>The foundational method: the student is trained to match the teacher's softened output distribution. The teacher's logits are divided by temperature T before softmax, producing a smoother distribution that reveals inter-token relationships. The student minimizes KL divergence against this soft distribution, weighted by T&#178; to maintain gradient magnitude.</p>
+      <p>The foundational method: the student is trained to match the teacher's softened output distribution. Both models produce logits of shape <span class="tensor">[B, L, V]</span> &mdash; batch B, sequence length L, vocabulary size V. The teacher's logits <span class="tensor">z<sub>T</sub></span> are divided by temperature <span class="tensor">&tau;</span> before softmax, producing a smoother distribution that reveals inter-token relationships:</p>
+      <p style="font-family: 'SF Mono', monospace; font-size: 0.88rem; text-align: center; background: var(--code-bg); padding: 0.6rem; border-radius: 4px;">L<sub>KD</sub> = &tau;&sup2; &middot; KL( softmax(z<sub>T</sub>/&tau;) &#8741; softmax(z<sub>S</sub>/&tau;) )</p>
+      <p>The KL divergence is averaged over all <span class="tensor">B &middot; L</span> positions. The <span class="tensor">&tau;&sup2;</span> weighting maintains gradient magnitude (the softmax gradient has a <span class="tensor">1/&tau;</span> factor baked in, which squared cancels out).</p>
       <div class="layer-diagram">
         <svg viewBox="0 0 600 180" width="600" height="180" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
           <!-- T=1 distribution -->
@@ -428,13 +430,13 @@
     <div class="layer-card innov">
       <div class="layer-header">
         <h4>Progressive / Layer-wise Distillation</h4>
-        <span class="shapes">Gradual Knowledge Transfer</span>
+        <span class="shapes">hidden: <span class="tensor">[B, L, d_S]</span> &harr; <span class="tensor">[B, L, d_T]</span></span>
       </div>
-      <p>Rather than distilling all at once, transfer knowledge layer by layer or in stages. TinyBERT aligns each student layer to a corresponding teacher layer (attention maps + hidden states). Orca 2 uses progressive learning: start with simple tasks, increase complexity. This curriculum approach prevents the student from being overwhelmed by the teacher's full complexity.</p>
+      <p>Rather than distilling all at once, transfer knowledge layer by layer or in stages. TinyBERT aligns each student layer to a corresponding teacher layer, matching both attention maps and hidden states. Typical dimensions: student has <span class="tensor">d<sub>S</sub></span>=312&ndash;768, teacher has <span class="tensor">d<sub>T</sub></span>=768&ndash;1024, <span class="tensor">H</span>=8&ndash;16 attention heads.</p>
       <ul>
-        <li><strong>Layer mapping:</strong> Student layer i maps to teacher layer f(i) &mdash; typically evenly spaced (e.g., student layer 3 maps to teacher layer 12 in a 6-to-24 mapping)</li>
-        <li><strong>Attention transfer:</strong> Minimize MSE between student and teacher attention matrices at mapped layers</li>
-        <li><strong>Embedding alignment:</strong> Linear projection to align different hidden dimensions between student and teacher</li>
+        <li><strong>Layer mapping:</strong> student layer <span class="tensor">i</span> maps to teacher layer <span class="tensor">f(i)</span> &mdash; typically evenly spaced (e.g., 6-to-12 maps student layer 3 to teacher layer 6)</li>
+        <li><strong>Attention transfer:</strong> MSE between attention matrices <span class="tensor">A<sub>S</sub>, A<sub>T</sub> &isin; [B, H, L, L]</span> at mapped layers</li>
+        <li><strong>Hidden-state transfer:</strong> MSE between hidden states <span class="tensor">H<sub>S</sub> &isin; [B, L, d<sub>S</sub>]</span> and <span class="tensor">W<sub>proj</sub> &middot; H<sub>T</sub> &isin; [B, L, d<sub>S</sub>]</span>, where <span class="tensor">W<sub>proj</sub> &isin; [d<sub>S</sub>, d<sub>T</sub>]</span> aligns the dimensions</li>
       </ul>
     </div>
 

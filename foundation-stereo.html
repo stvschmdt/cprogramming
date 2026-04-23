@@ -274,11 +274,11 @@
     <div class="layer-card encoder">
       <div class="layer-header">
         <h4>EdgeNeXt-S CNN + Frozen DepthAnythingV2 ViT</h4>
-        <div class="shapes">Stereo pair &rarr; multi-scale feature pyramids</div>
+        <div class="shapes">input <span class="tensor">[B, 3, H, W]</span> &rarr; pyramid at 1/4, 1/8, 1/16, 1/32</div>
       </div>
-      <p>Both left and right images pass through two parallel encoders:</p>
-      <p><strong>EdgeNeXt-S</strong> — a lightweight CNN that produces multi-level feature pyramids at 1/4, 1/8, 1/16, and 1/32 scales. This CNN is trained end-to-end and learns stereo-specific features.</p>
-      <p><strong>DepthAnythingV2</strong> — a frozen (non-trainable) ViT foundation model pre-trained on massive real-world monocular depth data. Its features are downscaled and <strong>concatenated</strong> with the CNN features at corresponding scales.</p>
+      <p>Both left and right images pass through two parallel encoders (weights shared across left/right):</p>
+      <p><strong>EdgeNeXt-S (trainable CNN)</strong> produces a feature pyramid at 1/4, 1/8, 1/16, and 1/32 resolutions. Concretely for a 540&times;960 input: <span class="tensor">[B, 48, 135, 240]</span>, <span class="tensor">[B, 96, 68, 120]</span>, <span class="tensor">[B, 160, 34, 60]</span>, <span class="tensor">[B, 304, 17, 30]</span>.</p>
+      <p><strong>DepthAnythingV2 (frozen ViT-Large)</strong> outputs a single-scale patch grid. For 540&times;960 it produces <span class="tensor">[B, 1024, 38, 68]</span> tokens (patch 14) which are bilinearly resized and projected to each pyramid scale, then <em>concatenated</em> with the CNN features along the channel axis. Resulting fused pyramid channels are 48+128, 96+128, 160+128, 304+128.</p>
       <div class="layer-diagram">
         <svg viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
           <text x="280" y="15" text-anchor="middle" font-size="10" fill="#57534e" font-weight="600">Side-Tuning: Best of both worlds</text>
@@ -331,13 +331,14 @@
     <div class="layer-card cost">
       <div class="layer-header">
         <h4>Correlation + Feature Concatenation</h4>
-        <div class="shapes">Left/right features &rarr; 4D cost volume (H &times; W &times; D &times; C)</div>
+        <div class="shapes">fused features &rarr; cost volume <span class="tensor">[B, C_cv, D, H/4, W/4]</span></div>
       </div>
-      <p>The cost volume measures how well left and right image features match at every possible disparity. FoundationStereo uses a <strong>hybrid</strong> approach combining two signals:</p>
+      <p>The cost volume measures how well left and right image features match at every possible disparity. Built at 1/4 resolution with <span class="tensor">D = 192/4 = 48</span> candidate disparities. FoundationStereo uses a <strong>hybrid</strong> cost volume combining two signals along the channel dimension:</p>
       <ul style="padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.92rem;">
-        <li><strong>Group-wise correlation</strong> (8 groups) — dot product between left and shifted-right features, split across channel groups. This captures matching similarity.</li>
-        <li><strong>Feature concatenation</strong> — raw left and right features concatenated at each disparity. This preserves the monocular depth priors from DepthAnythingV2 that would be lost in a pure correlation volume.</li>
+        <li><strong>Group-wise correlation</strong> &mdash; split the 176-channel features into 8 groups, compute dot product per group across all disparity shifts. Output shape: <span class="tensor">[B, 8, 48, H/4, W/4]</span>.</li>
+        <li><strong>Feature concatenation</strong> &mdash; concatenate left and right features at each disparity shift. Output shape: <span class="tensor">[B, 2&middot;176, 48, H/4, W/4]</span>.</li>
       </ul>
+      <p>Final hybrid cost volume: <span class="tensor">[B, 8 + 352, 48, H/4, W/4] &asymp; [B, 360, 48, 135, 240]</span>. The concatenation branch preserves DepthAnythingV2's monocular priors; the correlation branch carries direct matching similarity.</p>
     </div>
 
     <h3><span class="step-num amber">3</span> Attentive Hybrid Cost Filtering (AHCF)</h3>
@@ -345,11 +346,11 @@
     <div class="layer-card refine">
       <div class="layer-header">
         <h4>APC + Disparity Transformer</h4>
-        <div class="shapes">4D cost volume &rarr; filtered cost volume</div>
+        <div class="shapes">cost volume in/out: <span class="tensor">[B, C, D, H/4, W/4]</span></div>
       </div>
-      <p>Raw cost volumes are noisy — reflections, textureless surfaces, and repetitive patterns create matching ambiguities. AHCF filters the cost volume with two complementary mechanisms:</p>
-      <p><strong>Axial-Planar Convolution (APC)</strong> decomposes a full 3D convolution into a spatial conv (K<sub>s</sub>&times;K<sub>s</sub>&times;1) and a disparity conv (1&times;1&times;K<sub>d</sub>). This reduces memory dramatically while capturing local spatial and disparity patterns.</p>
-      <p><strong>Disparity Transformer (DT)</strong> applies self-attention across the entire disparity dimension, providing global reasoning. When a textureless wall creates ambiguity at many disparities, the transformer can reason about the overall disparity distribution to pick the correct match.</p>
+      <p>Raw cost volumes are noisy &mdash; reflections, textureless surfaces, and repetitive patterns create matching ambiguities. AHCF filters the cost volume with two complementary mechanisms:</p>
+      <p><strong>Axial-Planar Convolution (APC)</strong> decomposes a full 3D convolution <span class="tensor">(K<sub>s</sub>, K<sub>s</sub>, K<sub>d</sub>)</span> into a spatial conv <span class="tensor">(K<sub>s</sub>, K<sub>s</sub>, 1)</span> followed by a disparity conv <span class="tensor">(1, 1, K<sub>d</sub>)</span>. Parameter count drops from <span class="tensor">K<sub>s</sub>&sup2;&middot;K<sub>d</sub>&middot;C&sup2;</span> to <span class="tensor">(K<sub>s</sub>&sup2; + K<sub>d</sub>)&middot;C&sup2;</span> &mdash; roughly a 5&times; reduction at K=5.</p>
+      <p><strong>Disparity Transformer (DT)</strong> reshapes the cost volume to <span class="tensor">[B&middot;H/4&middot;W/4, D, C]</span> and applies self-attention across the <span class="tensor">D=48</span> disparity tokens. When a textureless wall creates ambiguity across many disparities, global attention lets the model reason about the overall disparity distribution instead of just local maxima. Attention is O(D&sup2;) = 2304 per spatial location &mdash; tractable because D is small.</p>
     </div>
 
     <h3><span class="step-num green">4</span> Iterative Refinement (ConvGRU)</h3>
@@ -357,9 +358,10 @@
     <div class="layer-card data">
       <div class="layer-header">
         <h4>Coarse-to-Fine GRU Updates</h4>
-        <div class="shapes">Initial estimate &rarr; 32 iterations &rarr; final disparity</div>
+        <div class="shapes">disparity: <span class="tensor">[B, 1, H/4, W/4]</span> &rarr; <span class="tensor">[B, 1, H, W]</span></div>
       </div>
-      <p>Starting from a coarse disparity estimate, a <strong>ConvGRU</strong> (Convolutional Gated Recurrent Unit) iteratively refines the prediction. Each iteration looks up the cost volume at the current disparity estimate, computes a correction, and updates. 22 iterations during training, 32 at inference. The coarse-to-fine structure starts at low resolution and progressively refines details.</p>
+      <p>Starting from an initial disparity estimate <span class="tensor">d<sub>0</sub> &isin; [B, 1, H/4, W/4]</span>, a <strong>ConvGRU</strong> iteratively refines the prediction. At each iteration, a lookup kernel samples the filtered cost volume at the current disparity's neighborhood, producing a local cost vector <span class="tensor">[B, C_lookup, H/4, W/4]</span>; the GRU cell combines this with its hidden state <span class="tensor">h<sub>t</sub> &isin; [B, C_h, H/4, W/4]</span> to produce a residual update <span class="tensor">&Delta;d<sub>t</sub></span>.</p>
+      <p>22 iterations during training, 32 at inference. The final disparity is upsampled 4&times; via learned convex combination to full resolution <span class="tensor">[B, 1, H, W]</span>.</p>
     </div>
   </section>
 

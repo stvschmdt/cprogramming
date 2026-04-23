@@ -255,9 +255,11 @@
     <div class="layer-card contrast">
       <div class="layer-header">
         <h4>How It Works</h4>
+        <span class="shapes">image: <span class="tensor">[B, 3, 224, 224]</span> &rarr; <span class="tensor">[B, d]</span> &middot; text: <span class="tensor">[B, L]</span> &rarr; <span class="tensor">[B, d]</span></span>
       </div>
-      <p>Given a batch of N image-text pairs, CLIP computes N image embeddings and N text embeddings. The training objective maximizes cosine similarity for the N true pairs while minimizing it for the N&sup2;&minus;N false pairs. This is InfoNCE loss &mdash; a softmax over similarities that treats the problem as N-way classification.</p>
-      <p><strong>SigLIP improvement:</strong> Replaces the softmax-based InfoNCE with a pairwise sigmoid loss. Each (image, text) pair is independently classified as matching or not, removing the need for synchronized batch statistics across GPUs. This allows larger effective batch sizes and better scaling.</p>
+      <p>Both towers project to a shared embedding dimension <span class="tensor">d</span> (typically 512 or 768). For CLIP ViT-L/14: image encoder produces a <span class="tensor">[B, 257, 1024]</span> patch sequence (1 <span class="tensor">[CLS]</span> + 16&times;16 patches), the <span class="tensor">[CLS]</span> token is projected to <span class="tensor">[B, 768]</span>; the text encoder produces <span class="tensor">[B, L, 512]</span> and the <span class="tensor">[EOS]</span> token is projected to <span class="tensor">[B, 768]</span>. Both are <em>l<sub>2</sub></em>-normalized.</p>
+      <p>Training: the similarity matrix <span class="tensor">S = v t<sup>&#8868;</sup> &isin; [B, B]</span> has diagonal entries for true pairs and off-diagonal for false pairs. InfoNCE treats each row as a <span class="tensor">B</span>-way classification (and symmetrically for columns).</p>
+      <p><strong>SigLIP improvement:</strong> Replaces the softmax-based InfoNCE with a pairwise sigmoid loss. Each <span class="tensor">(i, j)</span> entry of <span class="tensor">S</span> is independently classified as matching or not, removing the need for synchronized batch statistics across GPUs. This allows larger effective batch sizes and better scaling.</p>
     </div>
 
     <div class="layer-card contrast">
@@ -376,12 +378,13 @@
     <div class="layer-card fusion">
       <div class="layer-header">
         <h4>How It Works</h4>
+        <span class="shapes">vision: <span class="tensor">[B, N_v, d_v]</span> &rarr; <span class="tensor">[B, K, d_llm]</span></span>
       </div>
-      <p>The vision encoder (typically CLIP/SigLIP ViT) processes the image into a grid of visual tokens. A projection module (MLP, Perceiver, or Q-Former) maps these into the language model's embedding space. The LLM then processes interleaved text and visual tokens.</p>
+      <p>The vision encoder (typically CLIP/SigLIP ViT-L/14 or ViT-H/14) processes the image into a grid of <span class="tensor">N<sub>v</sub></span> patch tokens &mdash; <span class="tensor">N<sub>v</sub> = 256</span> for 224&times;224 at patch 14. The projection module then maps these into the LLM's <span class="tensor">d<sub>llm</sub></span>-dim embedding space and (optionally) compresses the sequence length.</p>
       <p>The critical design choice is <strong>how visual tokens interact with text</strong>:</p>
       <ul>
-        <li><strong>Flamingo:</strong> Inserts gated cross-attention layers between frozen LLM layers. Text tokens attend to visual tokens through dedicated cross-attention. Gates are initialized to zero so the model starts as a pure LLM.</li>
-        <li><strong>LLaVA:</strong> Simpler &mdash; projects visual tokens into the text token space and concatenates them with text tokens. The LLM's existing self-attention handles the interaction. No architectural changes to the LLM.</li>
+        <li><strong>Flamingo:</strong> A Perceiver Resampler first compresses <span class="tensor">[B, N_v, d_v]</span> &rarr; <span class="tensor">[B, 64, d_llm]</span> via learned query tokens. Gated cross-attention layers (Q = text, K/V = visual) are inserted between frozen LLM layers; gates are zero-initialized so the model starts as a pure LLM.</li>
+        <li><strong>LLaVA:</strong> Simpler &mdash; an MLP projection maps <span class="tensor">[B, N_v, d_v]</span> &rarr; <span class="tensor">[B, N_v, d_llm]</span> and the projected tokens are concatenated with text tokens along the sequence axis. The LLM's existing self-attention handles the interaction. No architectural changes to the LLM.</li>
       </ul>
     </div>
 
@@ -534,13 +537,14 @@
     <div class="layer-card unified">
       <div class="layer-header">
         <h4>How It Works</h4>
+        <span class="shapes">all modalities &rarr; <span class="tensor">[B, L, d_model]</span></span>
       </div>
-      <p>Each modality has a tokenizer that converts raw input into discrete or continuous tokens. All tokens are projected into a shared embedding space and concatenated into a single sequence. A standard transformer with full self-attention processes the entire sequence &mdash; every token can attend to every other token regardless of modality.</p>
+      <p>Each modality has a tokenizer that converts raw input into tokens, all of which land in a shared <span class="tensor">d<sub>model</sub></span>-dim embedding space (typical 2048&ndash;8192). The concatenated sequence <span class="tensor">[B, L, d_model]</span> &mdash; where <span class="tensor">L</span> mixes text, image, and audio tokens &mdash; is processed by a standard transformer with full self-attention. Every token attends to every other, regardless of modality.</p>
       <p><strong>Tokenization strategies vary:</strong></p>
       <ul>
-        <li><strong>Gemini:</strong> Uses a visual encoder (likely SigLIP-derived) to produce visual tokens that are interleaved with SentencePiece text tokens. Audio uses USM-derived features. Trained end-to-end on massive multimodal mixtures.</li>
-        <li><strong>Chameleon (Meta):</strong> Discretizes images into VQ-VAE tokens that share the same vocabulary as text. True token-level unification &mdash; the model generates image and text tokens with the same softmax head.</li>
-        <li><strong>Gemini Robotics:</strong> Extends to action tokens for robot control &mdash; the model "speaks" in motor commands the same way it speaks in text.</li>
+        <li><strong>Gemini:</strong> SigLIP-derived visual encoder produces <span class="tensor">~256</span> tokens per image; these are interleaved with SentencePiece text tokens. Audio uses USM-derived features &mdash; <span class="tensor">~6.25 tokens/s</span>. All project to the same <span class="tensor">d<sub>model</sub></span>.</li>
+        <li><strong>Chameleon (Meta):</strong> Discretizes images into <span class="tensor">256&times;256 &rarr; 1024</span> VQ-VAE tokens that share the same vocabulary as text. True token-level unification &mdash; image and text tokens use the same softmax head over a combined vocab of ~65K.</li>
+        <li><strong>Gemini Robotics:</strong> Extends to action tokens for robot control &mdash; continuous joint commands are discretized into a small vocab per joint and generated autoregressively.</li>
       </ul>
     </div>
 
