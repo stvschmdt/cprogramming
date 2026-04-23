@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Behavior Cloning Walkthrough — Model Walkthroughs</title>
+  <style>
+    :root {
+      --bg: #fafaf9;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #b45309;
+      --border: #e7e5e4;
+      --card-bg: #ffffff;
+      --highlight-bg: #fffbeb;
+      --highlight-border: #d97706;
+      --code-bg: #f5f5f4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 17px; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+    a:hover { border-bottom-color: var(--accent); }
+    nav { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .hero { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .hero .breadcrumb { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+    .hero .subtitle { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .hero .meta-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .hero .meta-tags span { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .hero .paper-link { font-size: 0.9rem; }
+    section { margin-bottom: 3rem; }
+    section h2 { font-size: 1.1rem; font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 1.15rem; margin-bottom: 0.75rem; margin-top: 1.5rem; } section h3:first-child { margin-top: 0; }
+    section p { margin-bottom: 1rem; }
+    .callout { background: var(--highlight-bg); border-left: 3px solid var(--highlight-border); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; margin-bottom: 1.25rem; font-size: 0.92rem; } .callout strong { color: var(--accent); }
+    .callout-blue { background: #eff6ff; border-left-color: #3b82f6; } .callout-blue strong { color: #2563eb; }
+    .callout-green { background: #f0fdf4; border-left-color: #22c55e; } .callout-green strong { color: #16a34a; }
+    .callout-purple { background: #faf5ff; border-left-color: #a855f7; } .callout-purple strong { color: #7c3aed; }
+    .callout-red { background: #fef2f2; border-left-color: #ef4444; } .callout-red strong { color: #dc2626; }
+    .tensor { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem; background: var(--code-bg); padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid var(--border); white-space: nowrap; }
+    .arch-diagram { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 2rem 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .arch-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+    .layer-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--border); }
+    .layer-card.encoder { border-left-color: #3b82f6; } .layer-card.projection { border-left-color: #22c55e; } .layer-card.decoder { border-left-color: #8b5cf6; } .layer-card.training { border-left-color: #f59e0b; } .layer-card.mobile { border-left-color: #ef4444; }
+    .layer-card .layer-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .layer-card .layer-header h4 { font-size: 1.05rem; margin: 0; }
+    .layer-card .layer-header .shapes { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    .layer-card p { font-size: 0.92rem; margin-bottom: 0.75rem; } .layer-card p:last-child { margin-bottom: 0; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .summary-table th, .summary-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .summary-table th { background: var(--code-bg); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .step-num { display: inline-block; width: 1.6rem; height: 1.6rem; line-height: 1.6rem; text-align: center; border-radius: 50%; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.75rem; font-weight: 700; color: white; margin-right: 0.5rem; }
+    .step-num.blue { background: #3b82f6; } .step-num.green { background: #22c55e; } .step-num.purple { background: #8b5cf6; } .step-num.amber { background: #f59e0b; } .step-num.red { background: #ef4444; }
+    @media (max-width: 600px) { .hero h1 { font-size: 1.5rem; } body { font-size: 16px; } nav { gap: 1rem; } .layer-card .layer-header { flex-direction: column; } }
+    footer { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="academia.html">Walkthroughs</a>
+  <a href="https://www.barflytrading.com">Trading</a>
+  <a href="https://www.linkedin.com/in/stevebschmidt">LinkedIn</a>
+  <a href="https://www.khoury.northeastern.edu/people/steve-schmidt/">Northeastern</a>
+  <a href="steveschmidtdir.pdf">Resume</a>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="breadcrumb"><a href="academia.html">Walkthroughs</a> / Behavior Cloning</div>
+    <h1>Behavior Cloning: From PilotNet to GR00T N1</h1>
+    <div class="subtitle">1989&ndash;2025 &mdash; Imitation Learning for Robotics</div>
+    <div class="meta-tags">
+      <span>Behavior Cloning</span>
+      <span>Imitation Learning</span>
+      <span>Robotics</span>
+      <span>Diffusion Policy</span>
+      <span>VLA</span>
+      <span>Humanoid</span>
+    </div>
+    <div class="paper-link">
+      PilotNet: <a href="https://arxiv.org/abs/1604.07316">arXiv:1604.07316</a> &nbsp;|&nbsp;
+      DAgger: <a href="https://arxiv.org/abs/1011.0686">arXiv:1011.0686</a> &nbsp;|&nbsp;
+      ACT: <a href="https://arxiv.org/abs/2304.13705">arXiv:2304.13705</a> &nbsp;|&nbsp;
+      Diffusion Policy: <a href="https://arxiv.org/abs/2303.04137">arXiv:2303.04137</a> &nbsp;|&nbsp;
+      GR00T N1: <a href="https://arxiv.org/abs/2503.14734">arXiv:2503.14734</a>
+    </div>
+  </section>
+
+  <!-- SECTION 1: What is BC -->
+  <section>
+    <h2>1 &mdash; What Is Behavior Cloning?</h2>
+
+    <p><strong>Behavior Cloning</strong> (BC) is the simplest form of imitation learning: given a dataset of expert demonstrations &mdash; sequences of observations paired with the actions the expert took &mdash; train a neural network to predict the expert's action from the observation. That's it. No reward function, no environment interaction during training, no planning, no value estimation. Just supervised learning on <span class="tensor">(state, action)</span> pairs.</p>
+
+    <div class="callout">
+      <strong>The core recipe:</strong> collect demonstrations &mdash; either humans teleoperating a robot, humans driving a car, or any expert policy producing sequences of <span class="tensor">(o<sub>t</sub>, a<sub>t</sub>)</span> &mdash; then minimize <span class="tensor">&sum; ||&pi;<sub>&theta;</sub>(o<sub>t</sub>) &minus; a<sub>t</sub>||</span> across the dataset. The resulting policy &pi;<sub>&theta;</sub> maps observations to actions with no knowledge of the task's reward structure or dynamics.
+    </div>
+
+    <!-- SVG: Basic BC flow -->
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Expert demos -->
+        <rect x="20" y="80" width="130" height="70" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="85" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">Expert Demos</text>
+        <text x="85" y="122" text-anchor="middle" font-size="9" fill="#92400e">(o₁, a₁) … (oₜ, aₜ)</text>
+        <text x="85" y="138" text-anchor="middle" font-size="9" font-style="italic" fill="#92400e">teleop / human driver</text>
+
+        <!-- Arrow -->
+        <line x1="150" y1="115" x2="195" y2="115" stroke="#78716c" stroke-width="1.3" marker-end="url(#bc1-gray)"/>
+
+        <!-- Policy network -->
+        <rect x="200" y="75" width="160" height="80" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="280" y="102" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">Policy Network π_θ</text>
+        <text x="280" y="120" text-anchor="middle" font-size="9" fill="#3b82f6">o → â (predicted action)</text>
+        <text x="280" y="136" text-anchor="middle" font-size="9" font-style="italic" fill="#3b82f6">CNN / Transformer / MLP</text>
+
+        <!-- Loss -->
+        <line x1="360" y1="115" x2="405" y2="115" stroke="#78716c" stroke-width="1.3" marker-end="url(#bc1-gray)"/>
+        <rect x="410" y="75" width="160" height="80" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="490" y="102" text-anchor="middle" font-size="12" font-weight="700" fill="#dc2626">Supervised Loss</text>
+        <text x="490" y="120" text-anchor="middle" font-size="10" fill="#dc2626">L = ||â − a||²</text>
+        <text x="490" y="138" text-anchor="middle" font-size="9" font-style="italic" fill="#dc2626">MSE / cross-entropy</text>
+
+        <!-- Deploy arrow -->
+        <line x1="570" y1="115" x2="615" y2="115" stroke="#78716c" stroke-width="1.3" marker-end="url(#bc1-gray)"/>
+        <rect x="620" y="80" width="80" height="70" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="660" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">Deploy</text>
+        <text x="660" y="125" text-anchor="middle" font-size="9" fill="#16a34a">π on robot</text>
+
+        <!-- Backward grad arrow -->
+        <path d="M 490,155 Q 280,195 280,155" fill="none" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#bc1-red)"/>
+        <text x="385" y="190" text-anchor="middle" font-size="9" font-weight="600" fill="#dc2626">gradient updates θ</text>
+
+        <defs>
+          <marker id="bc1-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#78716c"/></marker>
+          <marker id="bc1-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#ef4444"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <h3>Why BC Is Appealing</h3>
+    <p>BC has an irresistible simplicity. Every advance in supervised learning &mdash; bigger models, better optimizers, transfer learning from vision and language pretraining &mdash; immediately lifts BC performance with no algorithmic change required. There is no exploration problem, no sparse reward to shape, no distribution over rollouts to sample from. Given enough good data, BC <em>works</em>. The catch is that those three words &mdash; "enough good data" &mdash; hide one of the field's oldest and deepest failure modes.</p>
+  </section>
+
+  <!-- SECTION 2: PilotNet -->
+  <section>
+    <h2>2 &mdash; PilotNet: The Canonical Case Study</h2>
+
+    <p>The modern revival of BC traces to Pomerleau's ALVINN (1989), which used a shallow neural net to steer a Chevy van along a road. The ideas lay largely dormant until NVIDIA's <strong>PilotNet</strong> (Bojarski et&nbsp;al., 2016) dusted them off with modern ConvNets &mdash; a 9-layer CNN trained end-to-end on 72 hours of human driving video, producing steering angles directly from a single front-facing camera.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Camera input -->
+        <rect x="20" y="110" width="90" height="60" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="65" y="135" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Camera</text>
+        <text x="65" y="150" text-anchor="middle" font-size="9" fill="#92400e">66×200×3</text>
+
+        <!-- Conv layers -->
+        <g>
+          <rect x="125" y="115" width="35" height="50" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+          <text x="142" y="138" text-anchor="middle" font-size="9" fill="#1e40af">C1</text>
+          <text x="142" y="152" text-anchor="middle" font-size="8" fill="#3b82f6">24</text>
+          <rect x="165" y="120" width="35" height="40" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+          <text x="182" y="138" text-anchor="middle" font-size="9" fill="#1e40af">C2</text>
+          <text x="182" y="152" text-anchor="middle" font-size="8" fill="#3b82f6">36</text>
+          <rect x="205" y="125" width="35" height="30" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+          <text x="222" y="138" text-anchor="middle" font-size="9" fill="#1e40af">C3</text>
+          <text x="222" y="150" text-anchor="middle" font-size="8" fill="#3b82f6">48</text>
+          <rect x="245" y="128" width="35" height="24" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+          <text x="262" y="140" text-anchor="middle" font-size="9" fill="#1e40af">C4</text>
+          <text x="262" y="150" text-anchor="middle" font-size="7" fill="#3b82f6">64</text>
+          <rect x="285" y="130" width="35" height="20" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+          <text x="302" y="142" text-anchor="middle" font-size="9" fill="#1e40af">C5</text>
+          <text x="302" y="150" text-anchor="middle" font-size="7" fill="#3b82f6">64</text>
+        </g>
+        <text x="222" y="95" text-anchor="middle" font-size="9" fill="#57534e">5 convolutional layers</text>
+
+        <!-- FC layers -->
+        <g>
+          <rect x="345" y="110" width="25" height="60" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+          <text x="357" y="145" text-anchor="middle" font-size="9" fill="#14532d">FC</text>
+          <text x="357" y="158" text-anchor="middle" font-size="7" fill="#16a34a">1164</text>
+          <rect x="375" y="115" width="25" height="50" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+          <text x="387" y="145" text-anchor="middle" font-size="9" fill="#14532d">FC</text>
+          <text x="387" y="158" text-anchor="middle" font-size="7" fill="#16a34a">100</text>
+          <rect x="405" y="120" width="25" height="40" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+          <text x="417" y="145" text-anchor="middle" font-size="9" fill="#14532d">FC</text>
+          <text x="417" y="158" text-anchor="middle" font-size="7" fill="#16a34a">50</text>
+          <rect x="435" y="125" width="25" height="30" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+          <text x="447" y="145" text-anchor="middle" font-size="9" fill="#14532d">FC</text>
+          <text x="447" y="157" text-anchor="middle" font-size="7" fill="#16a34a">10</text>
+        </g>
+        <text x="400" y="95" text-anchor="middle" font-size="9" fill="#57534e">4 fully-connected layers</text>
+
+        <!-- Output -->
+        <line x1="465" y1="140" x2="510" y2="140" stroke="#78716c" stroke-width="1.3" marker-end="url(#pn-gray)"/>
+        <rect x="515" y="105" width="110" height="70" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="570" y="130" text-anchor="middle" font-size="12" font-weight="700" fill="#dc2626">Steering angle</text>
+        <text x="570" y="148" text-anchor="middle" font-size="10" fill="#dc2626">1 scalar output</text>
+        <text x="570" y="163" text-anchor="middle" font-size="9" font-style="italic" fill="#dc2626">inverse turning radius</text>
+
+        <!-- Arrow from camera to conv stack -->
+        <line x1="110" y1="140" x2="125" y2="140" stroke="#78716c" stroke-width="1.3" marker-end="url(#pn-gray)"/>
+        <line x1="320" y1="140" x2="345" y2="140" stroke="#78716c" stroke-width="1.3" marker-end="url(#pn-gray)"/>
+
+        <!-- Training data -->
+        <rect x="80" y="215" width="550" height="45" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="355" y="235" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Training: 72 hours of human driving, multi-camera with synthetic rotations/shifts</text>
+        <text x="355" y="250" text-anchor="middle" font-size="9" font-style="italic" fill="#92400e">Loss: MSE between predicted and recorded steering angle</text>
+
+        <defs>
+          <marker id="pn-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#78716c"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span>Pure End-to-End Pipeline</h4>
+        <div class="shapes">No lane detection, no path planner, no controller</div>
+      </div>
+      <p>PilotNet's radical claim was that a single network could replace the <em>entire</em> conventional self-driving stack for highway lane-keeping &mdash; no hand-coded lane detection, no path planner, no low-level controller. The network learns all the relevant cues (lane markings, road edges, other cars) implicitly from pixels &rarr; steering regression. The model is about 250k parameters, tiny by modern standards.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">2</span>Data Augmentation for Off-Center Recovery</h4>
+        <div class="shapes">Synthetic left/right camera shifts with corrected steering</div>
+      </div>
+      <p>A critical trick: NVIDIA recorded from three cameras simultaneously (left, center, right) and used the side cameras as <em>synthetic off-center observations</em> with hand-computed steering corrections (e.g., "if the left camera saw this, the correct action is to steer slightly right"). They also applied random shifts and rotations with analytically correct steering adjustments. This tiny bit of augmentation taught the network what to do when it drifted &mdash; and foreshadowed the central problem that every subsequent BC method would have to address.</p>
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>Why PilotNet matters:</strong> it proved that modern BC &mdash; deep network + enough data + a little care about distribution &mdash; could do something that had previously required an enormous engineering effort. The tricks it used to survive deployment (side-camera augmentation, shift/rotation corrections) are exactly the coping strategies the field has been refining ever since.
+    </div>
+  </section>
+
+  <!-- SECTION 3: Covariate Shift -->
+  <section>
+    <h2>3 &mdash; The Covariate Shift Problem</h2>
+
+    <p>BC has one fundamental, structural flaw. The training data is drawn from the <em>expert's</em> state distribution, but at deployment the policy drives the robot into states from its <em>own</em> distribution &mdash; a distribution that includes small errors, drifts, and edge cases the expert never visited. On those unseen states, the policy has no label to imitate. Its errors compound with time.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Expert path -->
+        <path d="M 40,160 Q 200,100 380,120 T 680,90" fill="none" stroke="#16a34a" stroke-width="2.5"/>
+        <text x="370" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">expert trajectory (training distribution)</text>
+        <!-- Dots -->
+        <g fill="#16a34a">
+          <circle cx="40" cy="160" r="4"/>
+          <circle cx="150" cy="122" r="4"/>
+          <circle cx="260" cy="108" r="4"/>
+          <circle cx="380" cy="120" r="4"/>
+          <circle cx="500" cy="107" r="4"/>
+          <circle cx="680" cy="90" r="4"/>
+        </g>
+
+        <!-- Policy drift path -->
+        <path d="M 40,160 Q 200,155 380,180 T 680,235" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="5,3"/>
+        <text x="500" y="230" text-anchor="start" font-size="11" font-weight="700" fill="#7f1d1d">policy trajectory (drifts + compounds)</text>
+        <g fill="#dc2626">
+          <circle cx="40" cy="160" r="4"/>
+          <circle cx="150" cy="160" r="4"/>
+          <circle cx="260" cy="166" r="4"/>
+          <circle cx="380" cy="180" r="4"/>
+          <circle cx="500" cy="200" r="4"/>
+          <circle cx="680" cy="235" r="4"/>
+        </g>
+
+        <!-- Error arrows -->
+        <g stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="2,2">
+          <line x1="150" y1="122" x2="150" y2="156"/>
+          <line x1="260" y1="108" x2="260" y2="162"/>
+          <line x1="380" y1="120" x2="380" y2="176"/>
+          <line x1="500" y1="107" x2="500" y2="196"/>
+          <line x1="680" y1="90" x2="680" y2="231"/>
+        </g>
+        <text x="680" y="80" text-anchor="middle" font-size="9" fill="#d97706">growing</text>
+        <text x="680" y="92" text-anchor="middle" font-size="9" fill="#d97706">error</text>
+
+        <!-- Legend -->
+        <text x="20" y="200" font-size="9" fill="#57534e">start: identical</text>
+        <text x="20" y="215" font-size="9" fill="#57534e">end: ∼O(T²) error</text>
+        <text x="20" y="230" font-size="9" fill="#57534e">under naive BC</text>
+
+      </svg>
+    </div>
+
+    <div class="callout-red callout">
+      <strong>The compounding bound:</strong> Ross &amp; Bagnell (2010) proved that if a BC policy has per-step error <em>&epsilon;</em>, its total error over an episode of length T is bounded by <span class="tensor">O(&epsilon; T<sup>2</sup>)</span>, not the <span class="tensor">O(&epsilon; T)</span> one might naively expect. The <em>quadratic</em> scaling comes from errors pulling the policy off the training distribution, where its error rate then increases, and so on. A 1% per-step error becomes a 100% failure probability by step 10 under worst-case analysis.
+    </div>
+  </section>
+
+  <!-- SECTION 4: DAgger -->
+  <section>
+    <h2>4 &mdash; DAgger: Dataset Aggregation</h2>
+
+    <p><strong>DAgger</strong> (Ross, Gordon &amp; Bagnell, AISTATS 2011) is the classical answer: instead of training once on expert data, iteratively roll out the <em>policy</em>, ask the expert to label the states the policy visited, append those new labels to the dataset, and retrain. Over iterations the dataset comes to cover the policy's own state distribution, and the compounding error bound tightens from <span class="tensor">O(&epsilon; T<sup>2</sup>)</span> to <span class="tensor">O(&epsilon; T)</span>.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Step 1: initial dataset -->
+        <rect x="20" y="40" width="130" height="60" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="85" y="62" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Expert Dataset D₀</text>
+        <text x="85" y="80" text-anchor="middle" font-size="9" fill="#92400e">initial demos</text>
+
+        <!-- Arrow down to policy -->
+        <line x1="85" y1="100" x2="85" y2="130" stroke="#78716c" stroke-width="1.2" marker-end="url(#dg-gray)"/>
+
+        <!-- Train policy -->
+        <rect x="20" y="135" width="130" height="55" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="85" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">Train π_i</text>
+        <text x="85" y="174" text-anchor="middle" font-size="9" fill="#3b82f6">supervised on D_i</text>
+
+        <!-- Arrow right to rollout -->
+        <line x1="150" y1="162" x2="195" y2="162" stroke="#78716c" stroke-width="1.2" marker-end="url(#dg-gray)"/>
+
+        <!-- Rollout -->
+        <rect x="200" y="135" width="140" height="55" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="270" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">Roll out π_i</text>
+        <text x="270" y="174" text-anchor="middle" font-size="9" fill="#16a34a">collect visited states</text>
+
+        <!-- Arrow right to expert query -->
+        <line x1="340" y1="162" x2="385" y2="162" stroke="#78716c" stroke-width="1.2" marker-end="url(#dg-gray)"/>
+
+        <!-- Expert query -->
+        <rect x="390" y="135" width="150" height="55" rx="8" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="465" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#581c87">Query Expert</text>
+        <text x="465" y="174" text-anchor="middle" font-size="9" fill="#a855f7">"what would you do here?"</text>
+
+        <!-- Arrow right to aggregate -->
+        <line x1="540" y1="162" x2="585" y2="162" stroke="#78716c" stroke-width="1.2" marker-end="url(#dg-gray)"/>
+
+        <!-- Aggregate -->
+        <rect x="590" y="135" width="110" height="55" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="645" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">Aggregate</text>
+        <text x="645" y="174" text-anchor="middle" font-size="9" fill="#dc2626">D_{i+1} = D_i ∪ new</text>
+
+        <!-- Loop back -->
+        <path d="M 645,190 L 645,225 L 85,225 L 85,190" fill="none" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#dg-red)"/>
+        <text x="365" y="245" text-anchor="middle" font-size="10" font-weight="600" fill="#dc2626">iterate: retrain on augmented dataset</text>
+
+        <defs>
+          <marker id="dg-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#78716c"/></marker>
+          <marker id="dg-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#ef4444"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>DAgger's Trade-Off</h4>
+      </div>
+      <p>DAgger tightens the theoretical bound at the cost of requiring an <strong>interactive expert</strong> who can label arbitrary states on demand. For a video game this is often cheap; for a human pilot in a real airplane it is prohibitive. This practical limitation is why most modern robotics BC does <em>not</em> use DAgger and instead tackles covariate shift through other means: much larger demonstration datasets, cross-embodiment data mixing, multimodal action predictions, and &mdash; the focus of the next two sections &mdash; action chunking and diffusion.</p>
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>The conceptual legacy:</strong> even where DAgger itself is impractical, its insight &mdash; that the training distribution must cover the policy's deployment distribution &mdash; is the single most important principle in practical BC. Every modern system addresses this, one way or another.
+    </div>
+  </section>
+
+  <!-- SECTION 5: Action Chunking -->
+  <section>
+    <h2>5 &mdash; Action Chunking (ACT / ALOHA)</h2>
+
+    <p><strong>Action Chunking with Transformers</strong> (Zhao et&nbsp;al., RSS 2023), introduced alongside the low-cost <strong>ALOHA</strong> bimanual teleoperation platform, proposed a simple but powerful modification to BC: instead of predicting a single next action <span class="tensor">a<sub>t</sub></span>, predict a <em>chunk</em> of <span class="tensor">k</span> consecutive actions <span class="tensor">(a<sub>t</sub>, a<sub>t+1</sub>, &hellip;, a<sub>t+k-1</sub>)</span>. The policy then executes the whole chunk (or, with temporal ensembling, a running average of overlapping chunks) before re-planning.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Obs inputs -->
+        <rect x="20" y="60" width="90" height="50" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.3"/>
+        <text x="65" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">4 RGB cams</text>
+        <text x="65" y="98" text-anchor="middle" font-size="9" fill="#92400e">+ joint pos</text>
+
+        <line x1="110" y1="85" x2="150" y2="110" stroke="#78716c" stroke-width="1.2" marker-end="url(#ac-gray)"/>
+
+        <!-- Encoder -->
+        <rect x="155" y="90" width="130" height="55" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="220" y="113" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">Transformer</text>
+        <text x="220" y="130" text-anchor="middle" font-size="9" fill="#3b82f6">Encoder (ResNet+TE)</text>
+
+        <!-- CVAE latent -->
+        <rect x="155" y="160" width="130" height="40" rx="8" fill="#faf5ff" stroke="#a855f7" stroke-width="1.3"/>
+        <text x="220" y="178" text-anchor="middle" font-size="10" font-weight="700" fill="#581c87">CVAE style prior</text>
+        <text x="220" y="192" text-anchor="middle" font-size="9" fill="#a855f7">z ~ N(μ, σ)</text>
+
+        <line x1="220" y1="160" x2="220" y2="145" stroke="#a855f7" stroke-width="1.2" marker-end="url(#ac-purple)"/>
+
+        <!-- Decoder -->
+        <line x1="285" y1="117" x2="320" y2="117" stroke="#78716c" stroke-width="1.2" marker-end="url(#ac-gray)"/>
+        <rect x="325" y="90" width="130" height="55" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="390" y="113" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">Transformer</text>
+        <text x="390" y="130" text-anchor="middle" font-size="9" fill="#16a34a">Decoder</text>
+
+        <!-- Action chunk output -->
+        <line x1="455" y1="117" x2="490" y2="117" stroke="#78716c" stroke-width="1.2" marker-end="url(#ac-gray)"/>
+        <g>
+          <rect x="495" y="75" width="35" height="25" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+          <text x="512" y="92" text-anchor="middle" font-size="9" font-weight="600" fill="#7f1d1d">a_t</text>
+          <rect x="535" y="75" width="35" height="25" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+          <text x="552" y="92" text-anchor="middle" font-size="9" font-weight="600" fill="#7f1d1d">a_{t+1}</text>
+          <rect x="575" y="75" width="35" height="25" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+          <text x="592" y="92" text-anchor="middle" font-size="9" font-weight="600" fill="#7f1d1d">a_{t+2}</text>
+          <text x="625" y="92" text-anchor="middle" font-size="9" fill="#dc2626">…</text>
+          <rect x="640" y="75" width="45" height="25" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+          <text x="662" y="92" text-anchor="middle" font-size="9" font-weight="600" fill="#7f1d1d">a_{t+k-1}</text>
+        </g>
+        <text x="590" y="130" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626">action chunk (k = 100 steps)</text>
+        <text x="590" y="145" text-anchor="middle" font-size="9" fill="#dc2626">14-DoF bimanual</text>
+
+        <!-- Temporal ensemble note -->
+        <rect x="155" y="215" width="530" height="30" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="420" y="235" text-anchor="middle" font-size="10" font-style="italic" fill="#92400e">Temporal ensembling: new chunks overlap old, average weighted by recency → smooth actions</text>
+
+        <defs>
+          <marker id="ac-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#78716c"/></marker>
+          <marker id="ac-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#a855f7"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span>Why Chunks Reduce Compounding</h4>
+        <div class="shapes">Committing to k-step plans sidesteps k-1 bad decision points</div>
+      </div>
+      <p>If the policy is queried every timestep, every timestep is a chance to drift. If it commits to 100 actions at a time, it has 100 fewer chances to compound. More importantly, chunks encode <em>temporal structure</em> in the demonstrations: fine-grained gripper control, multi-step insertion primitives, smooth bimanual coordination. Predicting chunks as a unit captures this structure in a way that per-step BC cannot.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4><span class="step-num purple">2</span>CVAE Style Latent</h4>
+        <div class="shapes">Captures multimodal human demos</div>
+      </div>
+      <p>ACT wraps the chunk predictor in a conditional VAE. A small "style encoder" (trained alongside the decoder) maps the full ground-truth action chunk to a latent <span class="tensor">z</span>; at inference time <span class="tensor">z</span> is sampled from the prior. This gives the decoder a cheap way to express multimodal human behavior &mdash; e.g., demos where the human sometimes grasps from the left and sometimes from the right &mdash; without the averaging collapse that plagues plain MSE BC on multimodal data.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">3</span>ALOHA: Cheap Teleop, Dense Demos</h4>
+        <div class="shapes">~$20k bimanual rig, 50 demos per task</div>
+      </div>
+      <p>The method paper is inseparable from the ALOHA hardware: a pair of leader-follower arms that lets one person smoothly teleoperate a 14-DoF bimanual system. Cheap, dense, smooth teleoperation produces demonstration data that is well-suited to chunk prediction. ACT + ALOHA could learn tasks like threading a zip tie, inserting a battery, or slotting a socket from only ~50 demonstrations each.</p>
+    </div>
+
+    <div class="callout-green callout">
+      <strong>The practical win:</strong> ACT showed that modest innovations on top of plain BC &mdash; action chunks, a latent style code, temporal ensembling at inference &mdash; produce large, robust improvements on real bimanual manipulation. The method is now the standard backbone for a generation of follow-up systems.
+    </div>
+  </section>
+
+  <!-- SECTION 6: Diffusion Policy -->
+  <section>
+    <h2>6 &mdash; Diffusion Policy</h2>
+
+    <p><strong>Diffusion Policy</strong> (Chi et&nbsp;al., RSS 2023) takes a different tack on the multimodality problem: model the full <em>distribution</em> over action sequences using a denoising diffusion model, conditioned on the current observation. The resulting policy naturally handles multimodal demonstrations, produces smooth high-dimensional action trajectories, and sets new state-of-the-art on dozens of manipulation benchmarks.</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Obs conditioning -->
+        <rect x="20" y="40" width="130" height="60" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="85" y="62" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Observation o_t</text>
+        <text x="85" y="80" text-anchor="middle" font-size="9" fill="#92400e">vision + state</text>
+
+        <line x1="150" y1="70" x2="195" y2="140" stroke="#d97706" stroke-width="1.3" marker-end="url(#dp-amber)"/>
+
+        <!-- Noise input -->
+        <rect x="20" y="160" width="130" height="60" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.3"/>
+        <text x="85" y="182" text-anchor="middle" font-size="11" font-weight="700" fill="#7f1d1d">Noisy Actions A^K</text>
+        <text x="85" y="200" text-anchor="middle" font-size="9" fill="#dc2626">sampled from N(0, I)</text>
+
+        <line x1="150" y1="190" x2="195" y2="160" stroke="#dc2626" stroke-width="1.3" marker-end="url(#dp-red)"/>
+
+        <!-- Denoiser -->
+        <rect x="200" y="110" width="170" height="90" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.8"/>
+        <text x="285" y="138" text-anchor="middle" font-size="12" font-weight="700" fill="#3730a3">Denoiser ε_θ</text>
+        <text x="285" y="156" text-anchor="middle" font-size="9" fill="#6366f1">CNN-UNet or Transformer</text>
+        <text x="285" y="172" text-anchor="middle" font-size="9" fill="#6366f1">conditioned on o_t</text>
+        <text x="285" y="189" text-anchor="middle" font-size="9" font-style="italic" fill="#6366f1">predicts noise</text>
+
+        <!-- K denoising steps -->
+        <g>
+          <text x="440" y="80" text-anchor="middle" font-size="10" font-weight="700" fill="#57534e">K denoising steps</text>
+          <rect x="400" y="95" width="25" height="25" rx="3" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+          <text x="412" y="112" text-anchor="middle" font-size="8" fill="#7f1d1d">A^K</text>
+          <line x1="425" y1="107" x2="440" y2="107" stroke="#78716c" stroke-width="1" marker-end="url(#dp-gray)"/>
+          <rect x="445" y="95" width="25" height="25" rx="3" fill="#fecaca" stroke="#dc2626" stroke-width="1"/>
+          <text x="457" y="112" text-anchor="middle" font-size="8" fill="#7f1d1d">A^{K-1}</text>
+          <line x1="470" y1="107" x2="485" y2="107" stroke="#78716c" stroke-width="1" marker-end="url(#dp-gray)"/>
+          <text x="500" y="112" font-size="10" fill="#78716c">…</text>
+          <rect x="520" y="95" width="25" height="25" rx="3" fill="#bbf7d0" stroke="#16a34a" stroke-width="1"/>
+          <text x="532" y="112" text-anchor="middle" font-size="8" fill="#14532d">A⁰</text>
+        </g>
+
+        <line x1="370" y1="155" x2="400" y2="108" stroke="#6366f1" stroke-width="1.3" stroke-dasharray="3,2"/>
+        <line x1="370" y1="155" x2="540" y2="108" stroke="#6366f1" stroke-width="1.3" stroke-dasharray="3,2"/>
+
+        <!-- Output -->
+        <line x1="548" y1="107" x2="595" y2="107" stroke="#16a34a" stroke-width="1.3" marker-end="url(#dp-green)"/>
+        <rect x="600" y="75" width="110" height="65" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="655" y="100" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">Clean Action</text>
+        <text x="655" y="117" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">Sequence A⁰</text>
+        <text x="655" y="133" text-anchor="middle" font-size="9" fill="#16a34a">16-step chunk</text>
+
+        <!-- Loss -->
+        <rect x="200" y="225" width="510" height="35" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="455" y="247" text-anchor="middle" font-size="10" font-style="italic" fill="#92400e">Training: noise prediction loss L = ||ε − ε_θ(A^k + noise, k, o_t)||²   →   mode-covering, multimodal</text>
+
+        <defs>
+          <marker id="dp-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#78716c"/></marker>
+          <marker id="dp-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#dc2626"/></marker>
+          <marker id="dp-amber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d97706"/></marker>
+          <marker id="dp-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#16a34a"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4><span class="step-num purple">1</span>Why Diffusion Helps</h4>
+        <div class="shapes">Implicit energy-based multimodal distribution</div>
+      </div>
+      <p>A plain MSE regression policy trained on multimodal demonstrations (go left <em>or</em> go right) averages the modes and produces a policy that goes straight into the wall. Diffusion models the data distribution implicitly via score matching: at each denoising step the network predicts the noise that was added, which is equivalent to predicting the gradient of the log-density of the action distribution. The resulting policy samples from the demonstration distribution rather than averaging over it.</p>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">2</span>Receding-Horizon Execution</h4>
+        <div class="shapes">Plan 16, execute 8, re-plan</div>
+      </div>
+      <p>Like ACT, Diffusion Policy predicts a chunk &mdash; typically 16 timesteps &mdash; then executes a prefix (e.g., 8 steps) before re-planning. This receding-horizon strategy combines the benefits of chunk commitment (smooth trajectories, fewer compounding points) with closed-loop responsiveness (new observations re-enter the prediction often enough to matter).</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">3</span>Denoising Networks</h4>
+        <div class="shapes">CNN-UNet or Transformer backbone &mdash; either works</div>
+      </div>
+      <p>The denoiser itself can be a 1D temporal CNN-UNet (for purely low-dim action sequences) or a transformer (when conditioning on rich visual embeddings). Both work; the CNN-UNet is lighter and easier to train. The original paper uses 100 denoising steps at training and 100 at inference, though later work (DDIM, consistency models) has reduced inference to 10 or even 1 step with minimal quality loss.</p>
+    </div>
+
+    <div class="callout-purple callout">
+      <strong>The benchmark verdict:</strong> across 15 simulated and 4 real tasks in the original paper, Diffusion Policy improves average success rates by 46% over the strongest BC baselines (including LSTM-GMM, IBC, and BET). It is now the default action head for many SOTA systems &mdash; including, as we will see, GR00T N1's action decoder.
+    </div>
+  </section>
+
+  <!-- SECTION 7: GR00T N1 -->
+  <section>
+    <h2>7 &mdash; GR00T N1: NVIDIA's Humanoid Foundation Model</h2>
+
+    <p><strong>GR00T N1</strong> (NVIDIA, March 2025) is the culmination of everything above: a foundation model for humanoid robots that inherits BC's supervised-learning simplicity, borrows diffusion's multimodal action generation, and wraps both inside a dual-system architecture inspired by Kahneman's System 1 / System 2 psychology. It is trained on the largest, most heterogeneous humanoid manipulation dataset assembled to date, and it is open-source.</p>
+
+    <!-- SVG: GR00T N1 dual-system architecture -->
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Input: vision + language + state -->
+        <rect x="20" y="40" width="100" height="50" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.3"/>
+        <text x="70" y="62" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">RGB (stereo)</text>
+        <text x="70" y="78" text-anchor="middle" font-size="9" fill="#92400e">egocentric cams</text>
+
+        <rect x="20" y="100" width="100" height="50" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.3"/>
+        <text x="70" y="122" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Language</text>
+        <text x="70" y="138" text-anchor="middle" font-size="9" fill="#92400e">task instruction</text>
+
+        <rect x="20" y="160" width="100" height="50" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.3"/>
+        <text x="70" y="182" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Robot State</text>
+        <text x="70" y="198" text-anchor="middle" font-size="9" fill="#92400e">joint pos / vel</text>
+
+        <!-- System 2: VLM -->
+        <line x1="120" y1="65" x2="165" y2="105" stroke="#78716c" stroke-width="1.2" marker-end="url(#gr-gray)"/>
+        <line x1="120" y1="125" x2="165" y2="115" stroke="#78716c" stroke-width="1.2" marker-end="url(#gr-gray)"/>
+        <rect x="170" y="60" width="210" height="110" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+        <text x="275" y="85" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">System 2 — VLM</text>
+        <text x="275" y="103" text-anchor="middle" font-size="10" fill="#1e40af">Eagle-2 (NVIDIA)</text>
+        <text x="275" y="120" text-anchor="middle" font-size="10" fill="#1e40af">≈2B parameters</text>
+        <text x="275" y="138" text-anchor="middle" font-size="9" font-style="italic" fill="#3b82f6">slow, deliberative</text>
+        <text x="275" y="154" text-anchor="middle" font-size="9" font-style="italic" fill="#3b82f6">scene + task understanding</text>
+
+        <!-- S2 output tokens -->
+        <line x1="380" y1="115" x2="420" y2="115" stroke="#3b82f6" stroke-width="1.3" marker-end="url(#gr-blue)"/>
+        <rect x="425" y="95" width="110" height="40" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.3"/>
+        <text x="480" y="112" text-anchor="middle" font-size="10" font-weight="700" fill="#3730a3">Latent tokens</text>
+        <text x="480" y="128" text-anchor="middle" font-size="9" fill="#6366f1">reasoning context</text>
+
+        <!-- System 1: DiT -->
+        <line x1="120" y1="185" x2="165" y2="235" stroke="#78716c" stroke-width="1.2" marker-end="url(#gr-gray)"/>
+        <line x1="480" y1="135" x2="275" y2="220" stroke="#6366f1" stroke-width="1.3" stroke-dasharray="3,2"/>
+        <rect x="170" y="215" width="210" height="110" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="275" y="240" text-anchor="middle" font-size="13" font-weight="700" fill="#14532d">System 1 — DiT</text>
+        <text x="275" y="258" text-anchor="middle" font-size="10" fill="#14532d">Diffusion Transformer</text>
+        <text x="275" y="275" text-anchor="middle" font-size="10" fill="#14532d">flow matching</text>
+        <text x="275" y="293" text-anchor="middle" font-size="9" font-style="italic" fill="#16a34a">fast reactive control</text>
+        <text x="275" y="309" text-anchor="middle" font-size="9" font-style="italic" fill="#16a34a">conditioned on S2 tokens</text>
+
+        <!-- Action output -->
+        <line x1="380" y1="270" x2="420" y2="270" stroke="#16a34a" stroke-width="1.3" marker-end="url(#gr-green)"/>
+        <rect x="425" y="235" width="170" height="70" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="510" y="260" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">Action Chunk</text>
+        <text x="510" y="278" text-anchor="middle" font-size="10" fill="#dc2626">whole-body control</text>
+        <text x="510" y="294" text-anchor="middle" font-size="9" font-style="italic" fill="#dc2626">arms + torso + hands</text>
+
+        <!-- Robot -->
+        <line x1="595" y1="270" x2="635" y2="270" stroke="#78716c" stroke-width="1.3" marker-end="url(#gr-gray)"/>
+        <rect x="640" y="235" width="60" height="70" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+        <text x="670" y="263" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Humanoid</text>
+        <text x="670" y="279" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Robot</text>
+        <text x="670" y="295" text-anchor="middle" font-size="9" fill="#d97706">120 Hz</text>
+
+        <!-- Timing annotations -->
+        <text x="480" y="180" text-anchor="middle" font-size="9" font-style="italic" fill="#3b82f6">~10 Hz (slow)</text>
+        <text x="480" y="335" text-anchor="middle" font-size="9" font-style="italic" fill="#16a34a">~120 Hz (fast)</text>
+
+        <!-- Annotation -->
+        <rect x="20" y="355" width="680" height="35" rx="6" fill="#faf5ff" stroke="#a855f7" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="360" y="377" text-anchor="middle" font-size="10" font-style="italic" fill="#581c87">System 2 reasons about the scene every few hundred ms; System 1 generates fresh action chunks every ~8 ms</text>
+
+        <defs>
+          <marker id="gr-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#78716c"/></marker>
+          <marker id="gr-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3b82f6"/></marker>
+          <marker id="gr-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#16a34a"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">1</span>Dual-System Architecture</h4>
+        <div class="shapes">Eagle-2 VLM (System 2) + Diffusion Transformer (System 1)</div>
+      </div>
+      <p>The central architectural choice in GR00T N1 is a separation of concerns modeled on Kahneman's psychology of decision-making. <strong>System 2</strong> is a Vision-Language Model (NVIDIA's Eagle-2, ~2B parameters) that processes vision and language at a comfortable ~10&nbsp;Hz &mdash; enough for deliberative scene parsing and instruction following but far too slow for continuous control. <strong>System 1</strong> is a Diffusion Transformer (DiT) that takes Eagle-2's latent tokens as conditioning context and produces action chunks at ~120&nbsp;Hz, fast enough for reactive humanoid control.</p>
+    </div>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4><span class="step-num blue">2</span>Eagle-2 Vision-Language Backbone</h4>
+        <div class="shapes">NVIDIA's open VLM &mdash; SigLIP vision + Llama-derived LM</div>
+      </div>
+      <p>Eagle-2 is a compact multimodal model combining a SigLIP vision encoder with an LLM backbone. For GR00T it ingests egocentric stereo RGB, a language instruction ("pick up the red mug and place it on the shelf"), and a brief history of robot state. Its output &mdash; a short sequence of latent tokens &mdash; compresses its scene-and-task understanding into conditioning signal for the action generator. Eagle-2 is trained jointly with the rest of GR00T during post-training but can also be used separately as a reasoning-only model.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4><span class="step-num purple">3</span>Diffusion Transformer Action Head</h4>
+        <div class="shapes">Flow matching over action chunks &mdash; whole-body control</div>
+      </div>
+      <p>The action head is a Diffusion Transformer trained with flow matching (a continuous-time variant of diffusion popularized by Stable Diffusion 3 and adopted by &pi;&#8320;). The action space covers the humanoid's full body: arm joint angles, hand finger joints, torso and waist. Chunks are typically 16&ndash;32 steps at the robot's control frequency. By running only the action head at 120&nbsp;Hz and keeping the VLM at 10&nbsp;Hz, GR00T sidesteps the compute bottleneck of large-model-every-timestep VLA architectures.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4><span class="step-num amber">4</span>The Data Pyramid</h4>
+        <div class="shapes">Web video ← synthetic ← real robot teleop</div>
+      </div>
+      <p>GR00T N1 introduces a three-tier data hierarchy:</p>
+      <ul style="padding-left: 1.25rem; margin: 0.5rem 0; font-size: 0.92rem;">
+        <li><strong>Real teleoperation data</strong> &mdash; the gold standard, but expensive to collect; a few thousand hours of humanoid teleop across NVIDIA's partners</li>
+        <li><strong>Synthetic data</strong> &mdash; millions of episodes generated in Isaac Sim with domain randomization and retargeted from human motion capture; cheap to produce, imperfect in physics fidelity</li>
+        <li><strong>Human egocentric video</strong> &mdash; public datasets (Ego4D, EgoExo4D, HOI4D) in which a human wears a head-cam while performing manipulation tasks; enormous in scale, but has no robot actions</li>
+      </ul>
+      <p>The human-video tier uses <em>neural trajectories</em> as pseudo-labels: a vision-based hand-pose estimator converts the human's hand trajectory into a synthetic action sequence that can be pre-trained on as if it were a robot demonstration.</p>
+    </div>
+
+    <div class="layer-card mobile">
+      <div class="layer-header">
+        <h4><span class="step-num red">5</span>Cross-Embodiment Training</h4>
+        <div class="shapes">Multiple humanoid platforms share one foundation</div>
+      </div>
+      <p>Like RT-X before it (and more aggressively), GR00T N1 is trained on data from multiple humanoid embodiments: Fourier GR-1, Unitree H1, 1X NEO, and others. A learned embodiment embedding tells the model which body it is controlling; the shared backbone transfers manipulation competence across platforms. This was infeasible for prior, per-robot BC systems and is a direct descendant of the dataset-aggregation lineage: collect from as many distributions as possible, and let a large model stitch them together.</p>
+    </div>
+
+    <div class="callout-blue callout">
+      <strong>Why dual-system is a big deal:</strong> prior VLAs (RT-2, OpenVLA, &pi;&#8320;) run a single large model at every control step, trading off between intelligence and reactivity. GR00T's split lets both sides run at their preferred frequency &mdash; a big, slow brain for <em>what</em> to do and a small, fast brain for <em>how</em> to move &mdash; without sacrificing either. The architectural idea is general and has already shown up in concurrent work (Helix, Figure-02).
+    </div>
+  </section>
+
+  <!-- SECTION 8: Evolution -->
+  <section>
+    <h2>8 &mdash; Evolution: BC Across Four Decades</h2>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+        <!-- Timeline axis -->
+        <line x1="20" y1="280" x2="700" y2="280" stroke="#57534e" stroke-width="1.2"/>
+        <g fill="#57534e" font-size="9" text-anchor="middle">
+          <text x="70" y="300">1989</text>
+          <text x="205" y="300">2011</text>
+          <text x="340" y="300">2016</text>
+          <text x="475" y="300">2023</text>
+          <text x="610" y="300">2025</text>
+        </g>
+
+        <!-- Tick marks -->
+        <g stroke="#57534e" stroke-width="1">
+          <line x1="70" y1="275" x2="70" y2="285"/>
+          <line x1="205" y1="275" x2="205" y2="285"/>
+          <line x1="340" y1="275" x2="340" y2="285"/>
+          <line x1="475" y1="275" x2="475" y2="285"/>
+          <line x1="610" y1="275" x2="610" y2="285"/>
+        </g>
+
+        <!-- ALVINN -->
+        <rect x="20" y="30" width="100" height="230" rx="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+        <text x="70" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="#713f12">ALVINN</text>
+        <line x1="30" y1="62" x2="110" y2="62" stroke="#fde047" stroke-width="1"/>
+        <text x="30" y="82" font-size="9" fill="#713f12">Shallow MLP</text>
+        <text x="30" y="99" font-size="9" fill="#713f12">30×32 input</text>
+        <text x="30" y="116" font-size="9" fill="#713f12">Steer Chevy van</text>
+        <text x="30" y="136" font-size="9" font-weight="600" fill="#854d0e">BC is born</text>
+
+        <!-- DAgger -->
+        <rect x="155" y="30" width="100" height="230" rx="8" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="205" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="#581c87">DAgger</text>
+        <line x1="165" y1="62" x2="245" y2="62" stroke="#d8b4fe" stroke-width="1"/>
+        <text x="165" y="82" font-size="9" fill="#3b0764">Iterative aggreg.</text>
+        <text x="165" y="99" font-size="9" fill="#3b0764">Expert-in-loop</text>
+        <text x="165" y="116" font-size="9" fill="#3b0764">O(εT) bound</text>
+        <text x="165" y="136" font-size="9" font-weight="600" fill="#581c87">Covariate shift</text>
+        <text x="165" y="152" font-size="9" font-weight="600" fill="#581c87">addressed</text>
+
+        <!-- PilotNet -->
+        <rect x="290" y="30" width="100" height="230" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="340" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">PilotNet</text>
+        <line x1="300" y1="62" x2="380" y2="62" stroke="#93c5fd" stroke-width="1"/>
+        <text x="300" y="82" font-size="9" fill="#1e3a5f">9-layer CNN</text>
+        <text x="300" y="99" font-size="9" fill="#1e3a5f">72 hr driving</text>
+        <text x="300" y="116" font-size="9" fill="#1e3a5f">End-to-end steer</text>
+        <text x="300" y="136" font-size="9" font-weight="600" fill="#1e40af">Deep BC</text>
+        <text x="300" y="152" font-size="9" font-weight="600" fill="#1e40af">mainstream</text>
+
+        <!-- ACT + Diffusion Policy -->
+        <rect x="425" y="30" width="100" height="230" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="475" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">ACT + DP</text>
+        <line x1="435" y1="62" x2="515" y2="62" stroke="#86efac" stroke-width="1"/>
+        <text x="435" y="82" font-size="9" fill="#14532d">Action chunks</text>
+        <text x="435" y="99" font-size="9" fill="#14532d">CVAE / Diffusion</text>
+        <text x="435" y="116" font-size="9" fill="#14532d">Multimodal demos</text>
+        <text x="435" y="136" font-size="9" font-weight="600" fill="#166534">Robot manipulation</text>
+        <text x="435" y="152" font-size="9" font-weight="600" fill="#166534">from ~50 demos</text>
+
+        <!-- GR00T N1 -->
+        <rect x="560" y="30" width="100" height="230" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="610" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="#991b1b">GR00T N1</text>
+        <line x1="570" y1="62" x2="650" y2="62" stroke="#fca5a5" stroke-width="1"/>
+        <text x="570" y="82" font-size="9" fill="#450a0a">Dual-system</text>
+        <text x="570" y="99" font-size="9" fill="#450a0a">VLM + DiT</text>
+        <text x="570" y="116" font-size="9" fill="#450a0a">Cross-embodiment</text>
+        <text x="570" y="133" font-size="9" fill="#450a0a">Data pyramid</text>
+        <text x="570" y="153" font-size="9" font-weight="600" fill="#991b1b">Humanoid</text>
+        <text x="570" y="169" font-size="9" font-weight="600" fill="#991b1b">foundation model</text>
+      </svg>
+    </div>
+
+    <table class="summary-table">
+      <tr>
+        <th>Method</th>
+        <th>Year</th>
+        <th>Covariate shift strategy</th>
+        <th>Action representation</th>
+        <th>Scale</th>
+      </tr>
+      <tr>
+        <td><strong>ALVINN</strong></td>
+        <td>1989</td>
+        <td>None &mdash; recovery unreliable</td>
+        <td>Per-step scalar</td>
+        <td>~few hr driving</td>
+      </tr>
+      <tr>
+        <td><strong>DAgger</strong></td>
+        <td>2011</td>
+        <td>Iterative expert queries</td>
+        <td>Per-step</td>
+        <td>Task-specific</td>
+      </tr>
+      <tr>
+        <td><strong>PilotNet</strong></td>
+        <td>2016</td>
+        <td>Side-camera augmentation</td>
+        <td>Per-step scalar</td>
+        <td>72 hr driving</td>
+      </tr>
+      <tr>
+        <td><strong>ACT</strong></td>
+        <td>2023</td>
+        <td>Action chunking + CVAE</td>
+        <td>100-step chunk</td>
+        <td>50 demos / task</td>
+      </tr>
+      <tr>
+        <td><strong>Diffusion Policy</strong></td>
+        <td>2023</td>
+        <td>Chunking + multimodal dist.</td>
+        <td>16-step chunk</td>
+        <td>100s of demos</td>
+      </tr>
+      <tr>
+        <td><strong>GR00T N1</strong></td>
+        <td>2025</td>
+        <td>Scale + data pyramid + cross-embodiment</td>
+        <td>DiT action chunks</td>
+        <td>thousands of hrs</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- SECTION 9: Takeaways -->
+  <section>
+    <h2>9 &mdash; Key Takeaways</h2>
+
+    <div class="layer-card encoder">
+      <div class="layer-header">
+        <h4>BC Is Deceptively Simple</h4>
+      </div>
+      <p>On paper, behavior cloning is the shortest algorithm in robotics: collect demos, minimize MSE, deploy. In practice the field has spent 35 years finding ways to cope with the single failure mode &mdash; covariate shift &mdash; that the simplicity creates. Every real-world BC system in deployment today uses one or more of: data augmentation (PilotNet), iterative aggregation (DAgger), larger and more diverse demonstration pools (RT-X, GR00T), chunked action prediction (ACT), or distributional action models (Diffusion Policy).</p>
+    </div>
+
+    <div class="layer-card projection">
+      <div class="layer-header">
+        <h4>Chunking Is a Cheap, Enormous Win</h4>
+      </div>
+      <p>Predicting action chunks instead of single actions is perhaps the highest-leverage change in modern BC: it reduces compounding decision points, captures temporal structure in demonstrations, and makes downstream features (smoothing, receding horizon, multimodal latent codes) easy to implement. Both ACT and Diffusion Policy use chunks; GR00T N1 does too. Chunks are now close to universal in manipulation policies.</p>
+    </div>
+
+    <div class="layer-card decoder">
+      <div class="layer-header">
+        <h4>Diffusion Is the Default Action Head</h4>
+      </div>
+      <p>For manipulation tasks with multimodal human demonstrations, diffusion or flow-matching action heads outperform unimodal regression across nearly every benchmark. GR00T N1's System 1 is a DiT; &pi;&#8320; uses flow matching; RT-2 &mdash; which predicted discrete action tokens &mdash; has largely been superseded by continuous-action diffusion variants. This is the single most consequential trend in BC since action chunking.</p>
+    </div>
+
+    <div class="layer-card training">
+      <div class="layer-header">
+        <h4>Data Is the Final Constraint</h4>
+      </div>
+      <p>After you have a good architecture (chunks + diffusion + big pretrained VLM), what is left is data. GR00T N1's contribution is as much about its three-tier data pyramid &mdash; real teleop + synthetic + human video with neural trajectories &mdash; as it is about its architecture. Every SOTA BC system after 2024 is explicitly a data engineering story, not only an algorithmic one.</p>
+    </div>
+
+    <div class="layer-card mobile">
+      <div class="layer-header">
+        <h4>Dual-System Is the New Blueprint</h4>
+      </div>
+      <p>The VLM-as-System-2 + DiT-as-System-1 split is emerging as the dominant pattern for VLA architectures. It decouples the frequency of reasoning from the frequency of control, which had been the bottleneck in prior single-model VLAs. Expect this pattern to show up in every major robotics foundation-model release for the next several years.</p>
+    </div>
+
+    <div class="callout">
+      <strong>The larger picture:</strong> BC has gone from a 1989 oddity into one of the two dominant paradigms in modern robotics (the other being reinforcement learning, often combined with BC for initialization). The trajectory from PilotNet to GR00T N1 is one of gradually more clever answers to the same fundamental question: how do we make a supervised learner behave when it is driving its own data distribution?
+    </div>
+  </section>
+
+  <!-- SECTION 10: References -->
+  <section>
+    <h2>10 &mdash; References &amp; Further Reading</h2>
+    <ul style="padding-left: 1.25rem;">
+      <li style="margin-bottom: 0.5rem;"><a href="https://papers.nips.cc/paper/1988/hash/812b4ba287f5ee0bc9d43bbf5bbe87fb-Abstract.html">ALVINN: An Autonomous Land Vehicle in a Neural Network</a> &mdash; Pomerleau &mdash; NeurIPS 1988</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/1604.07316">End to End Learning for Self-Driving Cars (PilotNet)</a> &mdash; Bojarski, Del Testa, Dworakowski, Firner, Flepp, Goyal, Jackel, Monfort, Muller, Zhang, Zhang, Zhao, Zieba &mdash; NVIDIA 2016</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/1011.0686">A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning (DAgger)</a> &mdash; Ross, Gordon, Bagnell &mdash; AISTATS 2011</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2304.13705">Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware (ACT / ALOHA)</a> &mdash; Zhao, Kumar, Levine, Finn &mdash; RSS 2023</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2303.04137">Diffusion Policy: Visuomotor Policy Learning via Action Diffusion</a> &mdash; Chi, Feng, Du, Xu, Cousineau, Burchfiel, Song &mdash; RSS 2023</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://arxiv.org/abs/2503.14734">GR00T N1: An Open Foundation Model for Generalist Humanoid Robots</a> &mdash; NVIDIA GEAR &mdash; 2025</li>
+      <li style="margin-bottom: 0.5rem;"><a href="https://developer.nvidia.com/isaac/gr00t">NVIDIA Isaac GR00T Project Page</a> &mdash; includes open model weights and simulation tools</li>
+      <li style="margin-bottom: 0.5rem;"><a href="pi0.html">Our &pi;&#8320; Walkthrough</a> &mdash; companion flow-matching VLA from Physical Intelligence</li>
+      <li style="margin-bottom: 0.5rem;"><a href="gemini-robotics.html">Our Gemini Robotics Walkthrough</a> &mdash; Google's related VLA family</li>
+      <li style="margin-bottom: 0.5rem;"><a href="safe-vla.html">Our SAFE Walkthrough</a> &mdash; failure detection for VLA policies</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  &copy; 2025 Steve Schmidt
+</footer>
+
+</body>
+</html>
